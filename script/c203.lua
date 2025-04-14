@@ -2,7 +2,7 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-    -- Activate
+    -- Activate (Continuous Spell)
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_ACTIVATE)
     e0:SetCode(EVENT_FREE_CHAIN)
@@ -32,7 +32,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.tdop)
     c:RegisterEffect(e2)
 
-    -- Effect 3: During End Phase, place Neo Space to Field Zone
+    -- Effect 3: During End Phase, place Neo Space into Field Zone
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
@@ -40,6 +40,7 @@ function s.initial_effect(c)
     e3:SetCode(EVENT_PHASE+PHASE_END)
     e3:SetRange(LOCATION_SZONE)
     e3:SetCountLimit(1,{id,2})
+    e3:SetHintTiming(0,TIMINGS_END_PHASE)
     e3:SetCondition(s.fzcond)
     e3:SetTarget(s.fztg)
     e3:SetOperation(s.fzop)
@@ -71,7 +72,7 @@ function s.op1(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Check for Neos Fusion Material
+-- Effect 2
 function s.neosfusionfilter(c)
     return c:IsType(TYPE_FUSION) and c:IsLocation(LOCATION_GRAVE)
         and c:IsAbleToExtra() and c.material and c:CheckFusionMaterial(aux.FilterBoolFunction(Card.IsCode,89943723))
@@ -80,7 +81,7 @@ function s.tdcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.neosfusionfilter,1,nil)
 end
 function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return eg:IsExists(s.neosfusionfilter,1,nil) end
+    if chk==0 then return true end
     local g=Group.CreateGroup()
     for tc in aux.Next(eg) do
         if s.neosfusionfilter(tc) then
@@ -97,7 +98,7 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: During YOUR End Phase
+-- Effect 3
 function s.fzcond(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()==tp and Duel.GetCurrentPhase()==PHASE_END
 end
@@ -109,6 +110,7 @@ function s.fztg(e,tp,eg,ep,ev,re,r,rp,chk)
         return Duel.IsExistingMatchingCard(s.fzfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
             and Duel.GetLocationCount(tp,LOCATION_FZONE)>0
     end
+    Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
 end
 function s.fzop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.GetLocationCount(tp,LOCATION_FZONE)<=0 then return end
