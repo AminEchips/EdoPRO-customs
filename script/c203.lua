@@ -24,7 +24,7 @@ function s.initial_effect(c)
 
     -- During End Phase: place 1 "Neo Space" from Deck or GY into Field Zone
     local e3=Effect.CreateEffect(c)
-    e3:SetCategory(CATEGORY_TOFIELD)
+   e3:SetCategory(CATEGORY_TOHAND + CATEGORY_SEARCH)
     e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e3:SetCode(EVENT_PHASE+PHASE_END)
     e3:SetRange(LOCATION_SZONE)
