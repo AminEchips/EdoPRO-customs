@@ -1,13 +1,13 @@
 --EN - Evolution Neo Space (ID: 203)
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Activate: Place into Spell/Trap Zone as a Continuous Spell
+    -- Effect 1: Activate "EN - Evolution Neo Space" from hand and place it in the Spell/Trap Zone
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_ACTIVATE)  -- Activate from hand
     e1:SetCode(EVENT_FREE_CHAIN)     -- Can be activated freely
     c:RegisterEffect(e1)
 
-    -- Effect 1: Send 1 Fusion Monster to the GY, and Special Summon 1 "Neo-Spacian" monster from your GY with the same Attribute
+    -- Effect 2: Send 1 Fusion Monster to the GY, and Special Summon 1 "Neo-Spacian" monster from your GY with the same Attribute
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
@@ -18,7 +18,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.operation1)
     c:RegisterEffect(e2)
 
-    -- Effect 2: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
+    -- Effect 3: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetCategory(CATEGORY_TODECK)
@@ -29,7 +29,7 @@ function s.initial_effect(c)
     e3:SetOperation(s.operation2)
     c:RegisterEffect(e3)
 
-    -- Effect 3: During the End Phase, place "Neo Space" from your Deck or GY into the Field Zone
+    -- Effect 4: During the End Phase, place "Neo Space" (code: 42015635) from your Deck or GY into the Field Zone
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,2))
     e4:SetCategory(CATEGORY_TOFIELD)
@@ -86,14 +86,15 @@ end
 -- Effect 3: Place "Neo Space" from Deck or GY into the Field Zone
 function s.target3(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        -- Check if "Neo Space" is in the Deck or GY
-        return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,91427878) -- Neo Space's code
+        -- Check if "Neo Space" (code: 42015635) is in the Deck or GY
+        return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,42015635)  -- Neo Space's code
     end
     Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
 end
 
 function s.operation3(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.SelectMatchingCard(tp,Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,91427878) -- Neo Space's code
+    -- Place "Neo Space" into the Field Zone from Deck or GY
+    local g=Duel.SelectMatchingCard(tp,Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,42015635) -- Neo Space's code
     if #g>0 then
         -- Move Neo Space to the Field Zone as a Field Spell
         Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
