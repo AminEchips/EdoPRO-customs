@@ -72,15 +72,18 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Cost for tributing 1 other HERO or Neo-Spacian
-function s.cfilter(c)
-    return c:IsFaceup() and (c:IsSetCard(0x8) or c:IsSetCard(0x1f)) and not c:IsCode(id)
+function s.cfilter(c,e)
+    return c:IsFaceup() and (c:IsSetCard(0x8) or c:IsSetCard(0x1f)) and c~=e:GetHandler()
 end
 
 function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.CheckReleaseGroup(tp,s.cfilter,1,nil) end
-    local g=Duel.SelectReleaseGroup(tp,s.cfilter,1,1,nil)
+    if chk==0 then
+        return Duel.CheckReleaseGroup(tp,function(c) return s.cfilter(c,e) end,1,nil)
+    end
+    local g=Duel.SelectReleaseGroup(tp,function(c) return s.cfilter(c,e) end,1,1,nil)
     Duel.Release(g,REASON_COST)
 end
+
 
 -- Search Polymerization
 function s.thfilter(c)
