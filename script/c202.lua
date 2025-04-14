@@ -38,7 +38,13 @@ function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk)
         local mg1=Duel.GetFusionMaterial(tp)
         local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
         mg1:Merge(mg2)
-        return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg1,chkf)
+        
+        -- Filter only legal Fusion Monsters
+        return Duel.IsExistingMatchingCard(function(c)
+            return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) 
+                and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false) 
+                and c:CheckFusionMaterial(mg1,nil,chkf)
+        end,tp,LOCATION_EXTRA,0,1,nil)
     end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
@@ -49,6 +55,7 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
     mg1:Merge(mg2)
 
+    -- Filter only legal Fusion Monsters and allow for valid Fusion Summon
     local sg=Duel.GetMatchingGroup(function(c)
         return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
             and c:CheckFusionMaterial(mg1,nil,chkf)
