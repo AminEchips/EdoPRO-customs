@@ -1,4 +1,4 @@
-This repo contains Chip's custom cards for EdoPro
+This repo contains Chips's custom cards for EdoPro
 
 Includes:
 - Elemental HERO Cosmic Soldier
