@@ -30,7 +30,7 @@ end
 
 -- Effect 1: Set 1 Trap that mentions "HERO"
 function s.setfilter(c)
-    return c:IsType(TYPE_TRAP) and c:IsSSetable() and c:GetText():lower():find("hero")
+    return c:IsType(TYPE_TRAP) and c:IsSSetable() and c:ListsArchetype(0x8)
 end
 
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
