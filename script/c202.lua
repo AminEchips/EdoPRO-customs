@@ -64,11 +64,13 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
 
     -- Fix: Filter materials that can be used for the selected Fusion Monster
     local matGroup = Duel.GetFusionMaterial(tp)
+    
+    -- Correct filter for selecting Fusion materials only from the deck
     local extraDeckMat=Duel.GetMatchingGroup(function(c)
         return c:IsCanBeFusionMaterial(tc)  -- Only show cards that can be used in the fusion
     end,tp,LOCATION_DECK,0,nil)
-    
-    -- Add additional Fusion materials if necessary
+
+    -- If additional materials can be used, allow their selection
     if extraDeckMat:GetCount()>0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
         local selected=extraDeckMat:Select(tp,1,1,nil)
