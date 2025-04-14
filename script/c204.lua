@@ -19,7 +19,7 @@ s.listed_names={89943723} -- Elemental HERO Neos
 
 -- Filter for cards that are Neos or mention Neos
 function s.filter(c)
-    return (c:IsCode(89943723) or (c:ListsCode and c:ListsCode(89943723)))
+    return (c:IsCode(89943723) or (c.ListsCode and c:ListsCode(89943723)))
         and not c:IsCode(id) and c:IsAbleToGrave()
 end
 
@@ -28,7 +28,7 @@ function s.neospacian_filter(c,e,tp)
 end
 
 function s.neos_mention_search(c)
-    return ((c:IsCode(89943723) or (c:ListsCode and c:ListsCode(89943723))) and not c:IsCode(id))
+    return ((c:IsCode(89943723) or (c.ListsCode and c:ListsCode(89943723))) and not c:IsCode(id))
         and c:IsAbleToHand()
 end
 
