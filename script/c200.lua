@@ -73,7 +73,7 @@ end
 
 -- Cost for tributing 1 other HERO or Neo-Spacian
 function s.cfilter(c)
-    return c:IsFaceup() and (c:IsSetCard(0x8) or c:IsSetCard(0x1f))
+    return c:IsFaceup() and (c:IsSetCard(0x8) or c:IsSetCard(0x1f)) and c~=e:GetHandler()
 end
 
 function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
