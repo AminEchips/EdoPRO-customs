@@ -1,23 +1,25 @@
---EN - Evolution Neo Space (ID: 203)
+-- EN - Evolution Neo Space
+-- Scripted by: Your Name
+
 local s,id=GetID()
+
 function s.initial_effect(c)
-    -- Effect 1: Activate from hand and place in Spell/Trap Zone as a Continuous Spell
+    -- Effect 1: Activate from hand and place in Spell/Trap Zone
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
-    e1:SetCode(EVENT_FREE_CHAIN)  -- Activate from hand
-    e1:SetTarget(s.target_activate)  -- Target for activation
-    e1:SetOperation(s.operation_activate)  -- Set operation for placing in Spell/Trap Zone
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetTarget(s.activate_target)
+    e1:SetOperation(s.activate_operation)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
+    -- Effect 2: Continuous effect while on the field
     local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,0))
-    e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
-    e2:SetType(EFFECT_TYPE_IGNITION)
-    e2:SetRange(LOCATION_SZONE)  -- Only activatable from Spell/Trap Zone
-    e2:SetCountLimit(1,id)
-    e2:SetTarget(s.target1)
-    e2:SetOperation(s.operation1)
+    e2:SetType(EFFECT_TYPE_FIELD)
+    e2:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+    e2:SetRange(LOCATION_SZONE)
+    e2:SetTargetRange(LOCATION_MZONE,0)
+    e2:SetTarget(aux.TargetBoolFunction(Card.IsSetCard,0x8))  -- Targets "Neo-Spacian" monsters
+    e2:SetValue(aux.tgoval)
     c:RegisterEffect(e2)
 
     -- Effect 3: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
@@ -46,7 +48,7 @@ function s.initial_effect(c)
 end
 
 -- Effect 1: Activate from hand and place in Spell/Trap Zone as a Continuous Spell
-function s.target_activate(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.activate_target(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         -- Can always activate from hand
         return true
@@ -60,55 +62,32 @@ function s.operation_activate(e,tp,eg,ep,ev,re,r,rp)
     Duel.MoveToField(c,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
 end
 
--- Effect 2: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
-function s.target1(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then
-        -- Check for a Fusion Monster on the field and a Neo-Spacian in the GY to Special Summon
-        return Duel.IsExistingMatchingCard(Card.IsFusionSummonable,tp,LOCATION_MZONE,0,1,nil)
-            and Duel.IsExistingMatchingCard(function(c)
-                return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x8) and c:IsAbleToHand() end,tp,LOCATION_GRAVE,0,1,nil)
-    end
-    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_MZONE)
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
-end
-
-function s.operation1(e,tp,eg,ep,ev,re,r,rp)
-    -- Send a Fusion Monster to the GY and Special Summon a Neo-Spacian from the GY with the same Attribute
-    local tg=Duel.SelectMatchingCard(tp,Card.IsFusionSummonable,tp,LOCATION_MZONE,0,1,1,nil)
-    if #tg>0 then
-        Duel.SendtoGrave(tg,REASON_EFFECT)
-        local special=Duel.SelectMatchingCard(tp,aux.FilterBoolFunction(Card.IsSetCard,0x8),tp,LOCATION_GRAVE,0,1,1,nil)
-        if #special>0 then
-            Duel.SpecialSummon(special,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
-        end
-    end
-end
-
--- Effect 3: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
+-- Effect 2: Continuous effect while on the field
+-- This effect ensures "Neo-Spacian" monsters cannot be targeted
 function s.condition2(e,tp,eg,ep,ev,re,r,rp)
-    -- Condition to check if the sent Fusion Monster mentions "Elemental HERO Neos"
+    -- Condition: Check if Fusion Monsters related to "Elemental HERO Neos" are sent to the GY
     return eg:IsExists(function(c)
-        return c:IsType(TYPE_FUSION) and c:IsSetCard(0x8) and c:IsCode(91427878)  -- Check for "Elemental HERO Neos"
+        return c:IsType(TYPE_FUSION) and c:IsSetCard(0x8) and c:IsCode(89943723)  -- Check for "Elemental HERO Neos"
     end,1,nil)
 end
 
 function s.target2(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        -- Look for Fusion Monsters that mention "Elemental HERO Neos"
+        -- Check if there are Fusion Monsters related to "Elemental HERO Neos"
         return Duel.IsExistingMatchingCard(aux.FilterBoolFunction(Card.IsFusionType,TYPE_FUSION),tp,LOCATION_GRAVE,0,1,nil)
     end
     Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.operation2(e,tp,eg,ep,ev,re,r,rp)
-    -- Shuffle Fusion Monsters that mention "Elemental HERO Neos" into the Extra Deck
+    -- Shuffle Fusion Monsters related to "Elemental HERO Neos" into the Extra Deck
     local g=Duel.GetMatchingGroup(aux.FilterBoolFunction(Card.IsFusionType,TYPE_FUSION),tp,LOCATION_GRAVE,0,nil)
     if #g>0 then
         Duel.SendtoDeck(g,nil,2,REASON_EFFECT)
     end
 end
 
--- Effect 4: Place "Neo Space" from Deck or GY into the Field Zone
+-- Effect 3: During End Phase, place "Neo Space" from Deck or GY into the Field Zone
 function s.target3(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         -- Check if "Neo Space" (code: 42015635) is in the Deck or GY
@@ -125,3 +104,4 @@ function s.operation3(e,tp,eg,ep,ev,re,r,rp)
         Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
+
