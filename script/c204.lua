@@ -26,9 +26,11 @@ function s.neospacian_filter(c,e,tp)
     return c:IsSetCard(0x1f) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 
+-- ONLY allows Neos OR Spell/Trap that mentions Neos
 function s.neos_mention_search(c)
-    return ((c:IsCode(89943723) or (c.ListsCode and c:ListsCode(89943723))) and not c:IsCode(id))
-        and c:IsAbleToHand()
+    return ((c:IsCode(89943723)) or
+        (not c:IsType(TYPE_MONSTER) and c.ListsCode and c:ListsCode(89943723)))
+        and not c:IsCode(id) and c:IsAbleToHand()
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -70,4 +72,3 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
-
