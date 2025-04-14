@@ -2,7 +2,7 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-    -- Activate (Continuous Spell)
+    -- Activate
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_ACTIVATE)
     e0:SetCode(EVENT_FREE_CHAIN)
@@ -46,7 +46,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- Effect 1: Conditions
+-- Effect 1
 function s.fusionfilter(c,e,tp)
     return c:IsType(TYPE_FUSION) and c:IsAbleToGrave() and c:IsFaceup()
         and Duel.IsExistingMatchingCard(s.neofilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,c:GetAttribute())
@@ -71,7 +71,7 @@ function s.op1(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Trigger if Neos was listed fusion material
+-- Effect 2: Shuffle if Neos was listed as material
 function s.neosfusionfilter(c)
     return c:IsType(TYPE_FUSION) and c:IsLocation(LOCATION_GRAVE)
         and c:IsAbleToExtra() and c.material and c:CheckFusionMaterial(aux.FilterBoolFunction(Card.IsCode,89943723))
@@ -92,9 +92,9 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: During YOUR End Phase
+-- Effect 3: Place Neo Space in Field Zone during your End Phase
 function s.fzcond(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetTurnPlayer()==tp
+    return Duel.GetTurnPlayer()==tp and Duel.GetCurrentPhase()==PHASE_END
 end
 function s.fzfilter(c)
     return c:IsCode(42015635) and not c:IsForbidden()
