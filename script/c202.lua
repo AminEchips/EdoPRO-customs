@@ -44,10 +44,9 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
-function s.filter1(c,e,tp,m,f,chkf)
+function s.filter1(c,e,tp)
 	return c:IsSetCard(0x3008) and c:IsType(TYPE_FUSION)
 		and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
-		and Duel.GetFusionMaterial(tp):IsExists(Card.IsCanBeFusionMaterial,1,nil,c)
 end
 
 function s.deckmatfilter(c)
@@ -55,24 +54,20 @@ function s.deckmatfilter(c)
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		local chkf=tp
-		local mg=Duel.GetFusionMaterial(tp)
-		return Duel.IsExistingMatchingCard(s.filter1,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg,nil,chkf)
-	end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.filter1,tp,LOCATION_EXTRA,0,1,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local chkf=tp
 	local mg=Duel.GetFusionMaterial(tp):Filter(Card.IsCanBeFusionMaterial,nil)
-	local sg=Duel.GetMatchingGroup(s.filter1,tp,LOCATION_EXTRA,0,nil,e,tp,mg,nil,chkf)
+	local sg=Duel.GetMatchingGroup(s.filter1,tp,LOCATION_EXTRA,0,nil,e,tp)
 	if #sg==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local tc=sg:Select(tp,1,1,nil):GetFirst()
 	if not tc then return end
 	local mat=Duel.SelectFusionMaterial(tp,tc,mg,nil,chkf)
-	if tc:GetText():lower():find("wingman") and Duel.IsExistingMatchingCard(s.deckmatfilter,tp,LOCATION_DECK,0,1,nil) then
+	if tc:GetText() and tc:GetText():lower():find("wingman") and Duel.IsExistingMatchingCard(s.deckmatfilter,tp,LOCATION_DECK,0,1,nil) then
 		if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 			local dg=Duel.SelectMatchingCard(tp,s.deckmatfilter,tp,LOCATION_DECK,0,1,1,nil)
