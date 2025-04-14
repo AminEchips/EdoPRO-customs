@@ -19,7 +19,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.op1)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Shuffle Fusion that listed Neos into Extra Deck
+    -- Effect 2: Shuffle Fusions that list Neos into Extra Deck
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TODECK)
@@ -32,7 +32,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.tdop)
     c:RegisterEffect(e2)
 
-    -- Effect 3: Place Neo Space from Deck or GY into Field Zone during your End Phase
+    -- Effect 3: During End Phase, place Neo Space to Field Zone
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
@@ -71,7 +71,7 @@ function s.op1(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Shuffle if Neos was listed as material
+-- Effect 2: Check for Neos Fusion Material
 function s.neosfusionfilter(c)
     return c:IsType(TYPE_FUSION) and c:IsLocation(LOCATION_GRAVE)
         and c:IsAbleToExtra() and c.material and c:CheckFusionMaterial(aux.FilterBoolFunction(Card.IsCode,89943723))
@@ -81,7 +81,12 @@ function s.tdcon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return eg:IsExists(s.neosfusionfilter,1,nil) end
-    local g=eg:Filter(s.neosfusionfilter,nil)
+    local g=Group.CreateGroup()
+    for tc in aux.Next(eg) do
+        if s.neosfusionfilter(tc) then
+            g:AddCard(tc)
+        end
+    end
     Duel.SetTargetCard(g)
     Duel.SetOperationInfo(0,CATEGORY_TODECK,g,#g,0,0)
 end
@@ -92,7 +97,7 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: Place Neo Space in Field Zone during your End Phase
+-- Effect 3: During YOUR End Phase
 function s.fzcond(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()==tp and Duel.GetCurrentPhase()==PHASE_END
 end
@@ -104,13 +109,13 @@ function s.fztg(e,tp,eg,ep,ev,re,r,rp,chk)
         return Duel.IsExistingMatchingCard(s.fzfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
             and Duel.GetLocationCount(tp,LOCATION_FZONE)>0
     end
-    Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
 end
 function s.fzop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.GetLocationCount(tp,LOCATION_FZONE)<=0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
     local g=Duel.SelectMatchingCard(tp,s.fzfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
-    if #g>0 then
-        Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
+    local tc=g:GetFirst()
+    if tc then
+        Duel.MoveToField(tc,tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
