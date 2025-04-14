@@ -1,4 +1,3 @@
-
 --Favorite Fusion
 local s,id=GetID()
 function s.initial_effect(c)
@@ -47,8 +46,6 @@ end
 function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local chkf=tp
     local mg1=Duel.GetFusionMaterial(tp)
-
-    -- Check if a "Wingman" is being summoned for Deck access
     local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
     mg1:Merge(mg2)
 
@@ -62,11 +59,16 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local tc=sg:Select(tp,1,1,nil):GetFirst()
     if not tc then return end
 
-    local deckFusion = tc:IsCode("56733747") or tc:IsCode(35809262) or tc:IsCode(93347961) or tc:IsCode(25366484) or tc:IsCode(160020065) or tc:IsCode(160320002)
+    local deckFusion = tc:IsCode(56733747) or tc:IsCode(35809262) or tc:IsCode(93347961) or tc:IsCode(25366484) or tc:IsCode(160020065) or tc:IsCode(160320002)
     local matGroup = Duel.GetFusionMaterial(tp)
 
     if deckFusion then
-        matGroup:Merge(Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil))
+        local extraDeckMat=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
+        if #extraDeckMat>0 then
+            Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+            local select1=extraDeckMat:Select(tp,1,1,nil)
+            matGroup:Merge(select1)
+        end
     end
 
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FMATERIAL)
