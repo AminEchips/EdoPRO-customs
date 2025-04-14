@@ -40,9 +40,9 @@ end
 -- Effect 1: Send Fusion, Summon Neo-Spacian
 function s.filter1(c,tp)
     return c:IsType(TYPE_FUSION) and c:IsAbleToGraveAsCost()
-        and Duel.IsExistingMatchingCard(s.filter2,tp,LOCATION_GRAVE,0,1,nil,c:GetAttribute())
+        and Duel.IsExistingMatchingCard(s.filter2,tp,LOCATION_GRAVE,0,1,nil,c:GetAttribute(),tp)
 end
-function s.filter2(c,attr)
+function s.filter2(c,attr,tp)
     return c:IsSetCard(0x1f) and c:IsAttribute(attr) and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -56,7 +56,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     if #g>0 and Duel.SendtoGrave(g,REASON_EFFECT)>0 then
         local attr=g:GetFirst():GetAttribute()
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-        local sc=Duel.SelectMatchingCard(tp,s.filter2,tp,LOCATION_GRAVE,0,1,1,nil,attr):GetFirst()
+        local sc=Duel.SelectMatchingCard(tp,s.filter2,tp,LOCATION_GRAVE,0,1,1,nil,attr,tp):GetFirst()
         if sc then
             Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
         end
@@ -98,4 +98,3 @@ function s.fzop(e,tp,eg,ep,ev,re,r,rp)
         Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
-
