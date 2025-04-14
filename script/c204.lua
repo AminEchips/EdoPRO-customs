@@ -26,19 +26,21 @@ function s.neospacian_filter(c,e,tp)
     return c:IsSetCard(0x1f) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 
--- ONLY allows Neos OR Spell/Trap that mentions Neos
+-- ONLY allows Neos or Spell/Trap that mentions Neos (not monsters)
 function s.neos_mention_search(c)
     return ((c:IsCode(89943723)) or
         (not c:IsType(TYPE_MONSTER) and c.ListsCode and c:ListsCode(89943723)))
         and not c:IsCode(id) and c:IsAbleToHand()
 end
 
+-- Target check for activation (valid card to send)
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil)
     end
 end
 
+-- Main operation: mill + branch + Fusion lock
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
     -- Lock to only Fusion Summons from Extra Deck
     local e1=Effect.CreateEffect(e:GetHandler())
@@ -46,7 +48,9 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
     e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
     e1:SetTargetRange(1,0)
-    e1:SetTarget(function(_,c) return c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_FUSION) end)
+    e1:SetTarget(function(_,c)
+        return c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_FUSION)
+    end)
     e1:SetReset(RESET_PHASE+PHASE_END)
     Duel.RegisterEffect(e1,tp)
 
@@ -54,9 +58,9 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
     local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil)
     local tc=g:GetFirst()
-    if not tc then return end
-    if Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
+    if not tc or Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
 
+    -- Branch by type
     if tc:IsType(TYPE_MONSTER) then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
         local sg=Duel.SelectMatchingCard(tp,s.neospacian_filter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp)
@@ -72,3 +76,4 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
