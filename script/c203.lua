@@ -23,17 +23,27 @@ function s.initial_effect(c)
     e2:SetOperation(s.operation2)
     c:RegisterEffect(e2)
 
-    -- Effect 3: During the End Phase, place "Neo Space" from your hand to the Spell/Trap Zone
+    -- Effect 3: During the End Phase, place "Neo Space" from your Deck or GY into the Field Zone
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
-    e3:SetType(EFFECT_TYPE_ACTIVATE)  -- Correcting the effect type to activate it directly
-    e3:SetCode(EVENT_FREE_CHAIN)  -- Allow activation from hand
-    e3:SetRange(LOCATION_HAND)  -- Activate from hand
+    e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e3:SetCode(EVENT_PHASE+PHASE_END)
+    e3:SetRange(LOCATION_GRAVE)
     e3:SetCountLimit(1)
     e3:SetTarget(s.target3)
     e3:SetOperation(s.operation3)
     c:RegisterEffect(e3)
+
+    -- Effect 4: Activate "EN - Evolution Neo Space" from hand and place it in the Spell/Trap Zone
+    local e4=Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id,3))
+    e4:SetCategory(CATEGORY_TOFIELD)
+    e4:SetType(EFFECT_TYPE_ACTIVATE)
+    e4:SetCode(EVENT_FREE_CHAIN)
+    e4:SetTarget(s.target4)
+    e4:SetOperation(s.operation4)
+    c:RegisterEffect(e4)
 end
 
 -- Effect 1: Send Fusion Monster to GY and Special Summon Neo-Spacian
@@ -72,18 +82,32 @@ function s.operation2(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: Place "Neo Space" from hand to Spell/Trap Zone
+-- Effect 3: Place "Neo Space" from Deck or GY into the Field Zone
 function s.target3(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_HAND,0,1,nil,91427878) -- Neo Space's code
+        return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,91427878) -- Neo Space's code
+    end
+    Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
+end
+
+function s.operation3(e,tp,eg,ep,ev,re,r,rp)
+    local g=Duel.SelectMatchingCard(tp,Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,91427878) -- Neo Space's code
+    if #g>0 then
+        -- Move Neo Space to the Field Zone as a Field Spell
+        Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
+    end
+end
+
+-- Effect 4: Activate "EN - Evolution Neo Space" from hand and place it in the Spell/Trap Zone
+function s.target4(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then
+        return true  -- You can always activate this card from hand
     end
     Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_HAND)  -- Correct category for Field Spell
 end
 
-function s.operation3(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.SelectMatchingCard(tp,Card.IsCode,tp,LOCATION_HAND,0,1,1,nil,91427878) -- Neo Space's code
-    if #g>0 then
-        -- Move Neo Space to the Spell/Trap Zone as a Field Spell
-        Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_SZONE,POS_FACEUP,true)
-    end
+function s.operation4(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    -- Move Evolution Neo Space from the hand to the Spell/Trap Zone as a Field Spell
+    Duel.MoveToField(c,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
 end
