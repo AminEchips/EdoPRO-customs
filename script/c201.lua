@@ -30,12 +30,14 @@ end
 
 -- Effect 1: Set 1 Trap that mentions "HERO"
 function s.setfilter(c)
-    return c:IsType(TYPE_TRAP) and c:IsSSetable() and c:GetText():match("HERO")
+    return c:IsType(TYPE_TRAP) and c:IsSSetable() and c:GetText():lower():find("hero")
 end
 
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
+    Duel.SetOperationInfo(0,0,nil,1,tp,LOCATION_DECK)
 end
+
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
     local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
@@ -43,6 +45,7 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SSet(tp,g:GetFirst())
     end
 end
+
 
 -- Effect 2: Attribute Change from GY
 function s.attrcost(e,tp,eg,ep,ev,re,r,rp,chk)
