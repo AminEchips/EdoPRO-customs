@@ -25,63 +25,58 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Fusion Summon
+-- Fusion Summon filter: check if the card is a valid Fusion Monster
 function s.filter(c,e,tp,m,chkf)
-    return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION)
-        and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
+    return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false) 
         and c:CheckFusionMaterial(m,nil,chkf)
 end
 
+-- Target for Fusion Summon
 function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         local chkf=tp
-        local mg1=Duel.GetFusionMaterial(tp)
-        local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
-        mg1:Merge(mg2)
-        
-        -- Filter only legal Fusion Monsters
-        return Duel.IsExistingMatchingCard(function(c)
-            return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) 
-                and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false) 
-                and c:CheckFusionMaterial(mg1,nil,chkf)
-        end,tp,LOCATION_EXTRA,0,1,nil)
+        local mg1=Duel.GetFusionMaterial(tp)  -- Get the available materials
+        local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil) -- Get cards that can be sent to the grave
+        mg1:Merge(mg2) -- Merge the two sets
+        return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg1,chkf) -- Check for any valid Fusion Monster
     end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA) -- Set the target for Special Summon
 end
 
+-- Fusion Operation
 function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local chkf=tp
     local mg1=Duel.GetFusionMaterial(tp)
     local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
-    mg1:Merge(mg2)
-
-    -- Filter only legal Fusion Monsters and allow for valid Fusion Summon
+    mg1:Merge(mg2) -- Merge materials
+    
+    -- Get valid Fusion Monsters
     local sg=Duel.GetMatchingGroup(function(c)
         return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
             and c:CheckFusionMaterial(mg1,nil,chkf)
     end,tp,LOCATION_EXTRA,0,nil)
 
-    if #sg==0 then return end
+    if #sg==0 then return end -- No valid Fusion Monsters
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local tc=sg:Select(tp,1,1,nil):GetFirst()
     if not tc then return end
 
-    local deckFusion = tc:IsCode(56733747) or tc:IsCode(35809262) or tc:IsCode(93347961) or tc:IsCode(25366484) or tc:IsCode(160020065) or tc:IsCode(160320002)
+    -- Add support for extra deck Fusion materials
     local matGroup = Duel.GetFusionMaterial(tp)
-
-    if deckFusion then
-        local extraDeckMat=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
-        if #extraDeckMat>0 then
-            Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-            local select1=extraDeckMat:Select(tp,1,1,nil)
-            matGroup:Merge(select1)
-        end
+    local extraDeckMat=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
+    
+    -- Add additional Fusion materials if necessary
+    if extraDeckMat:GetCount()>0 then
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+        local selected=extraDeckMat:Select(tp,1,1,nil)
+        matGroup:Merge(selected)
     end
 
+    -- Select Fusion materials and perform the Fusion Summon
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FMATERIAL)
     local mat=Duel.SelectFusionMaterial(tp,tc,matGroup,nil,chkf)
     if not mat or #mat==0 then return end
-
+    
     tc:SetMaterial(mat)
     Duel.SendtoGrave(mat,REASON_EFFECT+REASON_MATERIAL+REASON_FUSION)
     Duel.BreakEffect()
@@ -89,7 +84,7 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     tc:CompleteProcedure()
 end
 
--- GY effect: Recycle and draw
+-- GY effect: Recycle 3 "HERO" Fusion Monsters and draw 1
 function s.tdfilter(c)
     return c:IsType(TYPE_FUSION) and c:IsSetCard(0x8) and c:IsAbleToDeck()
 end
