@@ -63,7 +63,7 @@ end
 -- Effect 1: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
 function s.target1(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        -- Check for a Fusion Monster to send to the GY and a Neo-Spacian in the GY to Special Summon
+        -- Check if there's a Fusion Monster to send to the GY and a Neo-Spacian in the GY to Special Summon
         return Duel.IsExistingMatchingCard(Card.IsFusionSummonable,tp,LOCATION_MZONE,0,1,nil)
             and Duel.IsExistingMatchingCard(function(c)
                 return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x8) and c:IsAbleToHand() end,tp,LOCATION_GRAVE,0,1,nil)
@@ -125,3 +125,4 @@ function s.operation3(e,tp,eg,ep,ev,re,r,rp)
         Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
+
