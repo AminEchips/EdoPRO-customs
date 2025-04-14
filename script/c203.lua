@@ -36,13 +36,11 @@ function s.initial_effect(c)
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
-    e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
     e3:SetCode(EVENT_PHASE+PHASE_END)
     e3:SetRange(LOCATION_SZONE)
     e3:SetCountLimit(1,{id,2})
-    e3:SetHintTiming(0,TIMINGS_END_PHASE)
     e3:SetCondition(s.fzcond)
-    e3:SetTarget(s.fztg)
     e3:SetOperation(s.fzop)
     c:RegisterEffect(e3)
 end
@@ -82,42 +80,31 @@ function s.tdcon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
-    local g=Group.CreateGroup()
-    for tc in aux.Next(eg) do
-        if s.neosfusionfilter(tc) then
-            g:AddCard(tc)
-        end
-    end
+    local g=eg:Clone()
+    g:KeepAlive()
     Duel.SetTargetCard(g)
     Duel.SetOperationInfo(0,CATEGORY_TODECK,g,#g,0,0)
 end
 function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetTargetCards(e)
-    if #g>0 then
-        Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+    local tg=g:Filter(s.neosfusionfilter,nil)
+    if #tg>0 then
+        Duel.SendtoDeck(tg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
     end
 end
 
 -- Effect 3
 function s.fzcond(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetTurnPlayer()==tp and Duel.GetCurrentPhase()==PHASE_END
-end
-function s.fzfilter(c)
-    return c:IsCode(42015635) and not c:IsForbidden()
-end
-function s.fztg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then
-        return Duel.IsExistingMatchingCard(s.fzfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
-            and Duel.GetLocationCount(tp,LOCATION_FZONE)>0
-    end
-    Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
+    return Duel.GetTurnPlayer()==tp
 end
 function s.fzop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.GetLocationCount(tp,LOCATION_FZONE)<=0 then return end
+    local g=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,42015635)
+    if #g==0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
-    local g=Duel.SelectMatchingCard(tp,s.fzfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
-    local tc=g:GetFirst()
+    local tc=g:Select(tp,1,1,nil):GetFirst()
     if tc then
         Duel.MoveToField(tc,tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
+
