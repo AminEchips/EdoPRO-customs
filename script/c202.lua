@@ -38,7 +38,8 @@ function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk)
         local mg1=Duel.GetFusionMaterial(tp)  -- Get the available materials
         local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil) -- Get cards that can be sent to the grave
         mg1:Merge(mg2) -- Merge the two sets
-        return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg1,chkf) -- Check for any valid Fusion Monster
+        -- Ensure that only valid Fusion Monsters are shown
+        return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg1,chkf) 
     end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA) -- Set the target for Special Summon
 end
@@ -61,9 +62,11 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local tc=sg:Select(tp,1,1,nil):GetFirst()
     if not tc then return end
 
-    -- Add support for extra deck Fusion materials
+    -- Restrict the deck material to only those that can be used for fusion
     local matGroup = Duel.GetFusionMaterial(tp)
-    local extraDeckMat=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
+    local extraDeckMat=Duel.GetMatchingGroup(function(c)
+        return c:IsCanBeFusionMaterial(tc)  -- Only show cards that can be used in the fusion
+    end,tp,LOCATION_DECK,0,nil)
     
     -- Add additional Fusion materials if necessary
     if extraDeckMat:GetCount()>0 then
