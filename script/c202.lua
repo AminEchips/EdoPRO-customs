@@ -108,5 +108,5 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
-s.listed_series={0x166}
+s.listed_series={0x195}
 
