@@ -1,10 +1,8 @@
 -- EN - Evolution Neo Space
--- Scripted by: Your Name
-
 local s,id=GetID()
 
 function s.initial_effect(c)
-    -- Effect 1: Activate from hand and place in Spell/Trap Zone
+    -- Effect 1: Activate from hand and place in Spell/Trap Zone as a Continuous Spell
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)
@@ -104,4 +102,3 @@ function s.operation3(e,tp,eg,ep,ev,re,r,rp)
         Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
-
