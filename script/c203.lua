@@ -1,13 +1,14 @@
 -- EN - Evolution Neo Space
 local s,id=GetID()
+
 function s.initial_effect(c)
-    -- Activate (Continuous Spell)
+    -- Activate
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_ACTIVATE)
     e0:SetCode(EVENT_FREE_CHAIN)
     c:RegisterEffect(e0)
 
-    -- Effect 1: Send Fusion → Summon Neo-Spacian with same Attribute from GY
+    -- Effect 1: Send Fusion → Special Summon Neo-Spacian with same Attribute
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
@@ -18,7 +19,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.op1)
     c:RegisterEffect(e1)
 
-    -- Effect 2: When Neos-related Fusion sent to GY → Shuffle back into Extra Deck
+    -- Effect 2: If Fusion Monster that mentions Neos is sent to GY → shuffle into Extra Deck
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TODECK)
@@ -31,7 +32,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.tdop)
     c:RegisterEffect(e2)
 
-    -- Effect 3: During End Phase → Place Neo Space in Field Zone
+    -- Effect 3: During End Phase, place Neo Space from Deck or GY into Field Zone
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
@@ -44,7 +45,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- Effect 1: Send Fusion → Special Summon Neo-Spacian with same Attribute
+-- Effect 1
 function s.fusionfilter(c,tp)
     return c:IsType(TYPE_FUSION) and c:IsAbleToGrave() and c:IsFaceup()
         and Duel.IsExistingMatchingCard(s.neofilter,tp,LOCATION_GRAVE,0,1,nil,c:GetAttribute())
@@ -69,7 +70,7 @@ function s.op1(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: If Neos Fusion is sent to GY → shuffle into Extra Deck
+-- Effect 2
 function s.neosfusionfilter(c)
     return c:IsType(TYPE_FUSION) and c:IsLocation(LOCATION_GRAVE)
         and c:IsAbleToExtra() and c:ListsCode(89943723)
@@ -90,7 +91,7 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: During End Phase → place Neo Space in Field Zone
+-- Effect 3
 function s.fzfilter(c)
     return c:IsCode(42015635) and not c:IsForbidden()
 end
@@ -99,6 +100,7 @@ function s.fztg(e,tp,eg,ep,ev,re,r,rp,chk)
         return Duel.IsExistingMatchingCard(s.fzfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
             and Duel.GetLocationCount(tp,LOCATION_FZONE)>0
     end
+    Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
 end
 function s.fzop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.GetLocationCount(tp,LOCATION_FZONE)<=0 then return end
