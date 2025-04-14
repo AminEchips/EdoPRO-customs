@@ -19,7 +19,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.op1)
     c:RegisterEffect(e1)
 
-    -- Effect 2: If Fusion Monster that mentions Neos is sent to GY → shuffle into Extra Deck
+    -- Effect 2: Shuffle Neos Fusion into Extra Deck
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TODECK)
@@ -32,7 +32,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.tdop)
     c:RegisterEffect(e2)
 
-    -- Effect 3: During End Phase, place Neo Space from Deck or GY into Field Zone
+    -- Effect 3: Place Neo Space into Field Zone during your End Phase
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
@@ -40,40 +40,41 @@ function s.initial_effect(c)
     e3:SetCode(EVENT_PHASE+PHASE_END)
     e3:SetRange(LOCATION_SZONE)
     e3:SetCountLimit(1,{id,2})
+    e3:SetCondition(s.fzcond)
     e3:SetTarget(s.fztg)
     e3:SetOperation(s.fzop)
     c:RegisterEffect(e3)
 end
 
 -- Effect 1
-function s.fusionfilter(c,tp)
+function s.fusionfilter(c,e,tp)
     return c:IsType(TYPE_FUSION) and c:IsAbleToGrave() and c:IsFaceup()
-        and Duel.IsExistingMatchingCard(s.neofilter,tp,LOCATION_GRAVE,0,1,nil,c:GetAttribute())
+        and Duel.IsExistingMatchingCard(s.neofilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,c:GetAttribute())
 end
-function s.neofilter(c,attr)
-    return c:IsSetCard(0x1f) and c:IsCanBeSpecialSummoned(nil,0,tp,false,false) and c:IsAttribute(attr)
+function s.neofilter(c,e,tp,attr)
+    return c:IsSetCard(0x1f) and c:IsCanBeSpecialSummoned(e,0,tp,false,false) and c:IsAttribute(attr)
 end
 function s.tg1(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.fusionfilter,tp,LOCATION_MZONE,0,1,nil,tp) end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.fusionfilter,tp,LOCATION_MZONE,0,1,nil,e,tp) end
     Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_MZONE)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
 function s.op1(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local tc=Duel.SelectMatchingCard(tp,s.fusionfilter,tp,LOCATION_MZONE,0,1,1,nil,tp):GetFirst()
+    local tc=Duel.SelectMatchingCard(tp,s.fusionfilter,tp,LOCATION_MZONE,0,1,1,nil,e,tp):GetFirst()
     if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 then
         Duel.BreakEffect()
-        local g=Duel.SelectMatchingCard(tp,s.neofilter,tp,LOCATION_GRAVE,0,1,1,nil,tc:GetAttribute())
+        local g=Duel.SelectMatchingCard(tp,s.neofilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp,tc:GetAttribute())
         if #g>0 then
             Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
         end
     end
 end
 
--- Effect 2
+-- Effect 2: Fusion monster that had Neos as material sent to GY
 function s.neosfusionfilter(c)
     return c:IsType(TYPE_FUSION) and c:IsLocation(LOCATION_GRAVE)
-        and c:IsAbleToExtra() and c:ListsCode(89943723)
+        and c:IsAbleToExtra() and c.material and c:CheckFusionMaterial(aux.FilterBoolFunction(Card.IsCode,89943723))
 end
 function s.tdcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.neosfusionfilter,1,nil)
@@ -91,7 +92,10 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3
+-- Effect 3: Only during your own End Phase
+function s.fzcond(e,tp,eg,ep,ev,re,r,rp)
+    return Duel.GetTurnPlayer()==tp
+end
 function s.fzfilter(c)
     return c:IsCode(42015635) and not c:IsForbidden()
 end
@@ -110,3 +114,4 @@ function s.fzop(e,tp,eg,ep,ev,re,r,rp)
         Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
+
