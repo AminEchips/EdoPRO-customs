@@ -40,7 +40,7 @@ function s.initial_effect(c)
     e4:SetDescription(aux.Stringid(id,3))
     e4:SetCategory(CATEGORY_TOFIELD)
     e4:SetType(EFFECT_TYPE_ACTIVATE)
-    e4:SetCode(EVENT_FREE_CHAIN)
+    e4:SetCode(EVENT_FREE_CHAIN)  -- Activate from hand
     e4:SetTarget(s.target4)
     e4:SetOperation(s.operation4)
     c:RegisterEffect(e4)
