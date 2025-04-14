@@ -23,13 +23,12 @@ function s.initial_effect(c)
     e2:SetOperation(s.operation2)
     c:RegisterEffect(e2)
 
-    -- Effect 3: During the End Phase, place 1 "Neo Space" from your Deck or GY into the Field Zone (Continuous Spell)
+    -- Effect 3: During the End Phase, place 1 "Neo Space" from your hand to the Spell/Trap Zone
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
-    e3:SetCategory(CATEGORY_TOFIELD)
-    e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e3:SetCode(EVENT_PHASE+PHASE_END)
-    e3:SetRange(LOCATION_GRAVE)
+    e3:SetCategory(CATEGORY_TOHAND+CATEGORY_TOSPELL)
+    e3:SetType(EFFECT_TYPE_IGNITION)
+    e3:SetRange(LOCATION_HAND)
     e3:SetCountLimit(1)
     e3:SetTarget(s.target3)
     e3:SetOperation(s.operation3)
@@ -72,17 +71,18 @@ function s.operation2(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Target and Operation for Effect 3: Place "Neo Space" into Field Zone (Continuous Spell)
+-- Target and Operation for Effect 3: Place "Neo Space" from hand to Spell/Trap Zone
 function s.target3(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,91427878)
+        return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_HAND,0,1,nil,91427878)
     end
-    Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
+    Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_HAND)
 end
 
 function s.operation3(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.SelectMatchingCard(tp,Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,91427878)
+    local g=Duel.SelectMatchingCard(tp,Card.IsCode,tp,LOCATION_HAND,0,1,1,nil,91427878)
     if #g>0 then
-        Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
+        -- Move to Spell/Trap Zone as a Continuous Spell
+        Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_SZONE,POS_FACEUP,true)
     end
 end
