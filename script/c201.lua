@@ -30,7 +30,7 @@ end
 
 -- Effect 1: Set 1 Trap that mentions "HERO"
 function s.setfilter(c)
-    return c:IsType(TYPE_TRAP) and c:IsSSetable() and c:ListsArchetype(0x8)
+    return c:IsType(TYPE_TRAP) and c:IsSSetable() and heroMentionTraps[c:GetCode()]
 end
 
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
