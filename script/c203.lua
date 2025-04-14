@@ -3,7 +3,6 @@ local s,id=GetID()
 function s.initial_effect(c)
     -- Activate: Send 1 Fusion Monster you control to GY, SS 1 Neo-Spacian with same Attribute
     local e1=Effect.CreateEffect(c)
-    e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)
@@ -11,9 +10,8 @@ function s.initial_effect(c)
     e1:SetOperation(s.activate)
     c:RegisterEffect(e1)
 
-    -- If Fusion Monster that mentions "Elemental HERO Neos" is sent to GY, shuffle it into Extra Deck
+    -- If Fusion Monster that mentions "Elemental HERO Neos" is sent to GY, shuffle it into the Extra Deck
     local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TODECK)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_TO_GRAVE)
@@ -24,14 +22,14 @@ function s.initial_effect(c)
     e2:SetOperation(s.tdop)
     c:RegisterEffect(e2)
 
-    -- Place 1 "Neo Space" from Deck or GY to Field Zone during End Phase
+    -- During End Phase: place 1 "Neo Space" from Deck or GY into Field Zone
     local e3=Effect.CreateEffect(c)
-    e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
     e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e3:SetCode(EVENT_PHASE+PHASE_END)
     e3:SetRange(LOCATION_SZONE)
     e3:SetCountLimit(1,id+200)
+    e3:SetCondition(s.fzcon)
     e3:SetTarget(s.fztg)
     e3:SetOperation(s.fzop)
     c:RegisterEffect(e3)
@@ -63,10 +61,10 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Shuffle "Elemental HERO Neos"-mentioning Fusion back to ED
+-- Effect 2: Shuffle Fusion back to Extra if it mentions "Elemental HERO Neos"
 function s.tdfilter(c)
-    return c:IsType(TYPE_FUSION) and c:GetText():lower():find("elemental hero neos")
-        and c:IsAbleToExtra()
+    local text = c:GetText()
+    return c:IsType(TYPE_FUSION) and text and text:lower():find("elemental hero neos") and c:IsAbleToExtra()
 end
 function s.tdcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.tdfilter,1,nil)
@@ -83,13 +81,16 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: Place "Neo Space" to Field Zone
+-- Effect 3: Place "Neo Space" in Field Zone
+function s.fzcon(e,tp,eg,ep,ev,re,r,rp)
+    return Duel.GetTurnPlayer()==tp
+end
 function s.nsfilter(c)
     return c:IsCode(42015635) and not c:IsForbidden()
 end
 function s.fztg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.nsfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
-        and Duel.GetLocationCount(tp,LOCATION_FZONE)>0 end
+    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_FZONE)>0
+        and Duel.IsExistingMatchingCard(s.nsfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
 end
 function s.fzop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
