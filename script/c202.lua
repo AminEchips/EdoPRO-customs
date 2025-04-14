@@ -38,7 +38,8 @@ function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk)
         local mg1=Duel.GetFusionMaterial(tp)  -- Get the available materials
         local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil) -- Get cards that can be sent to the grave
         mg1:Merge(mg2) -- Merge the two sets
-        -- Ensure that only valid Fusion Monsters are shown
+        
+        -- Filter to only show monsters and ensure that only valid Fusion Monsters are shown
         return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg1,chkf) 
     end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA) -- Set the target for Special Summon
@@ -51,7 +52,7 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
     mg1:Merge(mg2) -- Merge materials
     
-    -- Get valid Fusion Monsters
+    -- Get valid Fusion Monsters (only monsters that can be Fusion Summoned)
     local sg=Duel.GetMatchingGroup(function(c)
         return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
             and c:CheckFusionMaterial(mg1,nil,chkf)
@@ -65,9 +66,9 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     -- Fix: Filter materials that can be used for the selected Fusion Monster
     local matGroup = Duel.GetFusionMaterial(tp)
     
-    -- Correct filter for selecting Fusion materials only from the deck
+    -- Filter to only allow **MONSTERS** to be Fusion materials
     local extraDeckMat=Duel.GetMatchingGroup(function(c)
-        return c:IsCanBeFusionMaterial(tc)  -- Only show cards that can be used in the fusion
+        return c:IsType(TYPE_MONSTER) and c:IsCanBeFusionMaterial(tc)  -- Only show cards that can be used in the fusion and are monsters
     end,tp,LOCATION_DECK,0,nil)
 
     -- If additional materials can be used, allow their selection
