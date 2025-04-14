@@ -34,10 +34,12 @@ end
 
 -- Store what card was sent
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil) end
+    local g=Duel.GetMatchingGroup(s.filter,tp,LOCATION_HAND+LOCATION_DECK,0,nil)
+    Debug.Message("Valid Neos targets in hand/deck: "..#g)
+    if chk==0 then return #g>0 end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil)
-    local tc=g:GetFirst()
+    local sg=g:Select(tp,1,1,nil)
+    local tc=sg:GetFirst()
     if tc then
         Duel.SendtoGrave(tc,REASON_COST)
         e:SetLabelObject(tc)
