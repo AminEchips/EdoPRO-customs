@@ -75,4 +75,4 @@ function s.attrop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
-s.listed_series={0x8}
+s.listed_series={0x3008}
