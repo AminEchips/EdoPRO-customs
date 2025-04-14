@@ -9,7 +9,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.operation_activate)  -- Set operation for placing in Spell/Trap Zone
     c:RegisterEffect(e1)
 
-    -- Effect 1: Send 1 Fusion Monster to the GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
+    -- Effect 1: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
@@ -63,7 +63,7 @@ end
 -- Effect 1: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
 function s.target1(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        -- Check for a Fusion Monster to send to the GY and a Neo-Spacian to Special Summon
+        -- Check for a Fusion Monster to send to the GY and a Neo-Spacian in the GY to Special Summon
         return Duel.IsExistingMatchingCard(Card.IsFusionSummonable,tp,LOCATION_MZONE,0,1,nil)
             and Duel.IsExistingMatchingCard(function(c)
                 return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x8) and c:IsAbleToHand() end,tp,LOCATION_GRAVE,0,1,nil)
