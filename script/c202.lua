@@ -61,7 +61,7 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local tc=sg:Select(tp,1,1,nil):GetFirst()
     if not tc then return end
 
-    local deckFusion = tc:IsName("Elemental HERO Flame Wingman") or tc:IsCode(35809262) -- example: Flame Wingman
+    local deckFusion = tc:IsCode("56733747") or tc:IsCode(35809262) or tc:IsCode(93347961) or tc:IsCode(25366484) or tc:IsCode(160020065) or tc:IsCode(160320002)
     local matGroup = Duel.GetFusionMaterial(tp)
 
     if deckFusion then
