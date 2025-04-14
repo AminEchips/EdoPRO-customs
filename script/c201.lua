@@ -30,8 +30,9 @@ end
 
 -- Effect 1: Set 1 Trap that mentions "HERO"
 function s.setfilter(c)
-    return c:IsType(TYPE_TRAP) and c:IsSSetable() and c:CheckText("HERO")
+    return c:IsType(TYPE_TRAP) and c:IsSSetable() and c:GetText():match("HERO")
 end
+
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
 end
@@ -45,17 +46,19 @@ end
 
 -- Effect 2: Attribute Change from GY
 function s.attrcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return aux.bfgcost(e,tp,eg,ep,ev,re,r,rp,chk) end
-    aux.bfgcost(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
+    Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
 end
+
 function s.attrtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingTarget(aux.FilterFaceup(Card.IsSetCard,0x8),tp,LOCATION_MZONE,0,1,nil) end
+    if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-    Duel.SelectTarget(tp,aux.FilterFaceup(Card.IsSetCard,0x8),tp,LOCATION_MZONE,0,1,1,nil)
+    Duel.SelectTarget(tp,Card.IsFaceup,tp,LOCATION_MZONE,0,1,1,nil)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATTRIBUTE)
     local attr=Duel.AnnounceAttribute(tp,1,ATTRIBUTE_ALL)
     e:SetLabel(attr)
 end
+
 function s.attrop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc:IsRelateToEffect(e) and tc:IsFaceup() then
