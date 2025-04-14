@@ -108,6 +108,6 @@ end
 
 function s.operation4(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    -- Move Evolution Neo Space from the hand to the Spell/Trap Zone as a Field Spell
+    -- Move Evolution Neo Space to the Spell/Trap Zone as a Field Spell
     Duel.MoveToField(c,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
 end
