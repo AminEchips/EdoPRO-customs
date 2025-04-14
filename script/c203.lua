@@ -12,7 +12,7 @@ function s.initial_effect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
     e2:SetType(EFFECT_TYPE_IGNITION)
-    e2:SetRange(LOCATION_SZONE) -- Activated from Spell/Trap Zone
+    e2:SetRange(LOCATION_SZONE)  -- Activated from Spell/Trap Zone
     e2:SetCountLimit(1,id)
     e2:SetTarget(s.target1)
     e2:SetOperation(s.operation1)
@@ -45,15 +45,18 @@ end
 -- Effect 1: Send Fusion Monster to GY and Special Summon Neo-Spacian
 function s.target1(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        return Duel.IsExistingMatchingCard(Card.IsFusionSummonable,tp,LOCATION_MZONE,0,1,nil)
-            and Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_GRAVE,0,1,nil,TYPE_MONSTER)
+        -- Check if there's a Fusion Monster to send to GY and a Neo-Spacian to Special Summon
+        return Duel.IsExistingMatchingCard(Card.IsFusionSummonable,tp,LOCATION_GRAVE,0,1,nil)
+            and Duel.IsExistingMatchingCard(function(c)
+                return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x8) and c:IsAbleToHand() end,tp,LOCATION_GRAVE,0,1,nil)
     end
-    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_MZONE)
+    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_GRAVE)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.operation1(e,tp,eg,ep,ev,re,r,rp)
-    local tg=Duel.SelectMatchingCard(tp,Card.IsFusionSummonable,tp,LOCATION_MZONE,0,1,1,nil)
+    -- Send a Fusion Monster to GY and Special Summon a Neo-Spacian from GY with the same Attribute
+    local tg=Duel.SelectMatchingCard(tp,Card.IsFusionSummonable,tp,LOCATION_GRAVE,0,1,1,nil)
     if #tg>0 then
         Duel.SendtoGrave(tg,REASON_EFFECT)
         local special=Duel.SelectMatchingCard(tp,aux.FilterBoolFunction(Card.IsSetCard,0x8),tp,LOCATION_GRAVE,0,1,1,nil)
@@ -66,13 +69,15 @@ end
 -- Effect 2: Shuffle Fusion Monsters related to "Elemental HERO Neos" into the Extra Deck
 function s.target2(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        return Duel.IsExistingMatchingCard(aux.FilterBoolFunction(Card.IsType,TYPE_FUSION),tp,LOCATION_GRAVE,0,1,nil)
+        -- Check for Fusion Monsters that mention "Elemental HERO Neos" in the GY
+        return Duel.IsExistingMatchingCard(aux.FilterBoolFunction(Card.IsFusionType,TYPE_FUSION),tp,LOCATION_GRAVE,0,1,nil)
     end
     Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.operation2(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetMatchingGroup(aux.FilterBoolFunction(Card.IsType,TYPE_FUSION),tp,LOCATION_GRAVE,0,nil)
+    -- Shuffle Fusion Monsters that mention "Elemental HERO Neos" into the Extra Deck
+    local g=Duel.GetMatchingGroup(aux.FilterBoolFunction(Card.IsFusionType,TYPE_FUSION),tp,LOCATION_GRAVE,0,nil)
     if #g>0 then
         Duel.SendtoDeck(g,nil,2,REASON_EFFECT)
     end
@@ -81,6 +86,7 @@ end
 -- Effect 3: Place "Neo Space" from Deck or GY into the Field Zone
 function s.target3(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
+        -- Check if "Neo Space" is in the Deck or GY
         return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,91427878) -- Neo Space's code
     end
     Duel.SetOperationInfo(0,CATEGORY_TOFIELD,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
