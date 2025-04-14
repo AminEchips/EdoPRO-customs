@@ -45,12 +45,11 @@ function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 -- Fusion Operation
--- Fusion Operation
 function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local chkf=tp
-    local mg1=Duel.GetFusionMaterial(tp)  -- Get the available materials
-    local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil) -- Get cards that can be sent to the grave
-    mg1:Merge(mg2) -- Merge the two sets
+    local mg1=Duel.GetFusionMaterial(tp)
+    local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
+    mg1:Merge(mg2) -- Merge materials
     
     -- Get valid Fusion Monsters
     local sg=Duel.GetMatchingGroup(function(c)
@@ -75,19 +74,6 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
         local selected=extraDeckMat:Select(tp,1,1,nil)
         matGroup:Merge(selected)
     end
-
-    -- Select Fusion materials and perform the Fusion Summon
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FMATERIAL)
-    local mat=Duel.SelectFusionMaterial(tp,tc,matGroup,nil,chkf)
-    if not mat or #mat==0 then return end
-    
-    tc:SetMaterial(mat)
-    Duel.SendtoGrave(mat,REASON_EFFECT+REASON_MATERIAL+REASON_FUSION)
-    Duel.BreakEffect()
-    Duel.SpecialSummon(tc,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
-    tc:CompleteProcedure()
-end
-
 
     -- Select Fusion materials and perform the Fusion Summon
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FMATERIAL)
