@@ -7,6 +7,7 @@ function s.initial_effect(c)
     e1:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetCountLimit(1,id)
     e1:SetTarget(s.target1)
     e1:SetOperation(s.operation1)
     c:RegisterEffect(e1)
@@ -22,7 +23,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.operation2)
     c:RegisterEffect(e2)
 
-    -- Effect 3: During the End Phase, place 1 "Neo Space" from your Deck or GY into the Field Zone
+    -- Effect 3: During the End Phase, place 1 "Neo Space" from your Deck or GY into the Field Zone (Continuous Spell)
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
@@ -71,7 +72,7 @@ function s.operation2(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Target and Operation for Effect 3: Place "Neo Space" into Field Zone
+-- Target and Operation for Effect 3: Place "Neo Space" into Field Zone (Continuous Spell)
 function s.target3(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil,91427878)
