@@ -2,7 +2,7 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-    -- Activate
+    -- Activate (Continuous Spell)
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_ACTIVATE)
     e0:SetCode(EVENT_FREE_CHAIN)
@@ -19,7 +19,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.op1)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Shuffle Neos Fusion into Extra Deck
+    -- Effect 2: Shuffle Fusion that listed Neos into Extra Deck
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TODECK)
@@ -32,7 +32,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.tdop)
     c:RegisterEffect(e2)
 
-    -- Effect 3: Place Neo Space into Field Zone during your End Phase
+    -- Effect 3: Place Neo Space from Deck or GY into Field Zone during your End Phase
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOFIELD)
@@ -46,7 +46,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- Effect 1
+-- Effect 1: Conditions
 function s.fusionfilter(c,e,tp)
     return c:IsType(TYPE_FUSION) and c:IsAbleToGrave() and c:IsFaceup()
         and Duel.IsExistingMatchingCard(s.neofilter,tp,LOCATION_GRAVE,0,1,nil,e,tp,c:GetAttribute())
@@ -71,7 +71,7 @@ function s.op1(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Fusion monster that had Neos as material sent to GY
+-- Effect 2: Trigger if Neos was listed fusion material
 function s.neosfusionfilter(c)
     return c:IsType(TYPE_FUSION) and c:IsLocation(LOCATION_GRAVE)
         and c:IsAbleToExtra() and c.material and c:CheckFusionMaterial(aux.FilterBoolFunction(Card.IsCode,89943723))
@@ -92,7 +92,7 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: Only during your own End Phase
+-- Effect 3: During YOUR End Phase
 function s.fzcond(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()==tp
 end
@@ -114,4 +114,3 @@ function s.fzop(e,tp,eg,ep,ev,re,r,rp)
         Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
-
