@@ -77,9 +77,11 @@ function s.cfilter(c)
 end
 
 function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.CheckReleaseGroup(tp,s.cfilter,1,nil) end
-    local g=Duel.SelectReleaseGroup(tp,s.cfilter,1,1,nil)
+    local c=e:GetHandler()
+    if chk==0 then return Duel.CheckReleaseGroup(tp,function(tc) return s.cfilter(tc) and tc~=c end,1,nil) end
+    local g=Duel.SelectReleaseGroup(tp,function(tc) return s.cfilter(tc) and tc~=c end,1,1,nil)
     Duel.Release(g,REASON_COST)
+end
 end
 
 -- Search Polymerization
