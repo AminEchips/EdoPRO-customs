@@ -9,7 +9,6 @@ function s.initial_effect(c)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)
     e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
-    e1:SetCost(s.cost)
     e1:SetTarget(s.target)
     e1:SetOperation(s.activate)
     c:RegisterEffect(e1)
@@ -32,28 +31,9 @@ function s.neos_mention_search(c)
         and c:IsAbleToHand()
 end
 
--- Store what card was sent
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-    local g=Duel.GetMatchingGroup(s.filter,tp,LOCATION_HAND+LOCATION_DECK,0,nil)
-    Debug.Message("Valid Neos targets in hand/deck: "..#g)
-    if chk==0 then return #g>0 end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local sg=g:Select(tp,1,1,nil)
-    local tc=sg:GetFirst()
-    if tc then
-        Duel.SendtoGrave(tc,REASON_COST)
-        e:SetLabelObject(tc)
-    end
-end
-
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-    local tc=e:GetLabelObject()
-    if not tc then return false end
-    if chk==0 then return true end
-    if tc:IsType(TYPE_MONSTER) then
-        Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_GRAVE)
-    else
-        Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
+    if chk==0 then
+        return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil)
     end
 end
 
@@ -68,20 +48,26 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     e1:SetReset(RESET_PHASE+PHASE_END)
     Duel.RegisterEffect(e1,tp)
 
-    local tc=e:GetLabelObject()
+    -- Select card to send
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+    local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil)
+    local tc=g:GetFirst()
     if not tc then return end
+    if Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
+
     if tc:IsType(TYPE_MONSTER) then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-        local g=Duel.SelectMatchingCard(tp,s.neospacian_filter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp)
-        if #g>0 then
-            Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+        local sg=Duel.SelectMatchingCard(tp,s.neospacian_filter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp)
+        if #sg>0 then
+            Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
         end
     else
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-        local g=Duel.SelectMatchingCard(tp,s.neos_mention_search,tp,LOCATION_DECK,0,1,1,nil)
-        if #g>0 then
-            Duel.SendtoHand(g,nil,REASON_EFFECT)
-            Duel.ConfirmCards(1-tp,g)
+        local sg=Duel.SelectMatchingCard(tp,s.neos_mention_search,tp,LOCATION_DECK,0,1,1,nil)
+        if #sg>0 then
+            Duel.SendtoHand(sg,nil,REASON_EFFECT)
+            Duel.ConfirmCards(1-tp,sg)
         end
     end
 end
+
