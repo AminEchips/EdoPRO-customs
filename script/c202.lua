@@ -48,12 +48,10 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local chkf=tp
     local mg1=Duel.GetFusionMaterial(tp)
 
-    -- Check if a "Wingman" is being summoned for Deck access
-    local mg2=Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
-    mg1:Merge(mg2)
-
+    -- Let player pick a valid HERO Fusion Monster first
     local sg=Duel.GetMatchingGroup(function(c)
-        return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
+        return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION)
+            and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
             and c:CheckFusionMaterial(mg1,nil,chkf)
     end,tp,LOCATION_EXTRA,0,nil)
 
@@ -62,20 +60,27 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local tc=sg:Select(tp,1,1,nil):GetFirst()
     if not tc then return end
 
-    local deckFusion = tc:IsCode(56733747) or tc:IsCode(35809262) or tc:IsCode(93347961) or tc:IsCode(25366484) or tc:IsCode(160020065) or tc:IsCode(160320002)
-    local matGroup = Duel.GetFusionMaterial(tp)
+    local deckmat = Group.CreateGroup()
+    local deckPool = Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil)
 
-    if deckFusion then
-        matGroup:Merge(Duel.GetMatchingGroup(Card.IsAbleToGrave,tp,LOCATION_DECK,0,nil))
+    -- If it's a Wingman Fusion Monster, allow selecting 1 material from Deck
+    if tc:GetText():lower():find("wingman") then
+        Duel.Hint(HINT_SELECTMSG,tp,"Select 1 monster from Deck to use as material (optional)")
+        local g1=deckPool:Select(tp,0,1,nil)
+        deckmat:Merge(g1)
     end
 
+    -- Merge the valid materials
+    local finalMaterials=mg1:Clone()
+    finalMaterials:Merge(deckmat)
+
+    -- Perform Fusion
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FMATERIAL)
-    local mat=Duel.SelectFusionMaterial(tp,tc,matGroup,nil,chkf)
+    local mat=Duel.SelectFusionMaterial(tp,tc,finalMaterials,nil,chkf)
     if not mat or #mat==0 then return end
 
     tc:SetMaterial(mat)
     Duel.SendtoGrave(mat,REASON_EFFECT+REASON_MATERIAL+REASON_FUSION)
-    Duel.BreakEffect()
     Duel.SpecialSummon(tc,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
     tc:CompleteProcedure()
 end
