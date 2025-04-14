@@ -15,7 +15,6 @@ function s.initial_effect(c)
     e1:SetRange(LOCATION_SZONE+LOCATION_GRAVE)
     e1:SetValue(42015635)
     c:RegisterEffect(e1)
-    aux.AddCodeList(c,42015635)
 
     -- End Phase: Shuffle Neos Fusion Monsters into Extra Deck
     local e2=Effect.CreateEffect(c)
