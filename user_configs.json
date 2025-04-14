@@ -1,0 +1,13 @@
+{
+	"repos": [
+		{
+		"url": "https://github.com/AminEchips/EdoPRO-customs",
+		"repo_name": "Amine Customs",
+		"repo_path": "./repositories/customcards",
+		"should_update": true,
+		"should_read": true
+	}
+	],
+	"urls": [],
+	"servers": []
+}
