@@ -1,13 +1,13 @@
---EN - Evolution Neo Space (ID: 203)
+--EN - Evolution Neo Space
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Effect 1: Activate "EN - Evolution Neo Space" from hand and place it in the Spell/Trap Zone
+    -- Activate from hand and place into the Spell/Trap Zone as a Continuous Spell
     local e1=Effect.CreateEffect(c)
-    e1:SetType(EFFECT_TYPE_ACTIVATE)  -- Activate from hand
-    e1:SetCode(EVENT_FREE_CHAIN)     -- Can be activated freely
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetCode(EVENT_FREE_CHAIN)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Send 1 Fusion Monster to the GY, and Special Summon 1 "Neo-Spacian" monster from your GY with the same Attribute
+    -- Effect 1: Send 1 Fusion Monster to the GY, and Special Summon 1 "Neo-Spacian" monster from your GY with the same Attribute
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
@@ -18,7 +18,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.operation1)
     c:RegisterEffect(e2)
 
-    -- Effect 3: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
+    -- Effect 2: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetCategory(CATEGORY_TODECK)
@@ -29,7 +29,7 @@ function s.initial_effect(c)
     e3:SetOperation(s.operation2)
     c:RegisterEffect(e3)
 
-    -- Effect 4: During the End Phase, place "Neo Space" (code: 42015635) from your Deck or GY into the Field Zone
+    -- Effect 3: During the End Phase, place "Neo Space" (code: 42015635) from your Deck or GY into the Field Zone
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,2))
     e4:SetCategory(CATEGORY_TOFIELD)
@@ -45,7 +45,6 @@ end
 -- Effect 1: Send Fusion Monster to GY and Special Summon Neo-Spacian
 function s.target1(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        -- Check if there's a Fusion Monster to send to GY and a Neo-Spacian to Special Summon
         return Duel.IsExistingMatchingCard(Card.IsFusionSummonable,tp,LOCATION_GRAVE,0,1,nil)
             and Duel.IsExistingMatchingCard(function(c)
                 return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x8) and c:IsAbleToHand() end,tp,LOCATION_GRAVE,0,1,nil)
