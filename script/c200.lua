@@ -28,7 +28,8 @@ end
 
 -- Filter for Neo-Spacian or Elemental HERO Neos
 function s.spcfilter(c)
-    return c:IsAbleToGraveAsCost() and (c:IsSetCard(0x1f) or c:IsCode(89943723))
+    local id=200
+    return c:IsAbleToGraveAsCost() and (c:IsSetCard(0x1f) or c:IsCode(89943723)) and not c:IsCode(id)
 end
 
 -- Send a Neo-Spacian or Neos to GY as cost
