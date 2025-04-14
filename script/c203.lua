@@ -1,7 +1,7 @@
---EN - Evolution Neo Space (ID: 203)
+--EN - Evolution Neo Space
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Activate from hand and place into Spell/Trap Zone as a Continuous Spell
+    -- Effect 1: Activate from hand and place in Spell/Trap Zone as a Continuous Spell
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)  -- Activate from hand
@@ -9,7 +9,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.operation_activate)  -- Set operation for placing in Spell/Trap Zone
     c:RegisterEffect(e1)
 
-    -- Effect 1: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
+    -- Effect 2: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
@@ -20,7 +20,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.operation1)
     c:RegisterEffect(e2)
 
-    -- Effect 2: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
+    -- Effect 3: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetCategory(CATEGORY_TODECK)
@@ -32,7 +32,7 @@ function s.initial_effect(c)
     e3:SetOperation(s.operation2)
     c:RegisterEffect(e3)
 
-    -- Effect 3: During End Phase, place "Neo Space" from Deck or GY into the Field Zone
+    -- Effect 4: During End Phase, place "Neo Space" from Deck or GY into the Field Zone
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,2))
     e4:SetCategory(CATEGORY_TOFIELD)
@@ -45,7 +45,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 end
 
--- Activation: Place "EN - Evolution Neo Space" into the Spell/Trap Zone as a Continuous Spell
+-- Effect 1: Activate from hand and place in Spell/Trap Zone as a Continuous Spell
 function s.target_activate(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         -- Can always activate from hand
@@ -60,10 +60,10 @@ function s.operation_activate(e,tp,eg,ep,ev,re,r,rp)
     Duel.MoveToField(c,tp,tp,LOCATION_SZONE,POS_FACEUP,true)
 end
 
--- Effect 1: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
+-- Effect 2: Send Fusion Monster to GY, Special Summon 1 "Neo-Spacian" from your GY with the same Attribute
 function s.target1(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        -- Check if there's a Fusion Monster to send to the GY and a Neo-Spacian in the GY to Special Summon
+        -- Check for a Fusion Monster on the field and a Neo-Spacian in the GY to Special Summon
         return Duel.IsExistingMatchingCard(Card.IsFusionSummonable,tp,LOCATION_MZONE,0,1,nil)
             and Duel.IsExistingMatchingCard(function(c)
                 return c:IsType(TYPE_MONSTER) and c:IsSetCard(0x8) and c:IsAbleToHand() end,tp,LOCATION_GRAVE,0,1,nil)
@@ -84,7 +84,7 @@ function s.operation1(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
+-- Effect 3: If Fusion Monster(s) that mentions "Elemental HERO Neos" is sent to the GY, shuffle them into the Extra Deck
 function s.condition2(e,tp,eg,ep,ev,re,r,rp)
     -- Condition to check if the sent Fusion Monster mentions "Elemental HERO Neos"
     return eg:IsExists(function(c)
@@ -108,7 +108,7 @@ function s.operation2(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: Place "Neo Space" from Deck or GY into the Field Zone
+-- Effect 4: Place "Neo Space" from Deck or GY into the Field Zone
 function s.target3(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         -- Check if "Neo Space" (code: 42015635) is in the Deck or GY
@@ -125,4 +125,3 @@ function s.operation3(e,tp,eg,ep,ev,re,r,rp)
         Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_FZONE,POS_FACEUP,true)
     end
 end
-
