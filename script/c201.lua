@@ -30,8 +30,9 @@ end
 
 -- Effect 1: Set 1 Trap that mentions "HERO"
 function s.setfilter(c)
-    return c:IsType(TYPE_TRAP) and c:IsSSetable() and heroMentionTraps[c:GetCode()]
+    return c:IsType(TYPE_TRAP) and c:IsSSetable() and c:ListsArchetype(0x3008)
 end
+
 
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
