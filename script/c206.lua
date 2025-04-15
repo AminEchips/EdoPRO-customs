@@ -70,12 +70,11 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     tc:CompleteProcedure()
 end
 
--- Filter for HERO that was destroyed
--- HERO destroyed trigger (Battle or Effect), same-Level HERO summon
+-- Trigger when a HERO monster you controlled is destroyed (by battle or effect)
 function s.cfilter(c,tp)
 	return c:IsReason(REASON_BATTLE+REASON_EFFECT)
-		and c:IsPreviousControler(tp)
 		and c:IsPreviousLocation(LOCATION_MZONE)
+		and c:IsPreviousControler(tp)
 		and c:IsPreviousPosition(POS_FACEUP)
 		and c:IsPreviousSetCard(0x8)
 		and c:IsType(TYPE_MONSTER)
@@ -93,16 +92,17 @@ end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=eg:Filter(s.cfilter,nil,tp)
 	if chk==0 then
-		return #g>0 and g:GetFirst():GetLevel()>0
-			and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+			and g:GetFirst() and g:GetFirst():GetLevel()>0
 			and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil,g:GetFirst():GetLevel(),e,tp)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE)
 end
 
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	local g=eg:Filter(s.cfilter,nil,tp)
-	if #g==0 or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	if #g==0 then return end
 	local lv=g:GetFirst():GetLevel()
 	if lv<=0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
