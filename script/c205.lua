@@ -1,5 +1,8 @@
 -- EN - Contact Neo Space
 local s,id=GetID()
+s.listed_names={89943723}
+Duel.LoadCardScript("c56840427.lua")
+
 function s.initial_effect(c)
     -- Activate as Field Spell
     local e0=Effect.CreateEffect(c)
@@ -7,22 +10,13 @@ function s.initial_effect(c)
     e0:SetCode(EVENT_FREE_CHAIN)
     c:RegisterEffect(e0)
 
-    -- Always treated as "Neo Space"
-    local e1=Effect.CreateEffect(c)
-    e1:SetType(EFFECT_TYPE_SINGLE)
-    e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-    e1:SetCode(EFFECT_ADD_CODE)
-    e1:SetRange(LOCATION_SZONE+LOCATION_GRAVE)
-    e1:SetValue(42015635)
-    c:RegisterEffect(e1)
-
-    -- End Phase: Shuffle Neos Fusion Monsters into Extra Deck
+    -- End Phase: Prevent Neos Fusions from shuffling
     local e2=Effect.CreateEffect(c)
-    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-    e2:SetCode(EVENT_PHASE+PHASE_END)
+    e2:SetType(EFFECT_TYPE_FIELD)
+    e2:SetCode(EFFECT_SKIP_END_PHASE)
     e2:SetRange(LOCATION_FZONE)
-    e2:SetCountLimit(1)
-    e2:SetOperation(s.grantop)
+    e2:SetTargetRange(LOCATION_MZONE,0)
+    e2:SetTarget(s.skipfilter)
     c:RegisterEffect(e2)
 
     -- Main Phase: Search 1 Neo-Spacian
@@ -36,33 +30,28 @@ function s.initial_effect(c)
     e3:SetOperation(s.thop)
     c:RegisterEffect(e3)
 
-    -- GY effect: Banish this card to Special Summon 1 Neo-Spacian from GY
+    -- GY effect: Send Neos or Neo-Spacian to recover this card
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,1))
-    e4:SetCategory(CATEGORY_SPECIAL_SUMMON)
-    e4:SetType(EFFECT_TYPE_QUICK_O)
-    e4:SetCode(EVENT_FREE_CHAIN)
+    e4:SetCategory(CATEGORY_TOHAND)
+    e4:SetType(EFFECT_TYPE_IGNITION)
     e4:SetRange(LOCATION_GRAVE)
     e4:SetCountLimit(1,{id,1})
-    e4:SetCondition(s.spcon)
-    e4:SetCost(aux.bfgcost)
-    e4:SetTarget(s.sptg)
-    e4:SetOperation(s.spop)
+    e4:SetCondition(s.addcon)
+    e4:SetCost(s.addcost)
+    e4:SetTarget(s.addtg)
+    e4:SetOperation(s.addop)
     c:RegisterEffect(e4)
 end
 
--- END PHASE EFFECT
-function s.grantfilter(c)
-    return c:IsType(TYPE_FUSION) and c:IsFaceup() and c:ListsCode(89943723)
-end
-function s.grantop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetMatchingGroup(s.grantfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
-    if #g>0 then
-        Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
-    end
+s.listed_names={56840427}
+
+-- Prevent Neos Fusions from shuffling during End Phase
+function s.skipfilter(e,c)
+    return c:IsType(TYPE_FUSION) and c:ListsCode(89943723)
 end
 
--- MAIN PHASE SEARCH EFFECT
+-- Search Neo-Spacian from Deck
 function s.thfilter(c)
     return c:IsSetCard(0x1f) and c:IsAbleToHand()
 end
@@ -79,24 +68,27 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- GY REVIVE EFFECT
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+-- GY effect: Only usable if not sent this turn
+function s.addcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():GetTurnID() < Duel.GetTurnCount()
 end
-function s.spfilter(c,e,tp)
-    return c:IsSetCard(0x1f) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+function s.cfilter(c)
+    return c:IsCode(89943723) or (c:IsSetCard(0x1f) and c:IsAbleToGraveAsCost())
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
+function s.addcost(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+    local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,1,nil)
+    Duel.SendtoGrave(g,REASON_COST)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-    if #g>0 then
-        Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return true end
+    Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,0)
+end
+function s.addop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    if c:IsRelateToEffect(e) then
+        Duel.SendtoHand(c,nil,REASON_EFFECT)
     end
 end
 
-s.listed_names={42015635}
