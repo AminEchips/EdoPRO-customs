@@ -61,7 +61,7 @@ function s.descon(e,tp,eg,ep,ev,re,r,rp)
     return not eg:IsContains(e:GetHandler()) and eg:IsExists(s.desfilter,1,nil,tp)
 end
 function s.spfilter(c)
-    return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsSetCard(0x46) and c:IsAbleToHand()
+    return c:IsType(TYPE_SPELL) and c:IsSetCard(0x46) and c:IsAbleToHand()
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil) end
