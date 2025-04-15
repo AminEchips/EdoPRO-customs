@@ -27,7 +27,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.fusop)
     c:RegisterEffect(e2)
 
-    -- Add itself from GY to hand if HERO Fusion is destroyed
+    -- Return this card from GY to hand if a HERO Fusion is destroyed by battle or effect
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOHAND)
@@ -42,7 +42,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- 1st Effect: Special Summon from hand if you control non-WIND HERO
+-- 1st effect: Control a non-WIND HERO
 function s.cfilter(c)
     return c:IsSetCard(0x8) and not c:IsAttribute(ATTRIBUTE_WIND)
 end
@@ -50,14 +50,15 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+    if chk==0 then
+        return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+            and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false)
+    end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) > 0 then
-        -- If it leaves the field, banish it instead
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
@@ -68,7 +69,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- 2nd Effect: Quick Fusion during Main Phase
+-- 2nd effect: Fusion Summon during Main Phase
 function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsMainPhase()
 end
@@ -103,12 +104,11 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     tc:CompleteProcedure()
 end
 
--- 3rd Effect: Add itself from GY to hand if HERO Fusion is destroyed
+-- 3rd effect: Add self if HERO Fusion is destroyed by battle/effect
 function s.thfilter(c,tp)
     return c:IsPreviousControler(tp)
         and c:IsSetCard(0x8)
         and c:IsType(TYPE_FUSION)
-        and bit.band(c:GetReason(),REASON_EFFECT+REASON_BATTLE)~=0
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.thfilter,1,nil,tp)
@@ -123,3 +123,4 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SendtoHand(c,nil,REASON_EFFECT)
     end
 end
+
