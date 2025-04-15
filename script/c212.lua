@@ -80,7 +80,7 @@ end
 
 -- Effect 3: Contact-like Fusion Summon
 function s.spfilter(c)
-    return c:IsType(TYPE_FUSION) and c:IsSetCard(0x3008) and c:IsLevel(12)
+    return c:IsType(TYPE_FUSION) and c:IsSetCard(0x8) and c:IsLevel(12)
         and c:IsCanBeSpecialSummoned(nil,0,tp,true,true)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
