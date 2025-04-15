@@ -13,13 +13,16 @@ function s.initial_effect(c)
     e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
 
-    -- Fusion Summon during Main Phase
+    -- Quick Effect: Fusion Summon during Main Phase
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_FUSION_SUMMON)
-    e2:SetType(EFFECT_TYPE_IGNITION)
+    e2:SetType(EFFECT_TYPE_QUICK_O)
+    e2:SetCode(EVENT_FREE_CHAIN)
+    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,1})
+    e2:SetCondition(s.fuscon)
     e2:SetTarget(s.fustg)
     e2:SetOperation(s.fusop)
     c:RegisterEffect(e2)
@@ -57,7 +60,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Fusion Summon
+-- Quick Fusion during Main Phase only
+function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
+    return Duel.IsMainPhase()
+end
 function s.fusfilter(c,e,tp,mg,chkf)
     return c:IsType(TYPE_FUSION) and c:IsSetCard(0x8)
         and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
@@ -89,7 +95,7 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     tc:CompleteProcedure()
 end
 
--- If sent from field to GY
+-- Add to hand if sent from field to GY
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return c:IsPreviousLocation(LOCATION_ONFIELD)
