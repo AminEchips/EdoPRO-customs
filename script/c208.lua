@@ -32,7 +32,7 @@ function s.initial_effect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOHAND)
     e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e3:SetProperty(EFFECT_FLAG_DELAY)
+    e3:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
     e3:SetCode(EVENT_DESTROYED)
     e3:SetRange(LOCATION_GRAVE)
     e3:SetCountLimit(1,{id,2})
@@ -101,7 +101,7 @@ end
 function s.thfilter(c,tp)
     return c:IsPreviousControler(tp) and c:IsSetCard(0x8) and c:IsType(TYPE_FUSION)
         and c:IsPreviousLocation(LOCATION_MZONE) and c:IsPreviousPosition(POS_FACEUP)
-        and bit.band(c:GetReason(),REASON_BATTLE+REASON_EFFECT)~=0
+        and c:IsReason(REASON_BATTLE+REASON_EFFECT)
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.thfilter,1,nil,tp)
