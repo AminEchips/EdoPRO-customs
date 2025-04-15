@@ -103,12 +103,12 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     tc:CompleteProcedure()
 end
 
--- 3rd Effect: Add this card from GY to hand if a HERO Fusion is destroyed
+-- 3rd Effect: Add itself from GY to hand if HERO Fusion is destroyed
 function s.thfilter(c,tp)
     return c:IsPreviousControler(tp)
         and c:IsSetCard(0x8)
         and c:IsType(TYPE_FUSION)
-        and c:IsReason(REASON_BATTLE+REASON_EFFECT)
+        and bit.band(c:GetReason(),REASON_EFFECT+REASON_BATTLE)~=0
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.thfilter,1,nil,tp)
