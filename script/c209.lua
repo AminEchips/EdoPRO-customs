@@ -15,7 +15,7 @@ end
 
 -- Check if a spell with "Elemental HERO" in text is settable or if self is summonable
 function s.spellfilter(c)
-    return c:IsType(TYPE_SPELL) and c:IsSSetable() and c:CheckText("Elemental HERO")
+    return c:IsType(TYPE_SPELL) and c:IsSSetable() and c:ListsArchetype(0x3008)
 end
 function s.ehero_filter(c)
     return c:IsFaceup() and c:IsSetCard(0x8) and c:IsAbleToHand()
