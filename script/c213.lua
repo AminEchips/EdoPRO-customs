@@ -13,7 +13,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Add a Fusion Spell from Deck when E-HERO Fusion is destroyed
+    -- Effect 2: Add Fusion Spell from Deck when E-HERO Fusion is destroyed by opponent's attack
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -55,13 +55,13 @@ function s.desfilter(c,tp)
     return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
         and c:IsPreviousPosition(POS_FACEUP)
         and c:IsSetCard(0x3008) and c:IsType(TYPE_FUSION)
-        and c:IsReason(REASON_BATTLE) and c:GetReasonPlayer()~=tp
+        and bit.band(c:GetReason(),REASON_BATTLE)~=0 and c:GetReasonPlayer()~=tp
 end
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-    return not eg:IsContains(e:GetHandler()) and eg:IsExists(s.desfilter,1,nil,tp)
+    return eg:IsExists(s.desfilter,1,nil,tp)
 end
 function s.spfilter(c)
-    return c:IsType(TYPE_SPELL) and c:IsSetCard(0x46) and c:IsAbleToHand()
+    return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsSetCard(0x46) and c:IsAbleToHand()
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil) end
@@ -76,4 +76,3 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
-s.listed_series={0x3008}
