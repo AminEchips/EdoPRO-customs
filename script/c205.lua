@@ -1,6 +1,6 @@
 -- EN - Contact Neo Space
 local s,id=GetID()
-s.listed_names={89943723,42015635}
+s.listed_names={89943723,42015635} -- Elemental HERO Neos, Neo Space
 
 function s.initial_effect(c)
     -- Activate as Field Spell
@@ -9,24 +9,24 @@ function s.initial_effect(c)
     e0:SetCode(EVENT_FREE_CHAIN)
     c:RegisterEffect(e0)
 
-    -- Always treated as "Neo Space"
+    -- Always treated as Neo Space (Field & GY)
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
     e1:SetCode(EFFECT_ADD_CODE)
     e1:SetRange(LOCATION_FZONE+LOCATION_GRAVE)
-    e1:SetValue(42015635) -- Neo Space
+    e1:SetValue(42015635) -- Neo Space's original ID
     c:RegisterEffect(e1)
 
-    -- End Phase effect prevent Neos Fusion from shuffling
+    -- End Phase: Prevent Neos Fusion return
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_FIELD)
-    e2:SetCode(42015635) -- Same code used in real Neo Space
+    e2:SetCode(42015635) -- same custom code used by Neo Space
     e2:SetRange(LOCATION_FZONE)
     e2:SetTargetRange(LOCATION_MZONE,0)
     c:RegisterEffect(e2)
 
-    -- Search Neo-Spacian
+    -- Search 1 Neo-Spacian monster
     local e3=Effect.CreateEffect(c)
     e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
     e3:SetType(EFFECT_TYPE_IGNITION)
@@ -36,7 +36,7 @@ function s.initial_effect(c)
     e3:SetOperation(s.thop)
     c:RegisterEffect(e3)
 
-    -- GY recovery
+    -- GY effect: Recover this card
     local e4=Effect.CreateEffect(c)
     e4:SetCategory(CATEGORY_TOHAND)
     e4:SetType(EFFECT_TYPE_IGNITION)
@@ -49,11 +49,14 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 end
 
--- Neo-Spacian fallback list (in case no SetCode in DB)
+-- Fusion Monsters that list Neos as material won't return
+-- handled by e2 using code 42015635 (same as Neo Space)
+
+-- Neo-Spacian search
 function s.thfilter(c)
     return c:IsAbleToHand() and (
         c:IsSetCard(0x1f) or
-        c:IsCode(80896940,43237273,17955766,44762290,65338781,80344569,00000200)
+        c:IsCode(80896940,43237273,17955766,44762290,65338781,80344569,00000200) -- all Neo-Spacians
     )
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -69,12 +72,12 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- GY condition: not the same turn
+-- GY recovery effect
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():GetTurnID() < Duel.GetTurnCount()
 end
 function s.cfilter(c)
-    return c:IsCode(89943723) or (c:IsSetCard(0x1f) and c:IsAbleToGraveAsCost())
+    return (c:IsCode(89943723) or c:IsSetCard(0x1f)) and c:IsAbleToGraveAsCost()
 end
 function s.addcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil) end
@@ -83,7 +86,7 @@ function s.addcost(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SendtoGrave(g,REASON_COST)
 end
 function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return true end
+    if chk==0 then return e:GetHandler():IsAbleToHand() end
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,0)
 end
 function s.addop(e,tp,eg,ep,ev,re,r,rp)
@@ -92,6 +95,7 @@ function s.addop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SendtoHand(c,nil,REASON_EFFECT)
     end
 end
+
 
 
 
