@@ -76,3 +76,4 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
+s.listed_series(0x3008)
