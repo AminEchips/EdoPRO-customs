@@ -13,12 +13,13 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Add Fusion/Polymerization Spell from Deck when E-HERO Fusion destroyed
+    -- Effect 2: Trigger in GY when Elemental HERO Fusion destroyed by opponent's attack
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e2:SetCode(EVENT_BATTLE_DESTROYED)
+    e2:SetCode(EVENT_DESTROYED)
+    e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetRange(LOCATION_GRAVE)
     e2:SetCountLimit(1,{id,1})
     e2:SetCondition(s.spcon)
@@ -28,7 +29,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Effect 1 functions
+-- Effect 1
 function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():IsAbleToGraveAsCost() end
     Duel.SendtoGrave(e:GetHandler(),REASON_COST)
@@ -49,21 +50,26 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2 functions
-function s.cfilter(c,tp)
-    return c:IsPreviousSetCard(0x3008) and c:IsPreviousTypeOnField(TYPE_FUSION)
-        and c:IsReason(REASON_BATTLE) and c:IsPreviousControler(tp)
-end
+-- Effect 2
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(s.cfilter,1,nil,tp)
+    local tc=eg:GetFirst()
+    while tc do
+        if tc:IsPreviousControler(tp) and tc:IsReason(REASON_BATTLE)
+            and tc:IsPreviousSetCard(0x3008) and tc:IsPreviousTypeOnField(TYPE_FUSION)
+            and tc:IsPreviousLocation(LOCATION_MZONE) and tc:GetReasonPlayer()~=tp then
+            return true
+        end
+        tc=eg:GetNext()
+    end
+    return false
 end
+
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
     Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
 end
 function s.spfilter(c)
-    return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsAbleToHand()
-        and (c:IsSetCard(0x46))
+    return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsSetCard(0x46) and c:IsAbleToHand()
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil) end
