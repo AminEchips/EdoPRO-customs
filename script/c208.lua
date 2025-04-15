@@ -38,9 +38,12 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- You control another WIND monster
+-- You control a HERO monster that is not WIND
+function s.cfilter(c)
+    return c:IsSetCard(0x8) and not c:IsAttribute(ATTRIBUTE_WIND)
+end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.IsExistingMatchingCard(Card.IsAttribute,tp,LOCATION_MZONE,0,1,nil,ATTRIBUTE_WIND)
+    return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
