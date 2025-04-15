@@ -7,7 +7,7 @@ function s.initial_effect(c)
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND+CATEGORY_LEAVE_GRAVE)
     e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e1:SetCode(EVENT_REMOVE)
-    e1:SetProperty(EFFECT_FLAG_DELAY)
+    e1:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
     e1:SetCountLimit(1,id)
     e1:SetTarget(s.tg)
     e1:SetOperation(s.op)
@@ -24,11 +24,13 @@ function s.hero_filter(c)
     return c:IsFaceup() and c:IsSetCard(0x8) and c:IsAbleToHand()
 end
 
-function s.tg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.tg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     local c=e:GetHandler()
-    local b1=Duel.IsExistingMatchingCard(s.spellfilter,tp,LOCATION_GRAVE,0,1,nil)
+    if chkc then return e:GetLabel() == 0 and chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spellfilter(chkc) end
+    local b1=Duel.IsExistingTarget(s.spellfilter,tp,LOCATION_GRAVE,0,1,nil)
     local b2=c:IsCanBeSpecialSummoned(e,0,tp,false,false)
     if chk==0 then return b1 or b2 end
+
     local op=0
     if b1 and b2 then
         op=Duel.SelectOption(tp,aux.Stringid(id,1),aux.Stringid(id,2))
@@ -40,7 +42,10 @@ function s.tg(e,tp,eg,ep,ev,re,r,rp,chk)
         Duel.Hint(HINT_OPSELECTED,1-tp,aux.Stringid(id,2))
     end
     e:SetLabel(op)
+
     if op==0 then
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+        Duel.SelectTarget(tp,s.spellfilter,tp,LOCATION_GRAVE,0,1,1,nil)
         Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,nil,1,tp,LOCATION_GRAVE)
     else
         Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
@@ -51,25 +56,28 @@ function s.op(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local op=e:GetLabel()
     if op==0 then
-        -- Set 1 Spell from GY
-        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-        local g=Duel.SelectMatchingCard(tp,s.spellfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-        if #g>0 then
-            Duel.SSet(tp,g:GetFirst())
+        -- Targeted Set from GY
+        local tc=Duel.GetFirstTarget()
+        if tc and tc:IsRelateToEffect(e) then
+            Duel.SSet(tp,tc)
         end
     else
         -- Special Summon self
         if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-            -- If banished for Fusion Summon of HERO
+            -- Optional: add banished "Elemental HERO" if it was used for HERO Fusion
             local rc=c:GetReasonCard()
             if rc and rc:IsType(TYPE_FUSION) and rc:IsSetCard(0x8) then
-                Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-                local g=Duel.SelectMatchingCard(tp,s.hero_filter,tp,LOCATION_REMOVED,0,1,1,nil)
-                if #g>0 then
-                    Duel.SendtoHand(g,nil,REASON_EFFECT)
-                    Duel.ConfirmCards(1-tp,g)
+                if Duel.IsExistingMatchingCard(s.hero_filter,tp,LOCATION_REMOVED,0,1,nil)
+                    and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+                    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+                    local g=Duel.SelectMatchingCard(tp,s.hero_filter,tp,LOCATION_REMOVED,0,1,1,nil)
+                    if #g>0 then
+                        Duel.SendtoHand(g,nil,REASON_EFFECT)
+                        Duel.ConfirmCards(1-tp,g)
+                    end
                 end
             end
         end
     end
 end
+
