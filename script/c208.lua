@@ -22,12 +22,12 @@ function s.initial_effect(c)
     e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,1})
-    e2:SetCondition(s.fuscon)
+    e2:SetCondition(function(e,tp) return Duel.IsMainPhase() end)
     e2:SetTarget(s.fustg)
     e2:SetOperation(s.fusop)
     c:RegisterEffect(e2)
 
-    -- Return this card from GY to hand if a HERO Fusion is destroyed by battle or effect
+    -- Return itself from GY if HERO Fusion is destroyed by battle or effect
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOHAND)
@@ -42,7 +42,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- 1st effect: Control a non-WIND HERO
+-- 1st effect: summon if you control non-WIND HERO
 function s.cfilter(c)
     return c:IsSetCard(0x8) and not c:IsAttribute(ATTRIBUTE_WIND)
 end
@@ -58,7 +58,7 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) > 0 then
+    if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
@@ -69,10 +69,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- 2nd effect: Fusion Summon during Main Phase
-function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.IsMainPhase()
-end
+-- 2nd effect: fusion summon
 function s.fusfilter(c,e,tp,mg,chkf)
     return c:IsType(TYPE_FUSION) and c:IsSetCard(0x8)
         and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
@@ -81,9 +78,7 @@ end
 function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk)
     local chkf=tp
     local mg=Duel.GetFusionMaterial(tp)
-    if chk==0 then
-        return Duel.IsExistingMatchingCard(s.fusfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg,chkf)
-    end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.fusfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg,chkf) end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
 function s.fusop(e,tp,eg,ep,ev,re,r,rp)
@@ -104,11 +99,13 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     tc:CompleteProcedure()
 end
 
--- 3rd effect: Add self if HERO Fusion is destroyed by battle/effect
+-- 3rd effect: return from GY if HERO Fusion destroyed
 function s.thfilter(c,tp)
-    return c:IsPreviousControler(tp)
-        and c:IsSetCard(0x8)
+    return c:IsPreviousControler(tp) and c:IsSetCard(0x8)
         and c:IsType(TYPE_FUSION)
+        and c:IsPreviousLocation(LOCATION_MZONE)
+        and c:IsPreviousPosition(POS_FACEUP)
+        and c:IsReason(REASON_BATTLE+REASON_EFFECT)
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.thfilter,1,nil,tp)
@@ -123,4 +120,5 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SendtoHand(c,nil,REASON_EFFECT)
     end
 end
+
 
