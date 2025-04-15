@@ -1,6 +1,6 @@
 -- EN - Contact Neo Space
 local s,id=GetID()
-s.listed_names={89943723,42015635}  -- Neos, Neo Space
+s.listed_names={89943723,42015635}
 
 function s.initial_effect(c)
     -- Activate as Field Spell
@@ -9,26 +9,24 @@ function s.initial_effect(c)
     e0:SetCode(EVENT_FREE_CHAIN)
     c:RegisterEffect(e0)
 
-    -- Always treated as Neo Space
+    -- Always treated as "Neo Space"
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
     e1:SetCode(EFFECT_ADD_CODE)
     e1:SetRange(LOCATION_FZONE+LOCATION_GRAVE)
-    e1:SetValue(42015635)
+    e1:SetValue(42015635) -- Neo Space
     c:RegisterEffect(e1)
-    aux.AddCodeList(c,42015635)
 
-    -- End Phase: Prevent Neos Fusions from shuffling
+    -- End Phase effect prevent Neos Fusion from shuffling
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_FIELD)
-    e2:SetCode(EFFECT_SKIP_END_PHASE)
+    e2:SetCode(42015635) -- Same code used in real Neo Space
     e2:SetRange(LOCATION_FZONE)
     e2:SetTargetRange(LOCATION_MZONE,0)
-    e2:SetTarget(s.skipfilter)
     c:RegisterEffect(e2)
 
-    -- Main Phase: Search 1 Neo-Spacian
+    -- Search Neo-Spacian
     local e3=Effect.CreateEffect(c)
     e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
     e3:SetType(EFFECT_TYPE_IGNITION)
@@ -38,7 +36,7 @@ function s.initial_effect(c)
     e3:SetOperation(s.thop)
     c:RegisterEffect(e3)
 
-    -- GY effect: Send Neos or Neo-Spacian to recover this card
+    -- GY recovery
     local e4=Effect.CreateEffect(c)
     e4:SetCategory(CATEGORY_TOHAND)
     e4:SetType(EFFECT_TYPE_IGNITION)
@@ -51,15 +49,12 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 end
 
--- Prevent Neos Fusions from shuffling during End Phase
-function s.skipfilter(e,c)
-    return c:IsType(TYPE_FUSION) and c:ListsCode(89943723)
-end
-
--- Search Neo-Spacian from Deck (robust)
+-- Neo-Spacian fallback list (in case no SetCode in DB)
 function s.thfilter(c)
-    return (c:IsCode(80896940,43237273,17955766,44762290,65338781,80344569,00000200))
-        and c:IsAbleToHand()
+    return c:IsAbleToHand() and (
+        c:IsSetCard(0x1f) or
+        c:IsCode(80896940,43237273,17955766,44762290,65338781,80344569,00000200)
+    )
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
@@ -74,7 +69,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- GY effect: Only usable if not sent this turn
+-- GY condition: not the same turn
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():GetTurnID() < Duel.GetTurnCount()
 end
@@ -97,5 +92,6 @@ function s.addop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SendtoHand(c,nil,REASON_EFFECT)
     end
 end
+
 
 
