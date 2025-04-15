@@ -14,10 +14,10 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 end
 s.listed_names={89943723} -- Elemental HERO Neos
-s.listed_series={0x1f,0x8} -- Neo-Spacian, Elemental HERO
+s.listed_series={0x3008,0x8} -- Neo-Spacian, Elemental HERO
 
 function s.filter1(c)
-    return c:IsFaceup() and (c:IsSetCard(0x8) or c:IsSetCard(0x1f))
+    return c:IsFaceup() and (c:IsSetCard(0x3008) or c:IsSetCard(0x1f))
 end
 function s.filter2(c)
     return c:IsFaceup() and c:IsCode(89943723)
