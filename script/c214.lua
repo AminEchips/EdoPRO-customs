@@ -51,13 +51,11 @@ end
 
 -- EFFECT 2: Banish monster, gain ATK, double damage
 function s.banfilter(c)
-    return c:IsMonster() and c:IsAbleToRemoveAsCost()
+    return c:IsMonster() and c:IsAbleToRemove()
 end
-function s.bancost(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.btg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.banfilter,tp,LOCATION_GRAVE,0,1,nil) end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local g=Duel.SelectMatchingCard(tp,s.banfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-    Duel.Remove(g,POS_FACEUP,REASON_COST)
+    Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_GRAVE)
 end
 function s.bop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
