@@ -1,7 +1,6 @@
 -- EN - Contact Neo Space
 local s,id=GetID()
-s.listed_names={89943723}
-Duel.LoadCardScript("c56840427.lua")
+s.listed_names={89943723,42015635}  -- Neos, Neo Space
 
 function s.initial_effect(c)
     -- Activate as Field Spell
@@ -21,7 +20,7 @@ function s.initial_effect(c)
 
     -- Main Phase: Search 1 Neo-Spacian
     local e3=Effect.CreateEffect(c)
-    e3:SetDescription(aux.Stringid(id,0))
+    -- e3:SetDescription(aux.Stringid(id,0))  -- comment out or define in strings.conf
     e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
     e3:SetType(EFFECT_TYPE_IGNITION)
     e3:SetRange(LOCATION_FZONE)
@@ -32,7 +31,7 @@ function s.initial_effect(c)
 
     -- GY effect: Send Neos or Neo-Spacian to recover this card
     local e4=Effect.CreateEffect(c)
-    e4:SetDescription(aux.Stringid(id,1))
+    -- e4:SetDescription(aux.Stringid(id,1))
     e4:SetCategory(CATEGORY_TOHAND)
     e4:SetType(EFFECT_TYPE_IGNITION)
     e4:SetRange(LOCATION_GRAVE)
@@ -43,8 +42,6 @@ function s.initial_effect(c)
     e4:SetOperation(s.addop)
     c:RegisterEffect(e4)
 end
-
-s.listed_names={56840427}
 
 -- Prevent Neos Fusions from shuffling during End Phase
 function s.skipfilter(e,c)
@@ -91,4 +88,3 @@ function s.addop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SendtoHand(c,nil,REASON_EFFECT)
     end
 end
-
