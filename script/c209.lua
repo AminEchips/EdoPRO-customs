@@ -15,7 +15,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.setop)
     c:RegisterEffect(e1)
 
-    -- Special Summon itself, then if banished for HERO Fusion, add 1 banished HERO to hand
+    -- Special Summon itself, then maybe recover a banished HERO
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
@@ -31,12 +31,12 @@ function s.initial_effect(c)
 end
 s.listed_series={0x8}
 
--- Effect 1: Set Spell from GY
+-- ===== SPELL SET EFFECT =====
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsContains(e:GetHandler())
 end
 function s.setfilter(c)
-    return c:IsType(TYPE_SPELL) and c:IsSSetable() and c:IsAbleToSet() and c:CheckText("Elemental HERO")
+    return c:IsType(TYPE_SPELL) and c:IsSSetable() and c:CheckText("Elemental HERO")
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
@@ -45,28 +45,25 @@ end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
     local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-    if #g>0 then
-        Duel.SSet(tp,g:GetFirst())
-    end
+    local tc=g:GetFirst()
+    if tc then Duel.SSet(tp,tc) end
 end
 
--- Effect 2: Special Summon and optional add
+-- ===== SELF SUMMON & ADD HERO BACK =====
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsContains(e:GetHandler())
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
 function s.thfilter(c)
-    return c:IsSetCard(0x8) and c:IsAbleToHand() and c:IsFaceup()
+    return c:IsSetCard(0x8) and c:IsFaceup() and c:IsAbleToHand()
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsRelateToEffect(e) then return end
-    if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) > 0 then
-        -- Only check for fusion summon with HERO monster
+    if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
         if bit.band(r,REASON_FUSION)~=0 and re and re:GetHandler():IsSetCard(0x8) then
             local g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_REMOVED,0,nil)
             if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
@@ -78,5 +75,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
 
 
