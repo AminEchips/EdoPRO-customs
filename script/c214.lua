@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
     --Fusion Materials: Burstinatrix + Necroshade
-    Fusion.AddProcMix(c,true,true,58932615,511023014)
+    Fusion.AddProcMix(c,true,true,58932615,89252153)
 
     --Add H - Heated Heart on Special Summon
     local e1=Effect.CreateEffect(c)
@@ -29,12 +29,12 @@ function s.initial_effect(c)
     e2:SetOperation(s.bop)
     c:RegisterEffect(e2)
 end
-s.listed_names={40453765} -- H - Heated Heart
+s.listed_names={74825788} -- H - Heated Heart
 s.material_setcode={0x3008}
 
 -- Search H - Heated Heart
 function s.thfilter(c)
-    return c:IsCode(40453765) and c:IsAbleToHand()
+    return c:IsCode(74825788) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
