@@ -71,20 +71,29 @@ function s.spop2(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 3
+-- Effect 3 (fixed): Boost ATK and grant destruction protection
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(s.condfilter,tp,LOCATION_MZONE,0,1,nil)
+	return Duel.IsExistingTarget(s.condfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.condfilter(c)
 	return c:IsSetCard(0x3008) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsLevel(10) and c:IsFaceup()
 end
+function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.condfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.condfilter,tp,LOCATION_MZONE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	Duel.SelectTarget(tp,s.condfilter,tp,LOCATION_MZONE,0,1,1,nil)
+end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) or not c:IsFaceup() then return end
+	local tc=Duel.GetFirstTarget()
+	if not (tc and tc:IsRelateToEffect(e) and tc:IsFaceup()) then return end
+
+	-- Count unique Attributes
 	local attr={}
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
-	for tc in aux.Next(g) do
-		local a=tc:GetAttribute()
+	for mc in aux.Next(g) do
+		local a=mc:GetAttribute()
 		for i=0,6 do
 			local mask=1<<i
 			if a&mask>0 then attr[mask]=true end
@@ -92,28 +101,25 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 	local ct=0
 	for _,v in pairs(attr) do if v then ct=ct+1 end end
-	if ct>0 then
-		local atk=ct*500
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_ATTACK)
-		e1:SetValue(atk)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-		c:RegisterEffect(e1)
-	end
-	--Banish and protect target
-	Duel.BreakEffect()
-	if Duel.Remove(c,POS_FACEUP,REASON_EFFECT)>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-		local tg=Duel.SelectMatchingCard(tp,aux.FaceupFilter(Card.IsSetCard,0x3008),tp,LOCATION_MZONE,0,1,1,nil)
-		local tc=tg:GetFirst()
-		if tc then
-			local e2=Effect.CreateEffect(c)
-			e2:SetType(EFFECT_TYPE_SINGLE)
-			e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
-			e2:SetValue(1)
-			e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-			tc:RegisterEffect(e2)
-		end
+	if ct==0 then return end
+
+	local atk=ct*500
+	-- Apply ATK gain
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_UPDATE_ATTACK)
+	e1:SetValue(atk)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+	tc:RegisterEffect(e1)
+
+	-- Banish Electaser as cost
+	if c:IsRelateToEffect(e) and Duel.Remove(c,POS_FACEUP,REASON_EFFECT)>0 then
+		-- Apply protection
+		local e2=Effect.CreateEffect(c)
+		e2:SetType(EFFECT_TYPE_SINGLE)
+		e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+		e2:SetValue(1)
+		e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+		tc:RegisterEffect(e2)
 	end
 end
