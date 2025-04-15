@@ -87,3 +87,5 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
         Duel.ConfirmCards(1-tp,tc)
     end
 end
+
+s.listed_series={0x3008}
