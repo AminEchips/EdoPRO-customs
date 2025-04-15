@@ -58,7 +58,7 @@ end
 
 -- Search Neo-Spacian from Deck (robust)
 function s.thfilter(c)
-    return (c:IsSetCard(0x1f) or c:IsCode(80896940,43237273,17955766,44762290,65338781,80344569))
+    return (c:IsCode(80896940,43237273,17955766,44762290,65338781,80344569,00000200))
         and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -79,5 +79,23 @@ function s.addcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():GetTurnID() < Duel.GetTurnCount()
 end
 function s.cfilter(c)
-    return c:IsCode(89943723) or (c:IsSetCard(0x1f) and c:IsAbleToGraveAsCost
+    return c:IsCode(89943723) or (c:IsSetCard(0x1f) and c:IsAbleToGraveAsCost())
+end
+function s.addcost(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+    local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,1,nil)
+    Duel.SendtoGrave(g,REASON_COST)
+end
+function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return true end
+    Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,0)
+end
+function s.addop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    if c:IsRelateToEffect(e) then
+        Duel.SendtoHand(c,nil,REASON_EFFECT)
+    end
+end
+
 
