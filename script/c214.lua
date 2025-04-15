@@ -25,6 +25,7 @@ function s.initial_effect(c)
     e2:SetCode(EVENT_ATTACK_ANNOUNCE)
     e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetCountLimit(1,{id,1})
+    e2:SetCost(s.bancost)
     e2:SetTarget(s.btg)
     e2:SetOperation(s.bop)
     c:RegisterEffect(e2)
@@ -51,11 +52,13 @@ end
 
 -- EFFECT 2: Banish monster, gain ATK, double damage
 function s.banfilter(c)
-    return c:IsMonster() and c:IsAbleToRemove()
+    return c:IsMonster() and c:IsAbleToRemoveAsCost()
 end
-function s.btg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.bancost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.banfilter,tp,LOCATION_GRAVE,0,1,nil) end
-    Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_GRAVE)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+    local g=Duel.SelectMatchingCard(tp,s.banfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+    Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 function s.bop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
