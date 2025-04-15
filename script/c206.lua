@@ -72,24 +72,31 @@ function s.cfilter(c,tp)
     return c:IsReason(REASON_BATTLE+REASON_EFFECT)
         and c:IsPreviousControler(tp)
         and c:IsPreviousLocation(LOCATION_MZONE)
-        and c:IsPreviousSetCard(0x8)
+        and c:IsPreviousPosition(POS_FACEUP)
+        and c:IsPreviousSetCard(0x8) -- HERO
+        and c:IsType(TYPE_MONSTER)
 end
+
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.cfilter,1,nil,tp)
 end
+
 function s.spfilter(c,lv,e,tp)
     return c:IsSetCard(0x8) and c:IsLevel(lv)
         and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
+
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
     local g=eg:Filter(s.cfilter,nil,tp)
     if chk==0 then
         return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-            and g:GetFirst() and g:GetFirst():GetLevel()>0
+            and g:GetFirst()
+            and g:GetFirst():GetLevel()>0
             and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil,g:GetFirst():GetLevel(),e,tp)
     end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE)
 end
+
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
     if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
     local g=eg:Filter(s.cfilter,nil,tp)
@@ -97,9 +104,9 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
     local lv=g:GetFirst():GetLevel()
     if lv<=0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local sc=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,lv,e,tp)
-    if #sc>0 then
-        Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
+    local sg=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,lv,e,tp)
+    if #sg>0 then
+        Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
     end
 end
 
