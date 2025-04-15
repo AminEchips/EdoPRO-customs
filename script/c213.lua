@@ -13,7 +13,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Trigger in GY when Elemental HERO Fusion destroyed by opponent's attack
+    -- Effect 2: Add a Fusion Spell from Deck when E-HERO Fusion is destroyed
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -22,8 +22,8 @@ function s.initial_effect(c)
     e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetRange(LOCATION_GRAVE)
     e2:SetCountLimit(1,{id,1})
-    e2:SetCondition(s.spcon)
-    e2:SetCost(s.spcost)
+    e2:SetCondition(s.descon)
+    e2:SetCost(aux.bfgcost)
     e2:SetTarget(s.sptg)
     e2:SetOperation(s.spop)
     c:RegisterEffect(e2)
@@ -51,22 +51,14 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Effect 2
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    local tc=eg:GetFirst()
-    while tc do
-        if tc:IsPreviousControler(tp) and tc:IsReason(REASON_BATTLE)
-            and tc:IsPreviousSetCard(0x3008) and tc:IsPreviousTypeOnField(TYPE_FUSION)
-            and tc:IsPreviousLocation(LOCATION_MZONE) and tc:GetReasonPlayer()~=tp then
-            return true
-        end
-        tc=eg:GetNext()
-    end
-    return false
+function s.desfilter(c,tp)
+    return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
+        and c:IsPreviousPosition(POS_FACEUP)
+        and c:IsSetCard(0x3008) and c:IsType(TYPE_FUSION)
+        and c:IsReason(REASON_BATTLE) and c:GetReasonPlayer()~=tp
 end
-
-function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
-    Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
+function s.descon(e,tp,eg,ep,ev,re,r,rp)
+    return not eg:IsContains(e:GetHandler()) and eg:IsExists(s.desfilter,1,nil,tp)
 end
 function s.spfilter(c)
     return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsSetCard(0x46) and c:IsAbleToHand()
@@ -83,3 +75,4 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
         Duel.ConfirmCards(1-tp,g)
     end
 end
+
