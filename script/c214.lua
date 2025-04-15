@@ -13,7 +13,6 @@ function s.initial_effect(c)
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)
     e1:SetProperty(EFFECT_FLAG_DELAY)
     e1:SetCountLimit(1,id)
-    e1:SetCondition(s.thcon)
     e1:SetTarget(s.thtg)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
@@ -30,7 +29,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.bop)
     c:RegisterEffect(e2)
 end
-s.listed_names={40418351} -- H - Heated Heart
+s.listed_names={54827788} -- H - Heated Heart
 s.material_setcode={0x3008}
 
 -- EFFECT 1: Search on Fusion Summon
@@ -38,7 +37,7 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
 end
 function s.thfilter(c)
-    return c:IsCode(40418351) and c:IsAbleToHand()
+    return c:IsCode(54827788) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
