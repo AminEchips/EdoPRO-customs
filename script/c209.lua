@@ -16,7 +16,7 @@ end
 
 -- Spell that mentions "Elemental HERO" and is Settable
 function s.spellfilter(c)
-    return c:IsType(TYPE_SPELL) and c:IsSSetable() and c:CheckText("Elemental HERO")
+    return c:IsType(TYPE_SPELL) and c:IsSSetable() and c:ListsArchetype(0x3008)
 end
 
 -- Banished E-HERO that can be returned to hand
