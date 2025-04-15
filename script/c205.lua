@@ -1,4 +1,5 @@
 -- EN - Contact Neo Space
+Duel.LoadCardScript("c42015635.lua")
 local s,id=GetID()
 s.listed_names={89943723,42015635} -- Elemental HERO Neos, Neo Space
 
@@ -8,15 +9,6 @@ function s.initial_effect(c)
     e0:SetType(EFFECT_TYPE_ACTIVATE)
     e0:SetCode(EVENT_FREE_CHAIN)
     c:RegisterEffect(e0)
-
-    -- Always treated as Neo Space (Field & GY)
-    local e1=Effect.CreateEffect(c)
-    e1:SetType(EFFECT_TYPE_SINGLE)
-    e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-    e1:SetCode(EFFECT_ADD_CODE)
-    e1:SetRange(LOCATION_FZONE+LOCATION_GRAVE)
-    e1:SetValue(42015635) -- Neo Space's original ID
-    c:RegisterEffect(e1)
 
     -- End Phase: Prevent Neos Fusion return
     local e2=Effect.CreateEffect(c)
