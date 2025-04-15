@@ -29,15 +29,12 @@ function s.initial_effect(c)
     e2:SetOperation(s.bop)
     c:RegisterEffect(e2)
 end
-s.listed_names={54827788} -- H - Heated Heart
+s.listed_names={74825788} -- H - Heated Heart
 s.material_setcode={0x3008}
 
 -- EFFECT 1: Search on Fusion Summon
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-    return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
-end
 function s.thfilter(c)
-    return c:IsCode(54827788) and c:IsAbleToHand()
+    return c:IsCode(74825788) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
