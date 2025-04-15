@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	--Fusion materials
 	c:EnableReviveLimit()
-	Fusion.AddProcMixN(c,true,true,21844576,2) -- Avian + Bladeedge
+	Fusion.AddProcMixN(c,true,true,21844576,59793705) -- Avian + Bladeedge
 
 	--Search E - Emergency Call when Special Summoned
 	local e1=Effect.CreateEffect(c)
@@ -35,7 +35,7 @@ end
 
 -- Search E - Emergency Call
 function s.thfilter(c)
-	return c:IsCode(38033121) and c:IsAbleToHand()
+	return c:IsCode(00213326) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
