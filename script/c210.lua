@@ -75,7 +75,10 @@ end
 
 -- Effect 3
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x8),tp,LOCATION_MZONE,0,1,nil)
+	return Duel.IsExistingMatchingCard(s.condfilter,tp,LOCATION_MZONE,0,1,nil)
+end
+function s.condfilter(c)
+	return c:IsSetCard(0x3008) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsLevel(10) and c:IsFaceup()
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
@@ -104,7 +107,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.BreakEffect()
 	if Duel.Remove(c,POS_FACEUP,REASON_EFFECT)>0 then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-		local tg=Duel.SelectMatchingCard(tp,aux.FaceupFilter(Card.IsSetCard,0x8),tp,LOCATION_MZONE,0,1,1,nil)
+		local tg=Duel.SelectMatchingCard(tp,aux.FaceupFilter(Card.IsSetCard,0x3008),tp,LOCATION_MZONE,0,1,1,nil)
 		local tc=tg:GetFirst()
 		if tc then
 			local e2=Effect.CreateEffect(c)
@@ -116,4 +119,3 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
-
