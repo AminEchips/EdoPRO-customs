@@ -42,7 +42,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- You control a HERO monster that is not WIND
+-- 1st Effect: Special Summon from hand if you control non-WIND HERO
 function s.cfilter(c)
     return c:IsSetCard(0x8) and not c:IsAttribute(ATTRIBUTE_WIND)
 end
@@ -56,12 +56,19 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if c:IsRelateToEffect(e) then
-        Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
+    if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) > 0 then
+        -- If it leaves the field, banish it instead
+        local e1=Effect.CreateEffect(c)
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
+        e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+        e1:SetReset(RESET_EVENT+RESETS_REDIRECT)
+        e1:SetValue(LOCATION_REMOVED)
+        c:RegisterEffect(e1,true)
     end
 end
 
--- Quick Fusion during Main Phase only
+-- 2nd Effect: Quick Fusion during Main Phase
 function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsMainPhase()
 end
@@ -96,7 +103,7 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     tc:CompleteProcedure()
 end
 
--- Add itself from GY to hand when a HERO Fusion is destroyed
+-- 3rd Effect: Add this card from GY to hand if a HERO Fusion is destroyed
 function s.thfilter(c,tp)
     return c:IsPreviousControler(tp)
         and c:IsSetCard(0x8)
