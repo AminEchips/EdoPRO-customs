@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMixN(c,true,true,21844576,20721928) -- Avian + Bladedge
+    Fusion.AddProcMixN(c,true,true,21844576,59793705) -- Avian + Bladedge
     -- Search "E - Emergency Call" on Special Summon
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
