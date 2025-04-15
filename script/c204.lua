@@ -19,6 +19,8 @@ function s.initial_effect(c)
 end
 
 s.listed_names={89943723} -- Elemental HERO Neos
+s.listed_series={0x3008} -- Elemental HERO
+
 
 -- Allow only Fusion from Extra Deck
 function s.counterfilter(c)
