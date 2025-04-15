@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
     --Fusion Materials
-    Fusion.AddProcMix(c,true,true,58932615,511023014) -- Burstinatrix + Necroshade
+    Fusion.AddProcMix(c,true,true,58932615,89252153) -- Burstinatrix + Necroshade
     -- Add "H - Heated Heart" on Special Summon
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
