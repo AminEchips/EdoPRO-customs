@@ -1,7 +1,7 @@
 -- HERO Second Signal
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Activate: Fusion Summon using hand/field, shuffle into Deck
+    -- Activate: Fusion Summon using HERO monsters in hand/field, shuffled into Deck
     local e1=Effect.CreateEffect(c)
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_FUSION_SUMMON)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
@@ -11,7 +11,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.fusop)
     c:RegisterEffect(e1)
 
-    -- Trigger: When HERO destroyed, summon same level HERO
+    -- Trigger: When a HERO is destroyed, summon a HERO with the same Level
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -25,7 +25,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.spop)
     c:RegisterEffect(e2)
 
-    -- GY effect: If HERO destroyed by battle, set this card; banish when it leaves field
+    -- GY Effect: Set this card if any monster is destroyed by battle; banish on leave
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -33,13 +33,12 @@ function s.initial_effect(c)
     e3:SetProperty(EFFECT_FLAG_DELAY)
     e3:SetRange(LOCATION_GRAVE)
     e3:SetCountLimit(1,{id,2})
-    e3:SetCondition(s.setcon)
     e3:SetTarget(s.settg)
     e3:SetOperation(s.setop)
     c:RegisterEffect(e3)
 end
 
--- Fusion Summon with HERO monsters (hand/field only)
+-- Fusion Summon using HERO monsters from hand/field
 function s.fusfilter(c,e,tp,mg,chkf)
     return c:IsType(TYPE_FUSION) and c:IsSetCard(0x8)
         and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
@@ -71,38 +70,40 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     tc:CompleteProcedure()
 end
 
--- HERO destroyed condition
-function s.cfilter(c,tp)
-    return c:IsReason(REASON_BATTLE+REASON_EFFECT) and c:IsPreviousControler(tp)
-        and c:IsPreviousLocation(LOCATION_MZONE) and c:IsSetCard(0x8) and c:IsType(TYPE_MONSTER)
+-- HERO destroyed trigger
+function s.spfilter(c,tp)
+    return c:IsReason(REASON_BATTLE+REASON_EFFECT)
+        and c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
+        and c:IsSetCard(0x8) and c:IsType(TYPE_MONSTER)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(s.cfilter,1,nil,tp)
-end
-function s.hspfilter(c,lv,e,tp)
-    return c:IsSetCard(0x8) and c:IsLevel(lv)
-        and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+    return eg:IsExists(s.spfilter,1,nil,tp)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    local g=eg:Filter(s.cfilter,nil,tp)
-    if chk==0 then return #g>0 and Duel.IsExistingMatchingCard(s.hspfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil,g:GetFirst():GetLevel(),e,tp) end
+    local g=eg:Filter(s.spfilter,nil,tp)
+    if chk==0 then
+        return #g>0 and Duel.IsExistingMatchingCard(function(c)
+            return c:IsSetCard(0x8) and c:IsLevel(g:GetFirst():GetLevel())
+                and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+        end,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
+    end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-    local g=eg:Filter(s.cfilter,nil,tp)
+    local g=eg:Filter(s.spfilter,nil,tp)
     if #g==0 then return end
     local lv=g:GetFirst():GetLevel()
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local sg=Duel.SelectMatchingCard(tp,s.hspfilter,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil,lv,e,tp)
+    local sg=Duel.SelectMatchingCard(tp,function(c)
+        return c:IsSetCard(0x8) and c:IsLevel(lv)
+            and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+    end,tp,LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
     if #sg>0 then
         Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
     end
 end
 
--- GY effect: If HERO is destroyed by battle
-function s.setcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(function(c) return c:IsSetCard(0x8) and c:IsReason(REASON_BATTLE) and c:IsControler(tp) end,1,nil)
-end
+-- GY: set if any monster destroyed by battle
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():IsSSetable() end
 end
@@ -119,4 +120,3 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         c:RegisterEffect(e1)
     end
 end
-
