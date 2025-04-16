@@ -38,6 +38,8 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+c.listed_names={237,94820406}
+
 function s.efilter(e,re,rp)
 	return re:IsActiveType(TYPE_MONSTER) and re:GetOwnerPlayer()~=e:GetHandlerPlayer()
 end
