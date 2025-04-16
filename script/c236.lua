@@ -57,7 +57,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Set Trap Condition
--- Set Trap Condition
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(function(c)
         return c:IsControler(tp) and c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_GRAVE)
