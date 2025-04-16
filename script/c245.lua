@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,true,true,99999990,99999991) -- Replace with actual card IDs
+    Fusion.AddProcMix(c,true,true,236,22160245) -- Replace with actual card IDs
 
     -- Must be Special Summoned with "Dark Fusion"
     local e0=Effect.CreateEffect(c)
