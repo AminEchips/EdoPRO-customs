@@ -56,7 +56,7 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
 end
 function s.spfilter(c,e,tp)
-	return c:IsSetCard(0x3008) and not c:IsRace(RACE_WARRIOR)
+	return c:IsSetCard(0x8) and not c:IsRace(RACE_WARRIOR)
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -89,7 +89,7 @@ function s.sp2con(e,tp,eg,ep,ev,re,r,rp)
 	return c:IsPreviousLocation(LOCATION_ONFIELD)
 end
 function s.sp2filter(c,e,tp)
-	return c:IsCode(08809344) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
+	return c:IsCode(40854197) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
 end
 function s.sp2tg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
