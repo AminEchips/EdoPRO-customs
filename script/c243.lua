@@ -73,10 +73,11 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
         Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
     else
-        Duel.SendtoHand(tc,nil,REASON_EFFECT)
+        Duel.SendtoHand(tc,tp,REASON_EFFECT)
         Duel.ConfirmCards(1-tp,tc)
     end
 end
+
 
 
 
