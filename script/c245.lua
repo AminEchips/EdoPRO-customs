@@ -12,17 +12,22 @@ function s.initial_effect(c)
     e0:SetValue(aux.fuslimit)
     c:RegisterEffect(e0)
 
-    -- Must attack if able
+    -- Cannot attack the turn it is Special Summoned (including Fusion Summoned)
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
-    e1:SetCode(EFFECT_MUST_ATTACK)
+    e1:SetCode(EFFECT_CANNOT_ATTACK)
+    e1:SetCondition(function(e)
+        return Duel.GetTurnCount()==e:GetHandler():GetTurnID()
+    end)
     c:RegisterEffect(e1)
 
-    -- Cannot attack the turn it is Special Summoned (including Fusion Summoned)
+    -- Must be attacked if able
     local e2=Effect.CreateEffect(c)
-    e2:SetType(EFFECT_TYPE_SINGLE)
-    e2:SetCode(EFFECT_CANNOT_ATTACK)
-    e2:SetCondition(function(e) return e:GetHandler():IsSummonTurn() end)
+    e2:SetType(EFFECT_TYPE_FIELD)
+    e2:SetCode(EFFECT_MUST_ATTACK_MONSTER)
+    e2:SetRange(LOCATION_MZONE)
+    e2:SetTargetRange(0,LOCATION_MZONE)
+    e2:SetValue(s.atklimit)
     c:RegisterEffect(e2)
 
     -- Inflict damage if destroys by battle
@@ -55,6 +60,10 @@ s.material_setcode={0x3008}
 s.listed_series={0x3008}
 s.dark_calling=true
 
+function s.atklimit(e,c)
+    return c==e:GetHandler()
+end
+
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
     local bc=e:GetHandler():GetBattleTarget()
     local val=math.max(bc:GetBaseAttack(),bc:GetBaseDefense())+2100
@@ -80,4 +89,3 @@ function s.posop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
-
