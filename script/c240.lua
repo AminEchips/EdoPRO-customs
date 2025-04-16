@@ -52,7 +52,7 @@ s.material_setcode={0x8,0x6008}
 s.dark_calling=true
 
 function s.fusfilter(c)
-    return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION)
+    return c:IsSetCard(0x6008) and c:IsType(TYPE_FUSION)
 end
 function s.lv8filter(c)
     return c:IsLevelAbove(8)
