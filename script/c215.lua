@@ -48,7 +48,6 @@ function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
     local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
     if #g>0 then
         Duel.SendtoHand(g,nil,REASON_EFFECT)
@@ -56,22 +55,23 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Check that this card declared an attack
+-- Condition: This card attacked
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return c:IsRelateToBattle() and c==Duel.GetAttacker()
+    return Duel.GetAttacker()==c
 end
 
--- Lose 800 ATK after damage step
+-- Operation: Lose 800 ATK
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if c:IsFaceup() and c:IsRelateToEffect(e) then
+    if c:IsFaceup() and c:IsRelateToBattle() then
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_UPDATE_ATTACK)
         e1:SetValue(-800)
-        e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
+        e1:SetReset(RESET_EVENT+RESETS_STANDARD)
         c:RegisterEffect(e1)
     end
 end
+
 
