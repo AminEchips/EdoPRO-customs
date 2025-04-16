@@ -51,6 +51,8 @@ function s.matfilter2(c)
 	return c:IsAttribute(ATTRIBUTE_FIRE)
 end
 
+s.material_setcode={0x3008}
+
 -- Effect 1: Special Summon non-Warrior HERO from hand or Deck
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
