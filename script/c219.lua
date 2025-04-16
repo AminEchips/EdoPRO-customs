@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,true,true,40044918,14778250) -- Stratos + Prisma
+    Fusion.AddProcMix(c,true,true,40044918,89312388) -- Stratos + Prisma
 
     -- Return opponent's card to hand on Fusion Summon
     local e1=Effect.CreateEffect(c)
