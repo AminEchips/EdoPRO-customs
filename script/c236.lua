@@ -1,20 +1,21 @@
 --Evil HERO Cosmos
 local s,id=GetID()
 function s.initial_effect(c)
-	--Becomes "Elemental HERO Neos" in GY
+	-- Name becomes "Elemental HERO Neos" in the GY
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetCode(EFFECT_ADD_CODE)
+	e0:SetCode(EFFECT_CHANGE_CODE)
 	e0:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
 	e0:SetRange(LOCATION_GRAVE)
 	e0:SetValue(89943723) -- Elemental HERO Neos
 	c:RegisterEffect(e0)
 
-	--Special Summon from hand if Dark Fusion was activated
+	-- Special Summon from hand if Dark Fusion was activated
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e1:SetCode(EVENT_CHAIN_SOLVED)
 	e1:SetRange(LOCATION_HAND)
 	e1:SetCountLimit(1,id)
 	e1:SetCondition(s.spcon)
@@ -22,9 +23,10 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	--Set Trap from Deck
+	-- Set Trap from Deck
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_SEARCH+CATEGORY_TOHAND+CATEGORY_LEAVE_GRAVE)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_TO_DECK)
 	e2:SetRange(LOCATION_GRAVE)
@@ -35,10 +37,12 @@ function s.initial_effect(c)
 	e2:SetOperation(s.setop)
 	c:RegisterEffect(e2)
 end
-s.listed_names={89943723,94820406} -- Neos, Dark Fusion
 
+s.listed_names={89943723,94820406} -- Elemental HERO Neos, Dark Fusion
+
+-- Check if Dark Fusion was activated
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetFlagEffect(tp,94820406)>0 -- Dark Fusion
+	return re and re:GetHandler():IsCode(94820406)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
@@ -52,12 +56,13 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+-- Set Trap Condition
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(function(c) return c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_GRAVE) end,1,nil)
-		and not Duel.IsDamageCalculated()
+	return eg:IsExists(Card.IsControler,1,nil,tp) and eg:IsExists(Card.IsPreviousLocation,1,nil,LOCATION_ONFIELD+LOCATION_GRAVE)
 end
 function s.setfilter(c)
-	return c:IsTrap() and (c:ListsCode(94820406) or c:ListsCode(89943723)) and c:IsSSetable()
+	return c:IsType(TYPE_TRAP) and c:IsSSetable()
+		and (c:ListsCode(94820406) or c:ListsCode(89943723))
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
@@ -65,10 +70,8 @@ end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
 	local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
-	if #g>0 then
-		Duel.SSet(tp,g)
-		Duel.ConfirmCards(1-tp,g)
-		local tc=g:GetFirst()
+	local tc=g:GetFirst()
+	if tc and Duel.SSet(tp,tc)>0 then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_TRAP_ACT_IN_SET_TURN)
