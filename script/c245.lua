@@ -27,42 +27,45 @@ function s.initial_effect(c)
     e2:SetCode(EFFECT_MUST_ATTACK_MONSTER)
     e2:SetRange(LOCATION_MZONE)
     e2:SetTargetRange(0,LOCATION_MZONE)
-    e2:SetValue(s.atklimit)
+    e2:SetValue(function(e,c) return c==e:GetHandler() end)
     c:RegisterEffect(e2)
 
-    -- Inflict damage if destroys by battle
     local e3=Effect.CreateEffect(c)
-    e3:SetDescription(aux.Stringid(id,0))
-    e3:SetCategory(CATEGORY_DAMAGE)
-    e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e3:SetCode(EVENT_BATTLE_DESTROYING)
-    e3:SetProperty(EFFECT_FLAG_DELAY)
-    e3:SetCondition(aux.bdgcon)
-    e3:SetTarget(s.damtg)
-    e3:SetOperation(s.damop)
+    e3:SetType(EFFECT_TYPE_FIELD)
+    e3:SetCode(EFFECT_MUST_ATTACK)
+    e3:SetRange(LOCATION_MZONE)
+    e3:SetTargetRange(0,LOCATION_MZONE)
     c:RegisterEffect(e3)
 
-    -- Change to Attack Position
+    -- Inflict damage if destroys by battle
     local e4=Effect.CreateEffect(c)
-    e4:SetDescription(aux.Stringid(id,1))
-    e4:SetType(EFFECT_TYPE_QUICK_O)
-    e4:SetCode(EVENT_FREE_CHAIN)
-    e4:SetRange(LOCATION_MZONE)
-    e4:SetCountLimit(1)
-    e4:SetHintTiming(0,TIMING_END_PHASE)
-    e4:SetCondition(s.poscon)
-    e4:SetOperation(s.posop)
+    e4:SetDescription(aux.Stringid(id,0))
+    e4:SetCategory(CATEGORY_DAMAGE)
+    e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+    e4:SetCode(EVENT_BATTLE_DESTROYING)
+    e4:SetProperty(EFFECT_FLAG_DELAY)
+    e4:SetCondition(aux.bdgcon)
+    e4:SetTarget(s.damtg)
+    e4:SetOperation(s.damop)
     c:RegisterEffect(e4)
+
+    -- Change to Attack Position
+    local e5=Effect.CreateEffect(c)
+    e5:SetDescription(aux.Stringid(id,1))
+    e5:SetType(EFFECT_TYPE_QUICK_O)
+    e5:SetCode(EVENT_FREE_CHAIN)
+    e5:SetRange(LOCATION_MZONE)
+    e5:SetCountLimit(1)
+    e5:SetHintTiming(0,TIMING_END_PHASE)
+    e5:SetCondition(s.poscon)
+    e5:SetOperation(s.posop)
+    c:RegisterEffect(e5)
 end
 
 s.listed_names={236,22160245,94820406}
 s.material_setcode={0x3008}
 s.listed_series={0x3008}
 s.dark_calling=true
-
-function s.atklimit(e,c)
-    return c==e:GetHandler()
-end
 
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
     local bc=e:GetHandler():GetBattleTarget()
