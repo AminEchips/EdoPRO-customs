@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,true,true,236,22160245) -- Replace with actual card IDs
+    Fusion.AddProcMix(c,true,true,236,22160245) -- Evil HERO Cosmos + Evil HERO Inferno Wing
 
     -- Must be Special Summoned with "Dark Fusion"
     local e0=Effect.CreateEffect(c)
@@ -12,29 +12,43 @@ function s.initial_effect(c)
     e0:SetValue(aux.fuslimit)
     c:RegisterEffect(e0)
 
-    -- Inflict damage if destroys by battle
+    -- Must attack if able
     local e1=Effect.CreateEffect(c)
-    e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_DAMAGE)
-    e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e1:SetCode(EVENT_BATTLE_DESTROYING)
-    e1:SetProperty(EFFECT_FLAG_DELAY)
-    e1:SetCondition(aux.bdgcon)
-    e1:SetTarget(s.damtg)
-    e1:SetOperation(s.damop)
+    e1:SetType(EFFECT_TYPE_SINGLE)
+    e1:SetCode(EFFECT_MUST_ATTACK)
     c:RegisterEffect(e1)
 
-    -- Change to Attack Position
+    -- Cannot attack the turn it is Special Summoned
     local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,1))
-    e2:SetType(EFFECT_TYPE_QUICK_O)
-    e2:SetCode(EVENT_FREE_CHAIN)
-    e2:SetRange(LOCATION_MZONE)
-    e2:SetCountLimit(1)
-    e2:SetHintTiming(0,TIMING_END_PHASE)
-    e2:SetCondition(s.poscon)
-    e2:SetOperation(s.posop)
+    e2:SetType(EFFECT_TYPE_SINGLE)
+    e2:SetCode(EFFECT_CANNOT_ATTACK)
+    e2:SetCondition(function(e) return e:GetHandler():IsSummonType(SUMMON_TYPE_SPECIAL) and e:GetHandler():IsSummonTurn() end)
+    e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
     c:RegisterEffect(e2)
+
+    -- Inflict damage if destroys by battle
+    local e3=Effect.CreateEffect(c)
+    e3:SetDescription(aux.Stringid(id,0))
+    e3:SetCategory(CATEGORY_DAMAGE)
+    e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+    e3:SetCode(EVENT_BATTLE_DESTROYING)
+    e3:SetProperty(EFFECT_FLAG_DELAY)
+    e3:SetCondition(aux.bdgcon)
+    e3:SetTarget(s.damtg)
+    e3:SetOperation(s.damop)
+    c:RegisterEffect(e3)
+
+    -- Change to Attack Position
+    local e4=Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id,1))
+    e4:SetType(EFFECT_TYPE_QUICK_O)
+    e4:SetCode(EVENT_FREE_CHAIN)
+    e4:SetRange(LOCATION_MZONE)
+    e4:SetCountLimit(1)
+    e4:SetHintTiming(0,TIMING_END_PHASE)
+    e4:SetCondition(s.poscon)
+    e4:SetOperation(s.posop)
+    c:RegisterEffect(e4)
 end
 
 s.listed_names={236,22160245,94820406}
@@ -60,9 +74,9 @@ function s.poscon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()~=tp
 end
 function s.posop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_MZONE,nil)
+    local g=Duel.GetMatchingGroup(Card.IsCanChangePosition,tp,0,LOCATION_MZONE,nil)
     for tc in aux.Next(g) do
-        if tc:IsFaceup() then
+        if tc:IsFacedown() or tc:IsDefensePos() then
             Duel.ChangePosition(tc,POS_FACEUP_ATTACK)
         end
     end
