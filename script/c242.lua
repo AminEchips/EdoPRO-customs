@@ -9,7 +9,7 @@ function s.initial_effect(c)
 	
 	--"Evil HERO" ATK gain when destroying a monster by battle
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e1:SetType(EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP)
 	e1:SetCode(EVENT_BATTLE_DESTROYING)
 	e1:SetRange(LOCATION_SZONE)
 	e1:SetCondition(s.atkcon)
