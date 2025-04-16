@@ -13,16 +13,18 @@ function s.initial_effect(c)
 	e0:SetValue(1)
 	c:RegisterEffect(e0)
 	--Take control
+	-- Effect 1: Take control of 1 monster until End Phase, apply restrictions
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_CONTROL)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1)
 	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e1:SetCountLimit(1)
 	e1:SetTarget(s.cttg)
 	e1:SetOperation(s.ctop)
 	c:RegisterEffect(e1)
+
 
 	--Special Summon Neos
 	local e2=Effect.CreateEffect(c)
@@ -44,9 +46,6 @@ function s.matfilter(c,fc,sumtype,tp)
 end
 
 -- Take control
-function s.ctfilter(c)
-	return c:IsFaceup() and c:IsControlerCanBeChanged()
-end
 function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) end
 	if chk==0 then return Duel.IsExistingTarget(nil,tp,0,LOCATION_MZONE,1,nil) end
@@ -57,11 +56,13 @@ end
 
 function s.ctop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) and Duel.GetControl(tc,tp)==1 then
-		-- Change to Attack
-		local pos=Duel.ChangePosition(tc,POS_FACEUP_ATTACK)
+	local c=e:GetHandler()
+	if tc and tc:IsRelateToEffect(e) and Duel.GetControl(tc,tp,PHASE_END,1)~=0 then
+		-- Change to Attack Position
+		Duel.ChangePosition(tc,POS_FACEUP_ATTACK)
+
 		-- Negate effects
-		local e1=Effect.CreateEffect(e:GetHandler())
+		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_DISABLE)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
@@ -69,18 +70,21 @@ function s.ctop(e,tp,eg,ep,ev,re,r,rp)
 		local e2=e1:Clone()
 		e2:SetCode(EFFECT_DISABLE_EFFECT)
 		tc:RegisterEffect(e2)
+
 		-- Must attack
-		local e3=Effect.CreateEffect(e:GetHandler())
+		local e3=Effect.CreateEffect(c)
 		e3:SetType(EFFECT_TYPE_SINGLE)
 		e3:SetCode(EFFECT_MUST_ATTACK)
 		e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 		tc:RegisterEffect(e3)
+
 		-- Cannot change position
 		local e4=e3:Clone()
 		e4:SetCode(EFFECT_CANNOT_CHANGE_POSITION)
 		tc:RegisterEffect(e4)
 	end
 end
+
 
 
 -- Condition: destroyed by opponent's effect while controlled by them
