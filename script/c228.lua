@@ -29,7 +29,6 @@ end
 function s.thfilter1(c)
     return c:IsAbleToHand() and (
         c:IsCode(89943723) -- Elemental HERO Neos
-        or c:IsSetCard(0x9) -- Neo Space
         or (c:IsSetCard(0x1f) and c:IsMonster()) -- Neo-Spacian monsters
     )
 end
@@ -71,3 +70,4 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
