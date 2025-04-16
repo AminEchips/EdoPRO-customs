@@ -31,6 +31,8 @@ function s.initial_effect(c)
 
 	-- Protect HERO from banish
 	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,2))
+	e3:SetCategory(CATEGORY_DISABLE)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_DAMAGE_STEP_END)
 	e3:SetRange(LOCATION_MZONE)
@@ -54,13 +56,24 @@ function s.initial_effect(c)
 	e4:SetTarget(s.negtg)
 	e4:SetOperation(s.negop)
 	c:RegisterEffect(e4)
+
+	-- Revive from grave
+	local e5=Effect.CreateEffect(c)
+	e5:SetDescription(aux.Stringid(id,3))
+	e5:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e5:SetType(EFFECT_TYPE_IGNITION)
+	e5:SetRange(LOCATION_GRAVE)
+	e5:SetCountLimit(1,{id,1})
+	e5:SetCost(s.revcost)
+	e5:SetTarget(s.revtg)
+	e5:SetOperation(s.revop)
+	c:RegisterEffect(e5)
 end
 
 s.listed_names={238,94820406,22908820}
 s.material_setcode={0x3008,0x6008,0x8}
 s.dark_calling=true
 
--- Materials: 1 HERO Fusion + (Sunrise or Nightfall)
 function s.fusfilter(c)
 	return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION)
 end
@@ -68,7 +81,6 @@ function s.sunrise_or_nightfall(c)
 	return c:IsCode(22908820,238)
 end
 
--- DEF becomes 0
 function s.defcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
@@ -91,17 +103,15 @@ function s.defop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- HERO monster battled
 function s.protcon(e,tp,eg,ep,ev,re,r,rp)
-	local bc=Duel.GetAttacker()
-	if bc:IsControler(1-tp) then bc=Duel.GetAttackTarget() end
-	return bc and bc:IsSetCard(0x8) and bc:IsRelateToBattle()
+	return Duel.GetBattledCount()>0
 end
 function s.prottg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	local bc=Duel.GetAttacker()
-	if bc:IsControler(1-tp) then bc=Duel.GetAttackTarget() end
-	if chk==0 then return bc and bc:IsOnField() end
-	Duel.SetTargetCard(bc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsSetCard(0x8) end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsSetCard,tp,LOCATION_MZONE,0,1,nil,0x8) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	local g=Duel.SelectTarget(tp,Card.IsSetCard,tp,LOCATION_MZONE,0,1,1,nil,0x8)
+	Duel.SetTargetCard(g)
 end
 function s.protop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
@@ -116,7 +126,6 @@ function s.protop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Quick Effect: banish self + negate + revive Sunrise/Nightfall
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	return re:IsActiveType(TYPE_SPELL+TYPE_TRAP) and Duel.IsChainNegatable(ev)
 end
@@ -135,7 +144,7 @@ function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.RegisterEffect(e1,tp)
 end
 function s.spfilter(c,e,tp)
-	return c:IsCode(22908820,238) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsCode(22908820,238) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
 end
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp) end
@@ -147,8 +156,31 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
 		if #g>0 then
-			Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+			Duel.SpecialSummon(g,0,tp,tp,true,true,POS_FACEUP)
 		end
 	end
 end
+
+-- Graveyard revival effect
+function s.revcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
+	Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
+end
+function s.revfilter(c,e,tp)
+	return c:IsCode(22908820,238) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
+end
+function s.revtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and Duel.IsExistingMatchingCard(s.revfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_REMOVED)
+end
+function s.revop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<1 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+	local g=Duel.SelectMatchingCard(tp,s.revfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
+	if #g>0 then
+		Duel.SpecialSummon(g,0,tp,tp,true,true,POS_FACEUP)
+	end
+end
+
 
