@@ -108,9 +108,9 @@ function s.protcon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.prottg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsSetCard(0x8) end
-	if chk==0 then return Duel.IsExistingTarget(Card.IsSetCard,tp,LOCATION_MZONE,0,1,nil,0x8) end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsSetCard(0x8),tp,LOCATION_MZONE,0,1,nil,0x8) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,Card.IsSetCard,tp,LOCATION_MZONE,0,1,1,nil,0x8)
+	local g=Duel.SelectTarget(tp,Card.IsSetCard(0x8),tp,LOCATION_MZONE,0,1,1,nil,0x8)
 	Duel.SetTargetCard(g)
 end
 function s.protop(e,tp,eg,ep,ev,re,r,rp)
