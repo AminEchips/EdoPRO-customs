@@ -46,6 +46,7 @@ end
 
 s.listed_names={94820406}
 s.material_setcode={0x3008}
+s.dark_calling=true
 
 function s.ffilter(c,fc,sumtype,tp,sub,mg,sg)
 	return c:IsSetCard(0x6008,fc,sumtype,tp) and c:GetAttribute(fc,sumtype,tp)~=0
