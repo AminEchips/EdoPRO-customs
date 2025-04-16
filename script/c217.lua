@@ -31,7 +31,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
-s.listed_names={63703130,22020907} -- O - Oversoul, Hero Flash!!
+s.listed_names={63703130,00191749} -- O - Oversoul, Hero Flash!!
 s.material_setcode=0x3008
 
 -- Condition: Only trigger if Fusion Summoned
@@ -48,7 +48,7 @@ function s.thfilter2(c)
         and c:IsAbleToHand()
 end
 function s.heroFlash(c)
-    return c:IsCode(22020907) and c:IsAbleToHand()
+    return c:IsCode(00191749) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter1,tp,LOCATION_DECK,0,1,nil) end
