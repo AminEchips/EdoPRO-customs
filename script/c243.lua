@@ -55,19 +55,19 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,tp)
+    return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil)
 end
 
-function s.filter(c,tp)
+function s.filter(c)
     return c:IsType(TYPE_MONSTER) and c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(nil,0,tp,false,false))
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,tp) end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) end
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
-    local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,tp)
+    local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil)
     local tc=g:GetFirst()
     if not tc then return end
     if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
