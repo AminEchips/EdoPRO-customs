@@ -49,17 +49,30 @@ function s.initial_effect(c)
     e4:SetOperation(s.damop)
     c:RegisterEffect(e4)
 
-    -- Change to Attack Position
+    -- Burn damage at end of Battle Phase
     local e5=Effect.CreateEffect(c)
     e5:SetDescription(aux.Stringid(id,1))
-    e5:SetType(EFFECT_TYPE_QUICK_O)
-    e5:SetCode(EVENT_FREE_CHAIN)
+    e5:SetCategory(CATEGORY_DAMAGE)
+    e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e5:SetCode(EVENT_PHASE+PHASE_BATTLE)
     e5:SetRange(LOCATION_MZONE)
     e5:SetCountLimit(1)
-    e5:SetHintTiming(0,TIMING_END_PHASE)
-    e5:SetCondition(s.poscon)
-    e5:SetOperation(s.posop)
+    e5:SetCondition(s.burncon)
+    e5:SetTarget(s.burntg)
+    e5:SetOperation(s.burnop)
     c:RegisterEffect(e5)
+
+    -- Change to Attack Position
+    local e6=Effect.CreateEffect(c)
+    e6:SetDescription(aux.Stringid(id,2))
+    e6:SetType(EFFECT_TYPE_QUICK_O)
+    e6:SetCode(EVENT_FREE_CHAIN)
+    e6:SetRange(LOCATION_MZONE)
+    e6:SetCountLimit(1)
+    e6:SetHintTiming(0,TIMING_END_PHASE)
+    e6:SetCondition(s.poscon)
+    e6:SetOperation(s.posop)
+    c:RegisterEffect(e6)
 end
 
 s.listed_names={236,22160245,94820406}
@@ -81,6 +94,25 @@ function s.damop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
+function s.burncon(e,tp,eg,ep,ev,re,r,rp)
+    return Duel.GetTurnPlayer()==tp or Duel.GetTurnPlayer()~=tp
+end
+function s.burntg(e,tp,eg,ep,ev,re,r,rp,chk)
+    local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
+    local maxatk=g:GetMaxGroup(Card.GetAttack):GetFirst()
+    if chk==0 then return maxatk end
+    local dmg=math.floor(maxatk:GetAttack()/2)+2100
+    Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,dmg)
+end
+function s.burnop(e,tp,eg,ep,ev,re,r,rp)
+    local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
+    local maxatk=g:GetMaxGroup(Card.GetAttack):GetFirst()
+    if maxatk then
+        local dmg=math.floor(maxatk:GetAttack()/2)+2100
+        Duel.Damage(1-tp,dmg,REASON_EFFECT)
+    end
+end
+
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()~=tp and Duel.IsExistingMatchingCard(s.defcheck,tp,0,LOCATION_MZONE,1,nil)
 end
@@ -95,4 +127,5 @@ function s.posop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
 
