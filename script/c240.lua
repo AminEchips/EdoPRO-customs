@@ -47,8 +47,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 end
 
-s.listed_names={97569816} -- Super Polymerization
-s.material_setcode={0x8}
+s.listed_names={48130397,94820406} -- Super Polymerization
+s.material_setcode={0x8,0x6008}
 s.dark_calling=true
 
 function s.fusfilter(c)
@@ -59,7 +59,7 @@ function s.lv8filter(c)
 end
 
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_ONFIELD,0,1,nil,84330567) -- Supreme King's Castle
+    return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_ONFIELD,0,1,nil,72043279) -- Supreme King's Castle
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(nil,tp,0,LOCATION_ONFIELD,1,nil) end
@@ -74,7 +74,7 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.setfilter(c)
-    return ((c:IsType(TYPE_SPELL) and c:IsType(TYPE_FUSION)) or c:IsCode(97569816)) and c:IsSSetable()
+    return ((c:IsType(TYPE_SPELL) and c:IsType(TYPE_FUSION)) or c:IsCode(48130397)) and c:IsSSetable()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
