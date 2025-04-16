@@ -40,6 +40,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 s.listed_series={0x3008}
+s.listed_names={40044918,89312388}
 
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
