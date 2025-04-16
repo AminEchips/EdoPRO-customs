@@ -1,83 +1,102 @@
 --Elemental HERO Neos Future
 local s,id=GetID()
 function s.initial_effect(c)
-    c:EnableReviveLimit()
-    -- Must be Special Summoned by shuffling materials
-    local e0=Effect.CreateEffect(c)
-    e0:SetType(EFFECT_TYPE_SINGLE)
-    e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-    e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    c:RegisterEffect(e0)
-    
-    -- Destroy 1 card on the field if summoned with 4 monsters
-    local e1=Effect.CreateEffect(c)
-    e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_DESTROY)
-    e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e1:SetCode(EVENT_SPSUMMON_SUCCESS)
-    e1:SetProperty(EFFECT_FLAG_DELAY)
-    e1:SetCountLimit(1,id)
-    e1:SetCondition(s.descon)
-    e1:SetTarget(s.destg)
-    e1:SetOperation(s.desop)
-    c:RegisterEffect(e1)
+	--Fusion Material
+	c:EnableReviveLimit()
+	Fusion.AddProcMixN(c,true,true,s.matfilter,3,3) -- dynamically validated below
 
-    -- Restriction after using effect 1
-    local e1b=Effect.CreateEffect(c)
-    e1b:SetType(EFFECT_TYPE_FIELD)
-    e1b:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-    e1b:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-    e1b:SetRange(LOCATION_MZONE)
-    e1b:SetTargetRange(1,0)
-    e1b:SetTarget(s.splimit)
-    e1b:SetReset(RESET_PHASE+PHASE_END)
-    c:RegisterEffect(e1b)
+	--Custom Contact Fusion
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_FIELD)
+	e0:SetCode(EFFECT_SPSUMMON_PROC)
+	e0:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+	e0:SetRange(LOCATION_EXTRA)
+	e0:SetCondition(s.sprcon)
+	e0:SetOperation(s.sprop)
+	c:RegisterEffect(e0)
 
-    -- Return to Extra Deck and search 2 Neo-Spacians
-    local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,1))
-    e2:SetCategory(CATEGORY_TOEXTRA+CATEGORY_SEARCH+CATEGORY_TOHAND)
-    e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e2:SetCode(EVENT_LEAVE_FIELD)
-    e2:SetCondition(s.thcon)
-    e2:SetTarget(s.thtg)
-    e2:SetOperation(s.thop)
-    c:RegisterEffect(e2)
+	--Destroy 1 card
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_DESTROY)
+	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetRange(LOCATION_MZONE)
+	e1:SetCountLimit(1)
+	e1:SetCondition(s.descon)
+	e1:SetTarget(s.destg)
+	e1:SetOperation(s.desop)
+	c:RegisterEffect(e1)
+
+	--Return to Extra Deck replacement
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e2:SetCode(EVENT_LEAVE_FIELD)
+	e2:SetOperation(s.retop)
+	c:RegisterEffect(e2)
 end
 
--- Must be Summoned properly
+-- Fusion Material Filter
+function s.matfilter(c,fc,sub,mg,sg)
+	if not c:IsMonster() then return false end
+	if c:IsCode(89943723) then return true end -- Elemental HERO Neos
+	if c:IsType(TYPE_FUSION) and c:ListsCode(89943723) then return true end
+	if c:IsSetCard(0x1f) then return true end -- Neo-Spacian
+	return false
+end
+
+-- Special Summon condition (Contact Fusion)
+function s.sprfilter(c)
+	return c:IsAbleToDeckOrExtraAsCost() and (c:IsCode(89943723) or c:IsType(TYPE_FUSION) and c:ListsCode(89943723) or c:IsSetCard(0x1f))
+end
+function s.groupcheck(g)
+	local count_neos=0
+	local count_neospacian=0
+	for tc in aux.Next(g) do
+		if tc:IsCode(89943723) or (tc:IsType(TYPE_FUSION) and tc:ListsCode(89943723)) then
+			count_neos=count_neos+1
+		elseif tc:IsSetCard(0x1f) then
+			count_neospacian=count_neospacian+1
+		end
+	end
+	return count_neos==1 and (count_neospacian==2 or count_neospacian==4)
+end
+function s.sprcon(e,c)
+	if c==nil then return true end
+	local tp=c:GetControler()
+	local g=Duel.GetMatchingGroup(s.sprfilter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,nil)
+	return g:CheckSubGroup(s.groupcheck,3,5)
+end
+function s.sprop(e,tp,eg,ep,ev,re,r,rp,c)
+	local g=Duel.GetMatchingGroup(s.sprfilter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,nil)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+	local sg=g:SelectSubGroup(tp,s.groupcheck,false,3,5)
+	if not sg then return end
+	c:SetMaterial(sg)
+	Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_COST)
+end
+
+-- Destroy 1 card
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-    return e:GetHandler():GetMaterialCount()==4
+	local c=e:GetHandler()
+	return c:GetMaterialCount()==5 -- special summoned with 4 Neo-Spacian monsters
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
-    Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,0,LOCATION_ONFIELD)
+	if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
+	local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-    local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
-    if #g>0 then Duel.Destroy(g,REASON_EFFECT) end
-end
-function s.splimit(e,c)
-    return c:IsLevelAbove(10)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
+	if #g>0 then
+		Duel.Destroy(g,REASON_EFFECT)
+	end
 end
 
--- Search when leaves field
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    return c:IsPreviousControler(tp) and c:IsFaceup()
-end
-function s.thfilter(c)
-    return c:IsRace(RACE_BEAST) and c:IsAttribute(ATTRIBUTE_LIGHT+ATTRIBUTE_EARTH+ATTRIBUTE_FIRE+ATTRIBUTE_WATER+ATTRIBUTE_WIND+DARK)
-        and c:IsSetCard(0x1f) and c:IsAbleToHand()
-end
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,2,nil) end
-    Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,2,tp,LOCATION_DECK)
-end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.SendtoDeck(e:GetHandler(),nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
-    Duel.BreakEffect()
-    local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,2,2,nil)
-    if #g>0 then Duel.SendtoHand(g,nil,REASON_EFFECT) Duel.ConfirmCards(1-tp,g) end
+-- Return to Extra Deck when leaving field
+function s.retop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if c:IsLocation(LOCATION_GRAVE) and c:IsReason(REASON_EFFECT+REASON_DESTROY) then
+		Duel.SendtoDeck(c,nil,SEQ_DECKTOP,REASON_EFFECT)
+	end
 end
