@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	-- Must be Special Summoned with "Dark Fusion"
 	c:EnableReviveLimit()
-	Fusion.AddProcMix(c,true,true,237,aux.FilterBoolFunctionEx(Card.IsRace,RACE_FIEND),aux.FilterBoolFunctionEx(Card.IsRace,RACE_FIEND))
+	Fusion.AddProcMix(c,true,true,236,aux.FilterBoolFunctionEx(Card.IsRace,RACE_FIEND),aux.FilterBoolFunctionEx(Card.IsRace,RACE_FIEND))
 
 	-- Cannot be targeted by opponent's monster effects
 	local e0=Effect.CreateEffect(c)
@@ -37,6 +37,8 @@ function s.initial_effect(c)
 	e2:SetOperation(s.retop)
 	c:RegisterEffect(e2)
 end
+
+s.listed_names={236,94820406}
 
 function s.efilter(e,re,rp)
 	return re:IsActiveType(TYPE_MONSTER) and re:GetOwnerPlayer()~=e:GetHandlerPlayer()
