@@ -37,6 +37,10 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
+s.listed_names={236,22160245,94820406}
+s.materials_setcode={0x3008}
+s.listed_series={0x3008}
+
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
     local bc=e:GetHandler():GetBattleTarget()
     local val=math.max(bc:GetBaseAttack(),bc:GetBaseDefense())+2100
