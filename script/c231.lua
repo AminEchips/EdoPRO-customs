@@ -84,7 +84,7 @@ function s.spcon2(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.spfilter2(c,e,tp)
 	return c:IsLevel(7) and c:IsType(TYPE_FUSION) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
-		and c.listed_series={0x1f})
+		and c:ListsArchetype(0x1f)
 end
 function s.sptg2(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCountFromEx(tp)>0
