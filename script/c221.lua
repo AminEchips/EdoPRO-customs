@@ -40,6 +40,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
+s.material_setcode={0x3008}
+
 function s.matfilter(c,scard,sumtype,tp)
     return c:IsSetCard(0x3008,scard,sumtype,tp) and c:IsType(TYPE_FUSION)
 end
