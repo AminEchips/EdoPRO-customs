@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     --Must be Fusion Summoned
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,true,true,21844576,20721928,59793705) -- Avian + Sparkman + Wildheart
+    Fusion.AddProcMix(c,true,true,21844576,20721928,86188410) -- Avian + Sparkman + Wildheart
 
     -- Search O - Oversoul and maybe Hero Flash!!
     local e1=Effect.CreateEffect(c)
@@ -29,7 +29,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.spop)
     c:RegisterEffect(e2)
 end
-s.listed_names={86188410,22020907} -- O - Oversoul, Hero Flash!!
+s.listed_names={63703130,22020907} -- O - Oversoul, Hero Flash!!
 
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
@@ -37,7 +37,7 @@ end
 
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
     -- Add "O - Oversoul"
-    local g1=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_DECK,0,nil,86188410)
+    local g1=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_DECK,0,nil,63703130)
     if #g1>0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
         local sg=g1:Select(tp,1,1,nil)
@@ -51,7 +51,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
         names[tc:GetCode()]=true
     end
     if table.getn(names)>=3 then
-        local flash=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,22020907)
+        local flash=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_DECK+LOCATION_GRAVE,0,nil,00191749)
         if #flash>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
             local f=flash:Select(tp,1,1,nil)
