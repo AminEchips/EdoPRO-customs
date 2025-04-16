@@ -23,7 +23,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- Set Trap from Deck
+	-- Set Trap from Deck when any monster is shuffled into Deck
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_LEAVE_GRAVE+CATEGORY_SEARCH)
@@ -56,10 +56,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Set Trap Condition (adapted)
+-- Set Trap Condition: any monster shuffled into the Deck
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
-		return c:IsType(TYPE_MONSTER)
+		return c:IsType(TYPE_MONSTER) and c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_GRAVE)
 	end,1,nil)
 end
 function s.setfilter(c)
@@ -76,12 +76,12 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	if #g>0 then
 		local tc=g:GetFirst()
 		if Duel.SSet(tp,tc)>0 then
-			local e3=Effect.CreateEffect(e:GetHandler())
-			e3:SetType(EFFECT_TYPE_SINGLE)
-			e3:SetCode(EFFECT_TRAP_ACT_IN_SET_TURN)
-			e3:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
-			e3:SetReset(RESET_EVENT+RESETS_STANDARD)
-			tc:RegisterEffect(e3)
+			local e1=Effect.CreateEffect(e:GetHandler())
+			e1:SetType(EFFECT_TYPE_SINGLE)
+			e1:SetCode(EFFECT_TRAP_ACT_IN_SET_TURN)
+			e1:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+			tc:RegisterEffect(e1)
 		end
 	end
 end
