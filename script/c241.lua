@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	e0:SetValue(aux.fuslimit)
 	c:RegisterEffect(e0)
 
-	-- Banish a monster sent to GY
+	-- Banish a monster sent to GY by destruction
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_REMOVE)
@@ -47,16 +47,17 @@ function s.matfilter(c,fc,sumtype,tp)
 end
 
 function s.cfilter(c)
-	return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsType(TYPE_MONSTER)
+	return c:IsReason(REASON_DESTROY) and c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsType(TYPE_MONSTER)
 end
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.cfilter,1,nil)
 end
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsType(TYPE_MONSTER) end
-	if chk==0 then return Duel.IsExistingTarget(Card.IsType,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,nil,TYPE_MONSTER) end
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsType(TYPE_MONSTER) and eg:IsContains(chkc) end
+	if chk==0 then return eg:IsExists(function(c) return c:IsLocation(LOCATION_GRAVE) and c:IsType(TYPE_MONSTER) end,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectTarget(tp,Card.IsType,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,1,nil,TYPE_MONSTER)
+	local g=eg:FilterSelect(tp,function(c) return c:IsLocation(LOCATION_GRAVE) and c:IsType(TYPE_MONSTER) end,1,1,nil)
+	Duel.SetTargetCard(g)
 	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
