@@ -28,7 +28,7 @@ function s.initial_effect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_LEAVE_GRAVE+CATEGORY_SEARCH)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_TO_DECK)
+	e2:SetCode(EVENT_RETURN_TO_DECK)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCondition(s.setcon)
@@ -58,9 +58,10 @@ end
 
 -- Set Trap Condition
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(function(c)
-        return c:IsControler(tp) and c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_GRAVE)
-    end,1,nil)
+	return eg:IsExists(function(c)
+		return c:IsControler(tp) and c:IsPreviousLocation(LOCATION_GRAVE+LOCATION_ONFIELD)
+			and (c:IsReason(REASON_EFFECT) or (re and re:IsActivated()))
+	end,1,nil)
 end
 function s.setfilter(c)
 	return c:IsType(TYPE_TRAP) and c:IsSSetable()
