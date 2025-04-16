@@ -4,7 +4,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     --Must be Fusion Summoned
     c:EnableReviveLimit()
-    aux.AddFusionProcCode2(c,20721928,64463828,true,true) -- Sparkman + Wildheart
+    aux.AddFusionProcCode2(c,86188410,20721928,true,true) -- Sparkman + Wildheart
 
     --Search R - Righteous Justice on Special Summon
     local e1=Effect.CreateEffect(c)
@@ -20,14 +20,14 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 end
 
-s.listed_names={53693634} -- R - Righteous Justice
+s.listed_names={37318031} -- R - Righteous Justice
 
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
 end
 
 function s.thfilter(c)
-    return c:IsCode(53693634) and c:IsAbleToHand()
+    return c:IsCode(37318031) and c:IsAbleToHand()
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
