@@ -4,7 +4,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     --Must be Fusion Summoned
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,86188410,20721928,true,true) -- Sparkman + Wildheart
+    Fusion.AddProcMix(c,true,true,86188410,20721928) -- Sparkman + Wildheart
 
     --Search R - Righteous Justice on Special Summon
     local e1=Effect.CreateEffect(c)
