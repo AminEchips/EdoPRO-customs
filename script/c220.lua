@@ -4,6 +4,7 @@ function s.initial_effect(c)
     c:EnableReviveLimit()
     Fusion.AddProcMix(c,true,true,59793705,79979666) -- Bladedge + Bubbleman
     s.listed_names={59793705,79979666}
+    s.material_setcode={0x3008}
 
     -- Piercing damage
     local e1=Effect.CreateEffect(c)
