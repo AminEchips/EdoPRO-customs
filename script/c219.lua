@@ -2,8 +2,8 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,true,true,40044918,56647086) -- Stratos + Prisma
-    s.listed_names={40044918,56647086}
+    Fusion.AddProcMix(c,true,true,40044918,89312388) -- Stratos + Prisma
+    s.listed_names={40044918,89312388}
 
     -- Bounce 1 opponent's card on Fusion Summon
     local e1=Effect.CreateEffect(c)
