@@ -33,6 +33,9 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+s.listed_names={236,94820406}
+s.material_setcode={0x3008}
+
 function s.ffilter(c,fc,sumtype,tp,sub,mg,sg)
 	return c:IsSetCard(0x6008,fc,sumtype,tp) and c:GetAttribute(fc,sumtype,tp)~=0
 		and (not sg or not sg:IsExists(function(sc) return sc:GetAttribute(fc,sumtype,tp)==c:GetAttribute(fc,sumtype,tp) end,1,c))
