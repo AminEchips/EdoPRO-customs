@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	--Must be Special Summoned with "Dark Fusion"
 	c:EnableReviveLimit()
-	Fusion.AddProcMix(c,true,true,s.matfilter1,s.matfilter2)
+	Fusion.AddProcFunRep(c,s.ffilter,2,true)
 
 	--Discard to draw and Special Summon a Fiend
 	local e1=Effect.CreateEffect(c)
@@ -33,11 +33,9 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
-function s.matfilter1(c)
-	return c:IsSetCard(0x6008)
-end
-function s.matfilter2(c,sc,mg,tp)
-	return c:IsSetCard(0x6008) and aux.dncheck(mg,tp) and mg:GetClassCount(Card.GetAttribute)>=2
+function s.ffilter(c,fc,sumtype,tp,sub,mg,sg)
+	return c:IsSetCard(0x6008,fc,sumtype,tp) and c:GetAttribute(fc,sumtype,tp)~=0
+		and (not sg or not sg:IsExists(function(sc) return sc:GetAttribute(fc,sumtype,tp)==c:GetAttribute(fc,sumtype,tp) end,1,c))
 end
 
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
