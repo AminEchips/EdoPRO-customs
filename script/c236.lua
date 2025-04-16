@@ -23,7 +23,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- Set Trap from Deck when any monster is shuffled into Deck while this card is in the GY
+	-- Set Trap from Deck when another monster is shuffled into Deck
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_LEAVE_GRAVE+CATEGORY_SEARCH)
@@ -56,14 +56,12 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Set Trap Condition: any monster shuffled into the Deck, while Cosmos is in the GY
+-- Set Trap Condition: another monster (not this card) was shuffled into the Deck while this card is in the GY
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(function(c)
-		return c:IsLocation(LOCATION_GRAVE) and c:IsCode(id)
-	end,tp,LOCATION_GRAVE,0,1,nil)
-		and eg:IsExists(function(c)
-			return c:IsType(TYPE_MONSTER) and c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_GRAVE)
-		end,1,nil)
+	local c=e:GetHandler()
+	return eg:IsExists(function(tc)
+		return tc~=c and tc:IsType(TYPE_MONSTER) and tc:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_GRAVE)
+	end,1,nil)
 end
 function s.setfilter(c)
 	return c:IsType(TYPE_TRAP) and c:IsSSetable()
@@ -88,4 +86,5 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
+
 
