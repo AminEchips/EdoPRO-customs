@@ -32,7 +32,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={63703130,00191749,21844576,20721928,86188410} -- O - Oversoul, Hero Flash!!
-s.material_setcode=0x3008
+s.material_setcode={0x3008}
 
 -- Condition: Only trigger if Fusion Summoned
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
