@@ -80,7 +80,7 @@ function s.gttg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 function s.gtfilter(c,e,tp)
-    return c:IsCode(1231268) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_SPECIAL,tp,true,true)
+    return c:IsCode(03642509) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_SPECIAL,tp,true,true)
 end
 
 function s.gtop(e,tp,eg,ep,ev,re,r,rp)
