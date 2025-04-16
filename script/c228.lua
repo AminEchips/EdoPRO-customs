@@ -25,7 +25,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={89943723} -- Elemental HERO Neos
-s.listed_series={0x1f,0x8,0x3008} -- Neo-Spacian, HERO, Elemental HERO
+s.listed_series={0x1f,0x3008} -- Neo-Spacian, HERO, Elemental HERO
 
 -- First effect: Search Neos or Neo-Spacian monster
 function s.filter1(c)
