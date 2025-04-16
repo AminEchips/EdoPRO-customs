@@ -20,7 +20,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 end
 
-s.listed_names={37318031} -- R - Righteous Justice
+s.listed_names={37318031,86188410,20721928} -- R - Righteous Justice
 
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
