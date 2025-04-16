@@ -38,8 +38,9 @@ function s.initial_effect(c)
 end
 
 s.listed_names={236,22160245,94820406}
-s.materials_setcode={0x3008}
+s.material_setcode={0x3008}
 s.listed_series={0x3008}
+s.dark_calling=true
 
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
     local bc=e:GetHandler():GetBattleTarget()
