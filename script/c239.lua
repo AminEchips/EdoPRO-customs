@@ -145,27 +145,10 @@ function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttacker() and Duel.GetAttacker():IsControler(1-tp)
 end
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsAbleToRemoveAsCost() and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,1,nil) end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	if #g>0 then
-		Duel.Remove(g,POS_FACEUP,REASON_COST)
-	end
-	if Duel.Remove(c,POS_FACEUP,REASON_COST+REASON_TEMPORARY)>0 then
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		e1:SetCode(EVENT_PHASE+PHASE_END)
-		e1:SetReset(RESET_PHASE+PHASE_END)
-		e1:SetLabelObject(c)
-		e1:SetOperation(function(e,tp)
-			local rc=e:GetLabelObject()
-			if rc and rc:IsLocation(LOCATION_REMOVED) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
-				Duel.ReturnToField(rc)
-			end
-		end)
-		Duel.RegisterEffect(e1,tp)
-	end
+	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 function s.cfilter(c)
 	return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) and c:IsAbleToRemoveAsCost()
