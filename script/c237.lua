@@ -39,6 +39,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={236,94820406}
+s.material_setcode={0x6008}
 
 function s.efilter(e,re,rp)
 	return re:IsActiveType(TYPE_MONSTER) and re:GetOwnerPlayer()~=e:GetHandlerPlayer()
