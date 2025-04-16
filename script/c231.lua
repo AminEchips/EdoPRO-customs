@@ -40,7 +40,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={89943723} -- Elemental HERO Neos
-s.listed_series={0x1f} -- Neo-Spacian
+s.listed_series={0x1f,0x3008} -- Neo-Spacian
 s.material_setcode={0x3008}
 
 function s.ffilter(c,fc,sumtype,tp)
