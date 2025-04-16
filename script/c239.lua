@@ -19,9 +19,13 @@ function s.initial_effect(c)
 	e1:SetCode(EFFECT_PIERCE)
 	c:RegisterEffect(e1)
 	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_DEFCHANGE)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_BATTLED)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
 	e2:SetCondition(s.defcon)
+	e2:SetTarget(s.deftg)
 	e2:SetOperation(s.defop)
 	c:RegisterEffect(e2)
 
@@ -30,6 +34,7 @@ function s.initial_effect(c)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_DAMAGE_STEP_END)
 	e3:SetRange(LOCATION_MZONE)
+	e3:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
 	e3:SetCondition(s.protcon)
 	e3:SetTarget(s.prottg)
 	e3:SetOperation(s.protop)
@@ -43,6 +48,7 @@ function s.initial_effect(c)
 	e4:SetCode(EVENT_CHAINING)
 	e4:SetRange(LOCATION_MZONE)
 	e4:SetCountLimit(1,id)
+	e4:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DAMAGE_CAL+EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
 	e4:SetCondition(s.negcon)
 	e4:SetCost(s.negcost)
 	e4:SetTarget(s.negtg)
@@ -68,15 +74,20 @@ function s.defcon(e,tp,eg,ep,ev,re,r,rp)
 	local bc=c:GetBattleTarget()
 	return bc and bc:IsControler(1-tp) and bc:IsRelateToBattle() and bc:IsPosition(POS_DEFENSE)
 end
+function s.deftg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc==e:GetHandler():GetBattleTarget() end
+	if chk==0 then return true end
+	Duel.SetTargetCard(e:GetHandler():GetBattleTarget())
+end
 function s.defop(e,tp,eg,ep,ev,re,r,rp)
-	local bc=e:GetHandler():GetBattleTarget()
-	if bc and bc:IsRelateToBattle() then
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) and tc:IsPosition(POS_DEFENSE) then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_SET_DEFENSE_FINAL)
 		e1:SetValue(0)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		bc:RegisterEffect(e1)
+		tc:RegisterEffect(e1)
 	end
 end
 
@@ -86,20 +97,23 @@ function s.protcon(e,tp,eg,ep,ev,re,r,rp)
 	if bc:IsControler(1-tp) then bc=Duel.GetAttackTarget() end
 	return bc and bc:IsSetCard(0x8) and bc:IsRelateToBattle()
 end
-function s.prottg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
+function s.prottg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	local bc=Duel.GetAttacker()
+	if bc:IsControler(1-tp) then bc=Duel.GetAttackTarget() end
+	if chk==0 then return bc and bc:IsOnField() end
+	Duel.SetTargetCard(bc)
 end
 function s.protop(e,tp,eg,ep,ev,re,r,rp)
-	local c=Duel.GetAttacker()
-	if c:IsControler(1-tp) then c=Duel.GetAttackTarget() end
-	if not c then return end
-	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_CANNOT_REMOVE)
-	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-	c:RegisterEffect(e1)
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) then
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_CANNOT_REMOVE)
+		e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+		e1:SetRange(LOCATION_MZONE)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+		tc:RegisterEffect(e1)
+	end
 end
 
 -- Quick Effect: banish self + negate + revive Sunrise/Nightfall
@@ -129,10 +143,12 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_REMOVED)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.NegateActivation(ev)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
-	if #g>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+	if Duel.NegateActivation(ev) then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
+		if #g>0 then
+			Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+		end
 	end
 end
+
