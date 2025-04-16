@@ -96,7 +96,7 @@ end
 function s.defcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
-	return bc and bc:IsRelateToBattle()
+	return bc and bc:IsRelateToBattle() and bc:IsDefenseAbove(1)
 end
 function s.deftg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc==e:GetHandler():GetBattleTarget() end
@@ -105,7 +105,7 @@ function s.deftg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 function s.defop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) then
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and tc:IsDefenseAbove(1) then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_SET_DEFENSE_FINAL)
