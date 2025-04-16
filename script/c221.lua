@@ -41,11 +41,9 @@ function s.initial_effect(c)
 end
 
 -- Fusion filters
-function s.ffilter_fire(c)
-    return c:IsFusionType(TYPE_FUSION) and c:IsSetCard(0x3008) and c:IsAttribute(ATTRIBUTE_FIRE)
-end
-function s.ffilter_water(c)
-    return c:IsFusionType(TYPE_FUSION) and c:IsSetCard(0x3008) and c:IsAttribute(ATTRIBUTE_WATER)
+function s.fusionfilter(c,fc,sumtype,tp)
+    return c:IsSetCard(0x3008,fc,sumtype,tp) and c:IsType(TYPE_FUSION,fc,sumtype,tp)
+        and (c:IsAttribute(ATTRIBUTE_FIRE,fc,sumtype,tp) or c:IsAttribute(ATTRIBUTE_WATER,fc,sumtype,tp))
 end
 
 -- Draw effect
