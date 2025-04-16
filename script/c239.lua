@@ -50,6 +50,9 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
+s.listed_names={236,94820406,22908820}
+s.material_setcode={0x3008, 0x8}
+
 -- Materials: 1 HERO Fusion + (Sunrise or Nightfall)
 function s.fusfilter(c)
 	return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION)
