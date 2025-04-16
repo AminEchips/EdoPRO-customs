@@ -42,6 +42,7 @@ function s.initial_effect(c)
 end
 
 s.listed_series={0x3008}
+s.material_setcode={0x3008}
 
 function s.matfilter(c,fc,sumtype,tp)
     return c:IsSetCard(0x3008,fc,sumtype,tp) and c:IsType(TYPE_FUSION) and (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsAttribute(ATTRIBUTE_DARK))
