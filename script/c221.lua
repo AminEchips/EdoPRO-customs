@@ -2,10 +2,18 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    -- Must be Fusion Summoned using 1 FIRE and 1 WATER Elemental HERO Fusion
-    Fusion.AddProcMix(c,true,true,s.ffilter_fire,s.ffilter_water)
+    Fusion.AddProcMix(c,true,true,s.matfilter1,s.matfilter2)
+    
+    -- Also treated as FIRE
+    local e0=Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_SINGLE)
+    e0:SetCode(EFFECT_ADD_ATTRIBUTE)
+    e0:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+    e0:SetRange(LOCATION_MZONE)
+    e0:SetValue(ATTRIBUTE_FIRE)
+    c:RegisterEffect(e0)
 
-    -- Draw up to 6 if you have 2 or fewer cards in hand
+    -- Draw until 6 if you have 2 or fewer when Fusion Summoned
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_DRAW)
@@ -18,7 +26,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.drop)
     c:RegisterEffect(e1)
 
-    -- GY Recovery
+    -- Add 1 to hand and shuffle 1 if it leaves the field
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
@@ -26,29 +34,24 @@ function s.initial_effect(c)
     e2:SetCode(EVENT_LEAVE_FIELD)
     e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetCountLimit(1,{id,1})
-    e2:SetTarget(s.rctg)
-    e2:SetOperation(s.rcop)
+    e2:SetTarget(s.tg)
+    e2:SetOperation(s.op)
     c:RegisterEffect(e2)
-
-    -- Also treated as FIRE while face-up
-    local e3=Effect.CreateEffect(c)
-    e3:SetType(EFFECT_TYPE_SINGLE)
-    e3:SetCode(EFFECT_ADD_ATTRIBUTE)
-    e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-    e3:SetRange(LOCATION_MZONE)
-    e3:SetValue(ATTRIBUTE_FIRE)
-    c:RegisterEffect(e3)
 end
 
--- Fusion filters
-function s.fusionfilter(c,fc,sumtype,tp)
-    return c:IsSetCard(0x3008,fc,sumtype,tp) and c:IsType(TYPE_FUSION,fc,sumtype,tp)
-        and (c:IsAttribute(ATTRIBUTE_FIRE,fc,sumtype,tp) or c:IsAttribute(ATTRIBUTE_WATER,fc,sumtype,tp))
+s.listed_series={0x3008}
+
+-- Fusion Material Filters
+function s.matfilter1(c,fc,sumtype,tp)
+    return c:IsFusionSetCard(0x3008) and c:IsType(TYPE_FUSION,fc,sumtype,tp) and c:IsAttribute(ATTRIBUTE_FIRE,fc,sumtype,tp)
+end
+function s.matfilter2(c,fc,sumtype,tp)
+    return c:IsFusionSetCard(0x3008) and c:IsType(TYPE_FUSION,fc,sumtype,tp) and c:IsAttribute(ATTRIBUTE_WATER,fc,sumtype,tp)
 end
 
--- Draw effect
+-- Draw Effect Condition
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetMatchingGroupCount(nil,tp,LOCATION_HAND,0,nil)<=2
+    return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION) and Duel.GetFieldGroupCount(tp,LOCATION_HAND,0)<=2
 end
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
     local ct=6-Duel.GetFieldGroupCount(tp,LOCATION_HAND,0)
@@ -62,27 +65,28 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- GY Recovery
-function s.thfilter(c)
-    return c:IsSetCard(0x3008) and c:IsAbleToHand() and not c:IsAttribute(ATTRIBUTE_FIRE+ATTRIBUTE_WATER)
+-- Leave Field Recovery
+function s.tgfilter(c)
+    return c:IsSetCard(0x3008) and not c:IsAttribute(ATTRIBUTE_FIRE+ATTRIBUTE_WATER)
+        and c:IsAbleToHand()
 end
-function s.rctg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE,0,2,nil) end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-    local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE,0,2,2,nil)
+function s.tg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chk==0 then 
+        return Duel.IsExistingTarget(s.tgfilter,tp,LOCATION_GRAVE,0,2,nil) 
+    end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SELECT)
+    local g=Duel.SelectTarget(tp,s.tgfilter,tp,LOCATION_GRAVE,0,2,2,nil)
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
 end
-function s.rcop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetTargetCards(e)
+function s.op(e,tp,eg,ep,ev,re,r,rp)
+    local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS):Filter(Card.IsRelateToEffect,nil,e)
     if #g<2 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-    local th=g:Select(tp,1,1,nil):GetFirst()
-    g:RemoveCard(th)
-    if th and Duel.SendtoHand(th,nil,REASON_EFFECT)>0 then
-        Duel.ConfirmCards(1-tp,th)
-    end
-    if #g>0 then
-        Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+    local tohand=g:Select(tp,1,1,nil):GetFirst()
+    g:RemoveCard(tohand)
+    if Duel.SendtoHand(tohand,nil,REASON_EFFECT)>0 and #g>0 then
+        Duel.BreakEffect()
+        Duel.SendtoDeck(g:GetFirst(),nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
     end
 end
