@@ -29,7 +29,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.bop)
     c:RegisterEffect(e2)
 end
-s.listed_names={74825788} -- H - Heated Heart
+s.listed_names={74825788,58932615,89252153} -- H - Heated Heart
 s.material_setcode={0x3008}
 
 -- EFFECT 1: Search on Fusion Summon
