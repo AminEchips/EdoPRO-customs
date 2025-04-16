@@ -40,6 +40,8 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+s.material_setcode={0x3008}
+
 -- Must be a Wingman Fusion Monster
 function s.matfilter(c,fc,sumtype,tp)
 	return c:IsSetCard(0x185,fc,sumtype,tp) and c:IsType(TYPE_FUSION,fc,sumtype,tp)
