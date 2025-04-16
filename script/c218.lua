@@ -31,6 +31,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={79979666,20721928}
+s.material_setcode={0x3008}
 -- Cost: Discard 1 card
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,nil) end
