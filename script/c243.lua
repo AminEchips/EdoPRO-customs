@@ -12,14 +12,16 @@ function s.initial_effect(c)
     e1:SetOperation(s.negop)
     c:RegisterEffect(e1)
 
-    --GY effect
+    --GY effect (Quick Effect)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON)
-    e2:SetType(EFFECT_TYPE_IGNITION)
+    e2:SetType(EFFECT_TYPE_QUICK_O)
+    e2:SetCode(EVENT_FREE_CHAIN)
     e2:SetRange(LOCATION_GRAVE)
-    e2:SetCountLimit(1,id)
+    e2:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
     e2:SetCost(aux.bfgcost)
+    e2:SetCondition(s.gycon)
     e2:SetTarget(s.gytg)
     e2:SetOperation(s.gyop)
     c:RegisterEffect(e2)
@@ -52,23 +54,29 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
-function s.filter(c,e,tp)
-    return c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,false,false))
+function s.gycon(e,tp,eg,ep,ev,re,r,rp)
+    return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,tp)
+end
+
+function s.filter(c,tp)
+    return c:IsType(TYPE_MONSTER) and c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(nil,0,tp,false,false))
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,tp) end
+    Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,e,tp)
-	local tc=g:GetFirst()
-	if not tc then return end
-	if Duel.SelectYesNo(tp,aux.Stringid(id,2)) and tc:IsCanBeSpecialSummoned(e,0,tp,false,false) then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
-	else
-		Duel.SendtoHand(tc,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,tc)
-	end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
+    local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,tp)
+    local tc=g:GetFirst()
+    if not tc then return end
+    if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+        Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+    else
+        Duel.SendtoHand(tc,nil,REASON_EFFECT)
+        Duel.ConfirmCards(1-tp,tc)
+    end
 end
+
 
 
