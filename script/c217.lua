@@ -44,7 +44,7 @@ function s.thfilter1(c)
     return c:IsCode(63703130) and c:IsAbleToHand()
 end
 function s.thfilter2(c)
-    return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and not c:IsSetCard(0x46)
+    return c:IsType(TYPE_SPELL) and not c:IsSetCard(0x46)
         and c:IsAbleToHand()
 end
 function s.heroFlash(c)
