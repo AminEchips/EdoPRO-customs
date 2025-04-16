@@ -41,6 +41,7 @@ function s.initial_effect(c)
 end
 
 s.material_setcode={0x3008}
+s.listed_names={78371393}
 
 -- Must be a Wingman Fusion Monster
 function s.matfilter(c,fc,sumtype,tp)
