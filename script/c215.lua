@@ -40,6 +40,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={21844576,59793705}
+s.material_setcode={0x3008}
 -- Search E - Emergency Call
 function s.thfilter(c)
     return c:IsCode(00213326) and c:IsAbleToHand()
