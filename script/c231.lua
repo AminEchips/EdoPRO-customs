@@ -41,6 +41,7 @@ end
 
 s.listed_names={89943723} -- Elemental HERO Neos
 s.listed_series={0x1f} -- Neo-Spacian
+s.material_setcode={0x3008}
 
 function s.ffilter(c,fc,sumtype,tp)
 	return c:IsType(TYPE_FUSION) and c:IsSetCard(0x8,fc,sumtype,tp)
