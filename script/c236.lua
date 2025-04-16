@@ -56,11 +56,12 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Set Trap Condition
+-- Set Trap Condition (adapted)
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
-		return c:IsControler(tp) and c:IsPreviousLocation(LOCATION_GRAVE+LOCATION_ONFIELD)
-			and (c:IsReason(REASON_EFFECT) or (re and re:IsActivated()))
+		return ((c:IsMonster() and c:IsSetCard(0x1f)) or c:IsCode(89943723))
+			and c:IsPreviousControler(tp) and c:IsControler(tp)
+			and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_GRAVE)
 	end,1,nil)
 end
 function s.setfilter(c)
