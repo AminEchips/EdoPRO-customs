@@ -47,6 +47,7 @@ function s.initial_effect(c)
 end
 
 s.listed_series={0x3008}
+s.material_setcode={0x3008}
 
 -- Effect 1: Bounce
 function s.bouncecon(e,tp,eg,ep,ev,re,r,rp)
