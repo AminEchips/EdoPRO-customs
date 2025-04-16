@@ -40,6 +40,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
+s.material_setcode={0x3008}
+
 -- Fusion materials: 4 Elemental HERO Fusion Monsters with different attributes
 function s.fusfilter1(c,scard,sumtype,tp) return c:IsSetCard(0x3008) and c:IsType(TYPE_FUSION) and c:IsAttribute(ATTRIBUTE_WIND,scard,sumtype,tp) end
 function s.fusfilter2(c,scard,sumtype,tp) return c:IsSetCard(0x3008) and c:IsType(TYPE_FUSION) and c:IsAttribute(ATTRIBUTE_WATER,scard,sumtype,tp) end
