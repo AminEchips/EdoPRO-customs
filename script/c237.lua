@@ -40,6 +40,7 @@ end
 
 s.listed_names={236,94820406}
 s.material_setcode={0x3008}
+s.dark_calling=true
 
 function s.efilter(e,re,rp)
 	return re:IsActiveType(TYPE_MONSTER) and re:GetOwnerPlayer()~=e:GetHandlerPlayer()
