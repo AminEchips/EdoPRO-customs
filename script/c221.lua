@@ -42,11 +42,9 @@ end
 s.listed_series={0x3008}
 
 -- Fusion Material Filters
-function s.matfilter1(c,fc,sumtype,tp)
-    return c:IsFusionSetCard(0x3008) and c:IsType(TYPE_FUSION,fc,sumtype,tp) and c:IsAttribute(ATTRIBUTE_FIRE,fc,sumtype,tp)
-end
-function s.matfilter2(c,fc,sumtype,tp)
-    return c:IsFusionSetCard(0x3008) and c:IsType(TYPE_FUSION,fc,sumtype,tp) and c:IsAttribute(ATTRIBUTE_WATER,fc,sumtype,tp)
+function s.fusionfilter(c,fc,sumtype,tp)
+    return c:IsSetCard(0x3008,fc,sumtype,tp) and c:IsType(TYPE_FUSION,fc,sumtype,tp)
+        and (c:IsAttribute(ATTRIBUTE_EARTH,fc,sumtype,tp) or c:IsAttribute(ATTRIBUTE_WIND,fc,sumtype,tp))
 end
 
 -- Draw Effect Condition
