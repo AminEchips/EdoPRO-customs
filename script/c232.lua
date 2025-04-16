@@ -1,7 +1,7 @@
 --Evil HERO Cursed Shadow
 local s,id=GetID()
 function s.initial_effect(c)
-    --Token summon on summon
+    --Summon Token on summon
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e2:SetCode(EVENT_SPSUMMON_SUCCESS)
     c:RegisterEffect(e2)
 
-    --Place Supreme King's Castle when banished by Dark Fusion card
+    --Place Supreme King's Castle if banished by "Dark Fusion" card
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
@@ -28,10 +28,9 @@ function s.initial_effect(c)
     e3:SetOperation(s.plop)
     c:RegisterEffect(e3)
 end
-
 s.listed_names={94820406,72043279} -- Dark Fusion, Supreme King's Castle
 
--- Token Summon
+--Token creation
 function s.toktg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
@@ -45,7 +44,7 @@ function s.tokop(e,tp,eg,ep,ev,re,r,rp)
     if not Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,6,RACE_FIEND,ATTRIBUTE_DARK) then return end
     local token=Duel.CreateToken(tp,id+1)
     Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
-    -- Lock non-HERO summons
+    --Lock non-HERO summons for rest of turn
     local e1=Effect.CreateEffect(e:GetHandler())
     e1:SetType(EFFECT_TYPE_FIELD)
     e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
@@ -56,16 +55,18 @@ function s.tokop(e,tp,eg,ep,ev,re,r,rp)
     Duel.RegisterEffect(e1,tp)
 end
 function s.splimit(e,c)
-    return not c:IsSetCard(0x8) -- Not a HERO
+    return not c:IsSetCard(0x8) -- Not a HERO monster
 end
 
--- Check if banished by card that mentions Dark Fusion
+--Condition: banished by card that mentions Dark Fusion
 function s.plcon(e,tp,eg,ep,ev,re,r,rp)
     return re and re:GetHandler():ListsCode(94820406)
 end
 function s.pltg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
-        and Duel.IsExistingMatchingCard(s.skfilter,tp,LOCATION_DECK,0,1,nil) end
+    if chk==0 then
+        return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
+            and Duel.IsExistingMatchingCard(s.skfilter,tp,LOCATION_DECK,0,1,nil)
+    end
 end
 function s.skfilter(c)
     return c:IsCode(72043279) and c:GetActivateEffect():IsActivatable(1)
