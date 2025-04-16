@@ -40,6 +40,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
+s.material_setcode={0x3008}
+
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     local g=eg:Filter(Card.IsReason,nil,REASON_BATTLE)
     if chk==0 then return #g>0 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
