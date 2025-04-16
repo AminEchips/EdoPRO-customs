@@ -96,7 +96,7 @@ end
 function s.defcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
-	return bc and bc:IsControler(1-tp) and bc:IsRelateToBattle() and bc:IsPosition(POS_DEFENSE)
+	return bc and bc:IsRelateToBattle() and bc:IsPosition(POS_DEFENSE)
 end
 function s.deftg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc==e:GetHandler():GetBattleTarget() end
@@ -147,18 +147,23 @@ end
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then return c:IsAbleToRemoveAsCost() and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,1,nil) end
-	Duel.Remove(c,POS_FACEUP,REASON_COST+REASON_TEMPORARY)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE,0,1,1,nil)
 	if #g>0 then
 		Duel.Remove(g,POS_FACEUP,REASON_COST)
 	end
+	Duel.Remove(c,POS_FACEUP,REASON_COST+REASON_TEMPORARY)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_PHASE+PHASE_END)
 	e1:SetReset(RESET_PHASE+PHASE_END)
 	e1:SetLabelObject(c)
-	e1:SetOperation(function(_,tp) Duel.ReturnToField(c) end)
+	e1:SetOperation(function(e,tp)
+		local rc=e:GetLabelObject()
+		if rc and rc:IsLocation(LOCATION_REMOVED) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
+			Duel.ReturnToField(rc)
+		end
+	end)
 	Duel.RegisterEffect(e1,tp)
 end
 function s.cfilter(c)
@@ -176,7 +181,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Graveyard revival effect
-function s.revcost(e,tp,eg,ep,ev,re,r,rp,chk)
+defunction s.revcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
 	Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
 end
@@ -196,5 +201,6 @@ function s.revop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.SpecialSummon(g,0,tp,tp,true,true,POS_FACEUP)
 	end
 end
+
 
 
