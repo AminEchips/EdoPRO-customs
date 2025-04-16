@@ -37,7 +37,7 @@ end
 
 -- Must be a Wingman Fusion Monster
 function s.matfilter(c,fc,sumtype,tp)
-	return c:IsFusionSetCard(0x185) and c:IsType(TYPE_FUSION,fc,sumtype,tp)
+	return c:IsSetCard(0x185,fc,sumtype,tp) and c:IsType(TYPE_FUSION,fc,sumtype,tp)
 end
 
 -- Take control
