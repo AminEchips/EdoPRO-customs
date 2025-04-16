@@ -13,12 +13,12 @@ function s.initial_effect(c)
 	e0:SetValue(aux.fuslimit)
 	c:RegisterEffect(e0)
 
-	-- Banish a monster sent to GY by destruction
+	-- Banish a monster sent to GY by destruction (battle or effect)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_REMOVE)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e1:SetCode(EVENT_TO_GRAVE)
+	e1:SetCode(EVENT_DESTROYED)
 	e1:SetRange(LOCATION_MZONE)
 	e1:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
 	e1:SetCondition(s.rmcon)
@@ -46,11 +46,11 @@ function s.matfilter(c,fc,sumtype,tp)
 	return c:IsSetCard(0x6008,fc,sumtype,tp)
 end
 
-function s.cfilter(c)
-	return c:IsReason(REASON_DESTROY) and c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsType(TYPE_MONSTER)
+function s.cfilter(c,tp)
+	return c:IsReason(REASON_EFFECT+REASON_BATTLE) and c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsType(TYPE_MONSTER) and c:IsControler(tp)
 end
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(s.cfilter,1,nil)
+	return eg:IsExists(s.cfilter,1,e:GetHandler(),tp)
 end
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsType(TYPE_MONSTER) and eg:IsContains(chkc) end
@@ -88,3 +88,4 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.ConfirmCards(1-tp,tc)
 	end
 end
+
