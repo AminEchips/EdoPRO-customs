@@ -18,12 +18,11 @@ function s.initial_effect(c)
     e1:SetCode(EFFECT_MUST_ATTACK)
     c:RegisterEffect(e1)
 
-    -- Cannot attack the turn it is Special Summoned
+    -- Cannot attack the turn it is Special Summoned (including Fusion Summoned)
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_SINGLE)
     e2:SetCode(EFFECT_CANNOT_ATTACK)
-    e2:SetCondition(function(e) return e:GetHandler():IsSummonType(SUMMON_TYPE_SPECIAL) and e:GetHandler():IsSummonTurn() end)
-    e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+    e2:SetCondition(function(e) return e:GetHandler():IsSummonTurn() end)
     c:RegisterEffect(e2)
 
     -- Inflict damage if destroys by battle
@@ -81,3 +80,4 @@ function s.posop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
