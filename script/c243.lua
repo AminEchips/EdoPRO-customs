@@ -53,7 +53,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.filter(c,e,tp)
-    return c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,false,false))
+    return c:IsType(TYPE_MONSTER) and c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,false,false))
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
