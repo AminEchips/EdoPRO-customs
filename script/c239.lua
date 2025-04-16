@@ -165,7 +165,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Graveyard revival effect
-function s.revcost(e,tp,eg,ep,ev,re,r,rp,chk)
+defunction s.revcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
 	Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
 end
