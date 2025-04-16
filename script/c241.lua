@@ -46,11 +46,11 @@ function s.matfilter(c,fc,sumtype,tp)
 	return c:IsSetCard(0x6008,fc,sumtype,tp)
 end
 
-function s.cfilter(c,tp)
-	return c:IsReason(REASON_EFFECT+REASON_BATTLE) and c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsType(TYPE_MONSTER) and c:IsControler(tp)
+function s.cfilter(c)
+	return c:IsReason(REASON_EFFECT+REASON_BATTLE) and c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsType(TYPE_MONSTER)
 end
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(s.cfilter,1,e:GetHandler(),tp)
+	return eg:IsExists(s.cfilter,1,e:GetHandler())
 end
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsType(TYPE_MONSTER) and eg:IsContains(chkc) end
