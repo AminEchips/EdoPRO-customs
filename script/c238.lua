@@ -33,7 +33,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
-s.listed_names={236,94820406}
+s.listed_names={94820406}
 s.material_setcode={0x3008}
 
 function s.ffilter(c,fc,sumtype,tp,sub,mg,sg)
