@@ -49,6 +49,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
+s.material_setcode={0x3008}
+
 function s.fusionfilter(c,fc,sumtype,tp)
     return c:IsSetCard(0x3008,fc,sumtype,tp) and c:IsType(TYPE_FUSION,fc,sumtype,tp)
         and (c:IsAttribute(ATTRIBUTE_EARTH,fc,sumtype,tp) or c:IsAttribute(ATTRIBUTE_WIND,fc,sumtype,tp))
