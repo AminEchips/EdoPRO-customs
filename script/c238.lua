@@ -5,6 +5,17 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Fusion.AddProcFunRep(c,s.ffilter,2,true)
 
+	-- Must be Fusion Summoned with "Dark Fusion"
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_SINGLE)
+	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
+	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
+	e0:SetValue(function(e,se,sp,st)
+    		return se and se:GetHandler():IsCode(94820406) -- Dark Fusion
+	end)
+	c:RegisterEffect(e0)
+
+
 	--Discard to draw and Special Summon a Fiend
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
