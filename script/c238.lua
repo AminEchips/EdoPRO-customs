@@ -45,7 +45,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={94820406}
-s.material_setcode={0x3008}
+s.material_setcode={0x6008}
 s.dark_calling=true
 
 function s.ffilter(c,fc,sumtype,tp,sub,mg,sg)
