@@ -16,20 +16,19 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	c:RegisterEffect(e2)
 
-	-- Place Supreme King's Castle when banished by Dark Fusion card
+	-- Set "Supreme King's Castle" when banished by "Dark Fusion"
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_REMOVE)
 	e3:SetProperty(EFFECT_FLAG_DELAY)
 	e3:SetCountLimit(1,{id,1})
-	e3:SetCondition(s.plcon)
-	e3:SetTarget(s.pltg)
-	e3:SetOperation(s.plop)
+	e3:SetCondition(s.setcon)
+	e3:SetTarget(s.settg)
+	e3:SetOperation(s.setop)
 	c:RegisterEffect(e3)
 end
 s.listed_names={94820406,72043279} -- Dark Fusion, Supreme King's Castle
-s.listed_series={0x6008} -- Evil HERO
 
 -- Token summon
 function s.toktg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -58,27 +57,21 @@ function s.splimit(e,c)
 	return not c:IsSetCard(0x8) -- Not a "HERO"
 end
 
--- Banish condition
-function s.plcon(e,tp,eg,ep,ev,re,r,rp)
-	return re and re:GetHandler():ListsCode(94820406) -- Dark Fusion
+-- Condition to trigger when banished by a "Dark Fusion" effect
+function s.setcon(e,tp,eg,ep,ev,re,r,rp)
+	return re and re:GetHandler():IsCode(94820406)
 end
-function s.plfilter(c)
-	return c:IsCode(72043279) and c:GetActivateEffect():IsActivatable(1) and not c:IsForbidden()
+function s.setfilter(c)
+	return c:IsCode(72043279) and c:IsSSetable()
 end
-function s.pltg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_FZONE)>0
-		and Duel.IsExistingMatchingCard(s.plfilter,tp,LOCATION_DECK,0,1,nil) end
+function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
 end
-function s.plop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
-	local tc=Duel.SelectMatchingCard(tp,s.plfilter,tp,LOCATION_DECK,0,1,1,nil):GetFirst()
-	if not tc then return end
-	local fc=Duel.GetFieldCard(tp,LOCATION_FZONE,0)
-	if fc then
-		Duel.SendtoGrave(fc,REASON_RULE)
-		Duel.BreakEffect()
+function s.setop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+	local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
+	local tc=g:GetFirst()
+	if tc then
+		Duel.SSet(tp,tc)
 	end
-	Duel.MoveToField(tc,tp,tp,LOCATION_FZONE,POS_FACEUP,true)
 end
-
-
