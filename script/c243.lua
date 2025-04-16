@@ -59,7 +59,7 @@ function s.gycon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.filter(c)
-    return c:IsType(TYPE_MONSTER) and c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(nil,0,tp,false,false))
+    return c:IsType(TYPE_MONSTER) and c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(nil,0,c:GetControler(),false,false))
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) end
@@ -77,7 +77,3 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
         Duel.ConfirmCards(1-tp,tc)
     end
 end
-
-
-
-
