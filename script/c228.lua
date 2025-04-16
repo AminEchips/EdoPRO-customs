@@ -29,7 +29,7 @@ end
 function s.thfilter1(c)
     return c:IsAbleToHand() and (
         c:IsCode(89943723) -- Elemental HERO Neos
-        or c:IsCode(42015635) -- Neo Space
+        or c:IsSetCard(0x9) -- Neo Space
         or (c:IsSetCard(0x1f) and c:IsMonster()) -- Neo-Spacian monsters
     )
 end
