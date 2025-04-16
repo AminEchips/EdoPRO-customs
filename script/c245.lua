@@ -79,7 +79,7 @@ function s.damop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetTurnPlayer()~=tp
+    return Duel.GetTurnPlayer()~=tp and Duel.IsExistingMatchingCard(Card.IsDefensePos,tp,0,LOCATION_MZONE,1,nil)
 end
 function s.posop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(Card.IsCanChangePosition,tp,0,LOCATION_MZONE,nil)
@@ -89,3 +89,4 @@ function s.posop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
