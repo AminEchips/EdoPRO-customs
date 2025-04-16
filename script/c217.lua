@@ -31,7 +31,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
-s.listed_names={63703130,00191749} -- O - Oversoul, Hero Flash!!
+s.listed_names={63703130,00191749,21844576,20721928,86188410} -- O - Oversoul, Hero Flash!!
 s.material_setcode=0x3008
 
 -- Condition: Only trigger if Fusion Summoned
