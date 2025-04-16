@@ -3,7 +3,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,true,true,aux.FilterBoolFunction(Card.IsSetCard,0x3008),aux.FilterAttribute(ATTRIBUTE_FIRE))
+    Fusion.AddProcMix(c,true,true,aux.FilterBoolFunction(Card.IsSetCard,0x3008),aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_FIRE)
 
     -- Special Summon 1 non-Warrior HERO from hand or Deck
     local e1=Effect.CreateEffect(c)
