@@ -39,6 +39,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
+s.listed_names={21844576,59793705}
 -- Search E - Emergency Call
 function s.thfilter(c)
     return c:IsCode(00213326) and c:IsAbleToHand()
