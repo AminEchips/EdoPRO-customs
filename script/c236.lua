@@ -59,10 +59,9 @@ end
 -- Set Trap Condition: any monster shuffled into the Deck
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
-		return c:IsType(TYPE_MONSTER)
+		return c:IsType(TYPE_MONSTER) and c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_GRAVE)
 	end,1,nil)
 end
-
 function s.setfilter(c)
 	return c:IsType(TYPE_TRAP) and c:IsSSetable()
 		and (c:ListsCode(94820406) or c:ListsCode(89943723))
