@@ -74,7 +74,7 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.setfilter(c)
-    return ((c:IsType(TYPE_SPELL) and c:IsSetCard(0x46) or c:IsCode(48130397)) and c:IsSSetable()
+    return ((c:IsType(TYPE_SPELL) and c:IsSetCard(0x46)) or c:IsCode(48130397)) and c:IsSSetable()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
