@@ -116,7 +116,7 @@ function s.defop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.protcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetBattledCount()>0
+	return Duel.GetCurrentPhase()==PHASE_DAMAGE and Duel.GetAttackTarget()~=nil
 end
 function s.prottg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsSetCard(0x8) end
