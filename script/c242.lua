@@ -1,28 +1,29 @@
 --Evil Flames
 local s,id=GetID()
 function s.initial_effect(c)
-
+	-- Activate
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e0)
-	
-	--"Evil HERO" ATK gain when destroying a monster by battle
+
+	-- Gain 500 ATK at end of Damage Step if Evil HERO destroys monster by battle
 	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP)
-	e1:SetCode(EVENT_BATTLE_DESTROYING)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e1:SetCode(EVENT_DAMAGE_STEP_END)
 	e1:SetRange(LOCATION_SZONE)
+	e1:SetProperty(EFFECT_FLAG_DELAY)
 	e1:SetCondition(s.atkcon)
+	e1:SetTarget(s.atktg)
 	e1:SetOperation(s.atkop)
 	c:RegisterEffect(e1)
 
-	--Destroy a face-up card when "Dark Fusion" is activated
+	-- Destroy 1 face-up card your opponent controls if Dark Fusion was activated
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
+	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_CHAINING)
-	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetRange(LOCATION_SZONE)
 	e2:SetCountLimit(1,id)
 	e2:SetCondition(s.descon)
@@ -32,32 +33,37 @@ function s.initial_effect(c)
 end
 
 s.listed_names={94820406} -- Dark Fusion
-s.listed_series={0x6008}
 
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
-	local tc=eg:GetFirst()
-	return tc:IsSetCard(0x6008) and tc:IsControler(tp) and tc:IsRelateToBattle()
+	local a=Duel.GetAttacker()
+	local d=Duel.GetAttackTarget()
+	return d and d:IsReason(REASON_BATTLE) and a:IsControler(tp) and a:IsSetCard(0x6008) and d:IsLocation(LOCATION_GRAVE)
+end
+function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return true end
+	local a=Duel.GetAttacker()
+	Duel.SetTargetCard(a)
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=eg:GetFirst()
-	if tc:IsFaceup() and tc:IsRelateToBattle() then
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and tc:IsSetCard(0x6008) then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_UPDATE_ATTACK)
 		e1:SetValue(500)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
 		tc:RegisterEffect(e1)
 	end
 end
 
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-	return re and re:GetHandler():IsCode(94820406)
+	return Duel.GetFlagEffect(tp,94820406)>0 -- Assume flag is set when Dark Fusion was activated
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(1-tp) and chkc:IsOnField() and chkc:IsFaceup() end
-	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
+	if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) and chkc:IsFaceup() end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,0,LOCATION_ONFIELD,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
+	local g=Duel.SelectTarget(tp,Card.IsFaceup,tp,0,LOCATION_ONFIELD,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
