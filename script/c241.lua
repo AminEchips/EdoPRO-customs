@@ -41,6 +41,7 @@ end
 
 s.material_setcode={0x6008}
 s.dark_calling=true
+s.listed_cards={94820406}
 
 function s.matfilter(c,fc,sumtype,tp)
 	return c:IsSetCard(0x6008,fc,sumtype,tp)
