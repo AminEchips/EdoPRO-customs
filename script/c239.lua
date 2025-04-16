@@ -152,19 +152,20 @@ function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if #g>0 then
 		Duel.Remove(g,POS_FACEUP,REASON_COST)
 	end
-	Duel.Remove(c,POS_FACEUP,REASON_COST+REASON_TEMPORARY)
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e1:SetCode(EVENT_PHASE+PHASE_END)
-	e1:SetReset(RESET_PHASE+PHASE_END)
-	e1:SetLabelObject(c)
-	e1:SetOperation(function(e,tp)
-		local rc=e:GetLabelObject()
-		if rc and rc:IsLocation(LOCATION_REMOVED) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
-			Duel.ReturnToField(rc)
-		end
-	end)
-	Duel.RegisterEffect(e1,tp)
+	if Duel.Remove(c,POS_FACEUP,REASON_COST+REASON_TEMPORARY)>0 then
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		e1:SetCode(EVENT_PHASE+PHASE_END)
+		e1:SetReset(RESET_PHASE+PHASE_END)
+		e1:SetLabelObject(c)
+		e1:SetOperation(function(e,tp)
+			local rc=e:GetLabelObject()
+			if rc and rc:IsLocation(LOCATION_REMOVED) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
+				Duel.ReturnToField(rc)
+			end
+		end)
+		Duel.RegisterEffect(e1,tp)
+	end
 end
 function s.cfilter(c)
 	return c:IsSetCard(0x8) and c:IsType(TYPE_FUSION) and c:IsAbleToRemoveAsCost()
