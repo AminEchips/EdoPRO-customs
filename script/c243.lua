@@ -52,25 +52,23 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
-function s.filter(c)
-    return c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(nil,0,tp,false,false))
+function s.filter(c,e,tp)
+    return c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,false,false))
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,tp) end
-    Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not Duel.IsExistingMatchingCard(s.rfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
-	local g=Duel.SelectMatchingCard(tp,s.rfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,e,tp)
 	local tc=g:GetFirst()
 	if not tc then return end
-	if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+	if Duel.SelectYesNo(tp,aux.Stringid(id,2)) and tc:IsCanBeSpecialSummoned(e,0,tp,false,false) then
 		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
 	else
 		Duel.SendtoHand(tc,nil,REASON_EFFECT)
 		Duel.ConfirmCards(1-tp,tc)
 	end
 end
+
 
