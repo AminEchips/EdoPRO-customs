@@ -59,8 +59,7 @@ end
 -- Set Trap Condition (adapted)
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
-		return c:IsMonster() and c:IsPreviousControler(tp)
-			and c:IsControler(tp) and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_GRAVE)
+		return c:IsType(TYPE_MONSTER)
 	end,1,nil)
 end
 function s.setfilter(c)
@@ -77,12 +76,12 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	if #g>0 then
 		local tc=g:GetFirst()
 		if Duel.SSet(tp,tc)>0 then
-			local e1=Effect.CreateEffect(e:GetHandler())
-			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetCode(EFFECT_TRAP_ACT_IN_SET_TURN)
-			e1:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
-			e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-			tc:RegisterEffect(e1)
+			local e3=Effect.CreateEffect(e:GetHandler())
+			e3:SetType(EFFECT_TYPE_SINGLE)
+			e3:SetCode(EFFECT_TRAP_ACT_IN_SET_TURN)
+			e3:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
+			e3:SetReset(RESET_EVENT+RESETS_STANDARD)
+			tc:RegisterEffect(e3)
 		end
 	end
 end
