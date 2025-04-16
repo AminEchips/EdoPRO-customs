@@ -59,9 +59,8 @@ end
 -- Set Trap Condition (adapted)
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
-		return ((c:IsMonster()
-			and c:IsPreviousControler(tp) and c:IsControler(tp)
-			and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_GRAVE)
+		return c:IsMonster() and c:IsPreviousControler(tp)
+			and c:IsControler(tp) and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_GRAVE)
 	end,1,nil)
 end
 function s.setfilter(c)
