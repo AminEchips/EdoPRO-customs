@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,true,true,s.matfilter1,s.matfilter2)
+     Fusion.AddProcMixN(c,true,true,s.fusionfilter,2)
     
     -- Also treated as FIRE
     local e0=Effect.CreateEffect(c)
