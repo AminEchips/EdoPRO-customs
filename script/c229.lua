@@ -25,7 +25,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={89943723} -- Elemental HERO Neos
-s.listed_series={0x1f} -- Neo-Spacian
+s.listed_series={0x1f,0x3008} -- Neo-Spacian, Elemental HERO
 
 function s.filter(c,e,tp)
     return c:IsSetCard(0x1f) and c:IsFaceup() and Duel.IsExistingMatchingCard(s.exfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,c:GetCode())
