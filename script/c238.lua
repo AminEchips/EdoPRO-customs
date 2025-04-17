@@ -5,17 +5,17 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Fusion.AddProcFunRep(c,s.ffilter,2,true)
 
-	-- Summon condition: must be Special Summoned with "Dark Fusion"
+	-- Must be Fusion Summoned with "Dark Fusion"
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
 	e0:SetValue(function(e,se,sp,st)
-		return se and se:GetHandler():IsCode(94820406) -- Dark Fusion
+		return se and se:GetHandler():IsCode(94820406)
 	end)
 	c:RegisterEffect(e0)
 
-	-- Draw 1 card and optionally Special Summon 1 Fiend from hand
+	-- Draw 1 and optionally Special Summon 1 Fiend
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DRAW+CATEGORY_SPECIAL_SUMMON)
@@ -23,6 +23,7 @@ function s.initial_effect(c)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e1:SetProperty(EFFECT_FLAG_DELAY)
 	e1:SetCountLimit(1,id)
+	e1:SetCost(s.drcost)
 	e1:SetTarget(s.drtg)
 	e1:SetOperation(s.drop)
 	c:RegisterEffect(e1)
@@ -45,13 +46,19 @@ s.listed_names={94820406}
 s.material_setcode={0x6008}
 s.dark_calling=true
 
--- Fusion Materials: 2 different Attribute "Evil HERO"
+-- Fusion materials: 2 Evil HERO monsters with different Attributes
 function s.ffilter(c,fc,sumtype,tp,sub,mg,sg)
 	return c:IsSetCard(0x6008,fc,sumtype,tp) and c:GetAttribute(fc,sumtype,tp)~=0
 		and (not sg or not sg:IsExists(function(sc) return sc:GetAttribute(fc,sumtype,tp)==c:GetAttribute(fc,sumtype,tp) end,1,c))
 end
 
--- Draw & Optional Special Summon
+-- Cost: Discard 1 card
+function s.drcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,nil) end
+	Duel.DiscardHand(tp,Card.IsDiscardable,1,1,REASON_COST+REASON_DISCARD)
+end
+
+-- Target and Operation for draw and summon
 function s.spfilter(c,e,tp)
 	return c:IsRace(RACE_FIEND) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
@@ -70,7 +77,7 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Position Change Effect
+-- Position change effect
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	local d=Duel.GetAttackTarget()
@@ -89,3 +96,4 @@ function s.posop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.ChangePosition(tc,POS_FACEUP_DEFENSE,POS_FACEUP_ATTACK,POS_FACEUP_ATTACK,POS_FACEUP_ATTACK)
 	end
 end
+
