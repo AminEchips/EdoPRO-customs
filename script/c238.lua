@@ -1,36 +1,33 @@
 --Evil HERO Nightfall
 local s,id=GetID()
 function s.initial_effect(c)
-	--Must be Special Summoned with "Dark Fusion"
+	--Must be Fusion Summoned with "Dark Fusion"
 	c:EnableReviveLimit()
 	Fusion.AddProcFunRep(c,s.ffilter,2,true)
 
-	-- Must be Fusion Summoned with "Dark Fusion"
+	-- Summon condition: must be Special Summoned with "Dark Fusion"
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e0:SetCode(EFFECT_SPSUMMON_CONDITION)
 	e0:SetValue(function(e,se,sp,st)
-    		return se and se:GetHandler():IsCode(94820406) -- Dark Fusion
+		return se and se:GetHandler():IsCode(94820406) -- Dark Fusion
 	end)
 	c:RegisterEffect(e0)
 
-
-	--Discard to draw and Special Summon a Fiend
+	-- Draw 1 card and optionally Special Summon 1 Fiend from hand
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DRAW+CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e1:SetProperty(EFFECT_FLAG_DELAY)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e1:SetCondition(s.drcon)
-	e1:SetCost(s.drcost)
+	e1:SetProperty(EFFECT_FLAG_DELAY)
+	e1:SetCountLimit(1,id)
 	e1:SetTarget(s.drtg)
 	e1:SetOperation(s.drop)
-	e1:SetCountLimit(1,id)
 	c:RegisterEffect(e1)
 
-	--Change battle position
+	-- Change battle position
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_POSITION)
@@ -48,39 +45,32 @@ s.listed_names={94820406}
 s.material_setcode={0x6008}
 s.dark_calling=true
 
+-- Fusion Materials: 2 different Attribute "Evil HERO"
 function s.ffilter(c,fc,sumtype,tp,sub,mg,sg)
 	return c:IsSetCard(0x6008,fc,sumtype,tp) and c:GetAttribute(fc,sumtype,tp)~=0
 		and (not sg or not sg:IsExists(function(sc) return sc:GetAttribute(fc,sumtype,tp)==c:GetAttribute(fc,sumtype,tp) end,1,c))
 end
 
-function s.drcon(e,tp,eg,ep,ev,re,r,rp)
-	return true
-end
-function s.drcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,nil) end
-	Duel.DiscardHand(tp,Card.IsDiscardable,1,1,REASON_COST+REASON_DISCARD)
-end
+-- Draw & Optional Special Summon
 function s.spfilter(c,e,tp)
 	return c:IsRace(RACE_FIEND) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsPlayerCanDraw(tp,1)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND,0,1,nil,e,tp) end
+	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
 	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
 end
 function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.Draw(tp,1,REASON_EFFECT)>0 then
-		Duel.BreakEffect()
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND,0,1,1,nil,e,tp)
-		if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-			Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+	if Duel.Draw(tp,1,REASON_EFFECT)>0 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
+		local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_HAND,0,nil,e,tp)
+		if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+			local sg=g:Select(tp,1,1,nil)
+			Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
 		end
 	end
 end
 
+-- Position Change Effect
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	local d=Duel.GetAttackTarget()
