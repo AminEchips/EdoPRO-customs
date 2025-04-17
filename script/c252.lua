@@ -77,13 +77,20 @@ end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if not (tc and tc:IsRelateToEffect(e) and tc:IsFaceup()) then return end
-    -- Only gain ATK during damage calculation
+    -- Only gain ATK during damage calculation if attacking
     local e1=Effect.CreateEffect(e:GetHandler())
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetCode(EFFECT_UPDATE_ATTACK)
-    e1:SetCondition(function(e) return Duel.GetCurrentPhase()==PHASE_DAMAGE_CAL and tc:IsAttacking() end)
     e1:SetValue(2100)
     e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_DAMAGE_CAL)
+    e1:SetCondition(s.atkcon)
+    e1:SetLabelObject(tc)
     tc:RegisterEffect(e1)
 end
+
+function s.atkcon(e)
+    local c=e:GetHandler()
+    return Duel.GetCurrentPhase()==PHASE_DAMAGE_CAL and Duel.GetAttacker()==c
+end
+
 
