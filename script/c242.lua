@@ -93,9 +93,11 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Trigger when this face-up card is destroyed
+-- Trigger when this face-up card is destroyed
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsPreviousPosition(POS_FACEUP) and bit.band(r,REASON_DESTROY)~=0
+	return c:IsPreviousLocation(LOCATION_SZONE) and c:IsPreviousPosition(POS_FACEUP) 
+		and bit.band(r,REASON_DESTROY)~=0
 end
 function s.thfilter(c)
 	return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsAbleToHand()
@@ -109,23 +111,16 @@ function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,PLAYER_ALL,1000)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Group.CreateGroup()
-
 	local g1=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
 	local g2=Duel.SelectMatchingCard(1-tp,s.thfilter,1-tp,LOCATION_GRAVE,0,1,1,nil)
-
-	if #g1>0 then
-		g:Merge(g1)
-		Duel.SendtoHand(g1,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,g1)
+	local g=Group.CreateGroup()
+	g:Merge(g1)
+	g:Merge(g2)
+	if #g>0 then
+		Duel.SendtoHand(g,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,g)
 	end
-	if #g2>0 then
-		g:Merge(g2)
-		Duel.SendtoHand(g2,nil,REASON_EFFECT)
-		Duel.ConfirmCards(tp,g2)
-	end
-
-	if #g>0 then Duel.BreakEffect() end
+	Duel.BreakEffect()
 	Duel.Damage(tp,1000,REASON_EFFECT)
 	Duel.Damage(1-tp,1000,REASON_EFFECT)
 end
