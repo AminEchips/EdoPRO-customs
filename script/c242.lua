@@ -47,12 +47,13 @@ function s.initial_effect(c)
 end
 
 s.listed_names={94820406}
+s.listed_series={0x8}
 
 -- Gain ATK if Evil HERO destroys by battle
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	local d=Duel.GetAttackTarget()
-	return d and d:IsReason(REASON_BATTLE) and a:IsControler(tp) and a:IsSetCard(0x6008) and d:IsLocation(LOCATION_GRAVE)
+	return d and d:IsReason(REASON_BATTLE) and a:IsControler(tp) and a:IsSetCard(0x8) and d:IsLocation(LOCATION_GRAVE)
 end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
@@ -60,11 +61,11 @@ function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) and tc:IsSetCard(0x6008) then
+	if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) and tc:IsSetCard(0x8) then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_UPDATE_ATTACK)
-		e1:SetValue(800)
+		e1:SetValue(400)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
 		tc:RegisterEffect(e1)
 	end
@@ -106,17 +107,23 @@ function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,PLAYER_ALL,1000)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Group.CreateGroup()
+
 	local g1=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
 	local g2=Duel.SelectMatchingCard(1-tp,s.thfilter,1-tp,LOCATION_GRAVE,0,1,1,nil)
-	local g=Group.CreateGroup()
-	g:Merge(g1)
-	g:Merge(g2)
-	if #g>0 then
-		Duel.SendtoHand(g,nil,REASON_EFFECT)
-		Duel.ConfirmCards(0,g)
-		Duel.ConfirmCards(1,g)
+
+	if #g1>0 then
+		g:Merge(g1)
+		Duel.SendtoHand(g1,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,g1)
 	end
-	Duel.BreakEffect()
+	if #g2>0 then
+		g:Merge(g2)
+		Duel.SendtoHand(g2,nil,REASON_EFFECT)
+		Duel.ConfirmCards(tp,g2)
+	end
+
+	if #g>0 then Duel.BreakEffect() end
 	Duel.Damage(tp,1000,REASON_EFFECT)
 	Duel.Damage(1-tp,1000,REASON_EFFECT)
 end
