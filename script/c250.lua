@@ -34,15 +34,7 @@ end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc and tc:IsRelateToEffect(e) then
-        if Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)~=0 then
-            local e1=Effect.CreateEffect(e:GetHandler())
-            e1:SetType(EFFECT_TYPE_SINGLE)
-            e1:SetCode(EFFECT_CANNOT_TRIGGER)
-            e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
-            e1:SetRange(LOCATION_MZONE)
-            e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-            tc:RegisterEffect(e1)
-            tc:CompleteProcedure()
-        end
+        Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
     end
 end
+
