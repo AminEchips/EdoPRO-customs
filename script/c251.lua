@@ -16,6 +16,7 @@ end
 
 s.listed_names={247,248,249,250,94820406}
 s.listed_series={0x6008}
+s.dark_calling=true
 
 function s.filter(cid)
     return function(c)
