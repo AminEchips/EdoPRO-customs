@@ -1,8 +1,7 @@
-
 --Evil HERO Traumosphere
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Choose 1 effect on Summon or if banished from hand
+    -- Choose 1 effect on Normal or Special Summon
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_DESTROY+CATEGORY_TOGRAVE)
@@ -15,10 +14,16 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 
     local e2=e1:Clone()
-    e2:SetCode(EVENT_REMOVE)
-    e2:SetCondition(s.rmcon)
+    e2:SetCode(EVENT_SPSUMMON_SUCCESS)
     c:RegisterEffect(e2)
+
+    -- Trigger when banished from hand
+    local e3=e1:Clone()
+    e3:SetCode(EVENT_REMOVE)
+    e3:SetCondition(s.rmcon)
+    c:RegisterEffect(e3)
 end
+
 s.listed_names={94820406} -- Dark Fusion
 
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
