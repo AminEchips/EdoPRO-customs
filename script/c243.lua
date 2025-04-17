@@ -53,7 +53,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.filter(c,e,tp)
-    return c:IsType(TYPE_MONSTER) and c:ListsCode(94820406) and (c:IsAbleToHand() or c:IsAbleToExtra())
+    return c:IsType(TYPE_MONSTER) and c:ListsCode(94820406) and ((c:IsAbleToHand() or c:IsAbleToExtra()) and c:IsCanBeSpecialSummoned(e,0,tp,false,true))
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
@@ -63,10 +63,12 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,e,tp)
     local tc=g:GetFirst()
     if not tc then return end
-    if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+    if Duel.SelectYesNo(tp,aux.Stringid(id,2)) and tc:IsCanBeSpecialSummoned(e,0,tp,false,true) then
         Duel.SpecialSummon(tc,SUMMON_TYPE_SPECIAL,tp,tp,false,true,POS_FACEUP)
+        tc:CompleteProcedure()
     else
         Duel.SendtoHand(tc,nil,REASON_EFFECT)
         Duel.ConfirmCards(1-tp,tc)
     end
 end
+
