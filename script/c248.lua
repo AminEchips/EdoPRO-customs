@@ -18,11 +18,12 @@ s.listed_names={94820406} -- Dark Fusion
 
 function s.cfilter(c,tp)
 	return c:IsType(TYPE_FUSION) and c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
-		and c:IsLocation(LOCATION_GRAVE) and c:IsReason(REASON_DESTROY)
-		and c:ListsCode(94820406)
+		and c:IsLocation(LOCATION_GRAVE) and c:ListsCode(94820406)
 end
+
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()~=tp and Duel.CheckEvent(EVENT_TO_GRAVE,nil,nil,nil,nil,tp)
+	local g=Duel.GetMatchingGroup(s.cfilter,tp,LOCATION_GRAVE,0,nil,tp)
+	return Duel.GetTurnPlayer()~=tp and #g>0
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
@@ -47,5 +48,6 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetCode(EFFECT_SET_ATTACK_FINAL)
 	e2:SetValue(tc:GetAttack()/2)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_DAMAGE_CAL)
-	Duel.RegisterEffect(e2,tp)
+	tc:RegisterEffect(e2)
 end
+
