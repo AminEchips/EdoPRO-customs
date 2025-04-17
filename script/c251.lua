@@ -14,7 +14,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 end
 
-s.listed_names={247,248,249,250}
+s.listed_names={247,248,249,250,94820406}
 s.listed_series={0x6008}
 
 function s.filter(cid)
