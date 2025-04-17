@@ -22,8 +22,13 @@ function s.cfilter(c,tp)
 end
 
 function s.condition(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(s.cfilter,tp,LOCATION_GRAVE,0,nil,tp)
-	return Duel.GetTurnPlayer()~=tp and #g>0
+	local ph=Duel.GetCurrentPhase()
+	return Duel.GetTurnPlayer()~=tp and Duel.IsPlayerAffectedByEffect(tp,EFFECT_CANNOT_ACTIVATE)==false
+		and Duel.GetMatchingGroupCount(function(c)
+			return c:IsType(TYPE_FUSION) and c:ListsCode(94820406) and c:IsPreviousControler(tp)
+				and c:IsPreviousLocation(LOCATION_MZONE) and c:IsReason(REASON_EFFECT+REASON_BATTLE)
+				and c:GetTurnID()==Duel.GetTurnCount()
+		end,tp,LOCATION_GRAVE,0,nil)>0
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
@@ -50,4 +55,3 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_DAMAGE_CAL)
 	tc:RegisterEffect(e2)
 end
-
