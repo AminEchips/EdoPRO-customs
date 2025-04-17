@@ -34,16 +34,18 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 
 	-- When this card is destroyed face-up: Each player adds 1 Normal Spell from GY, then take 1000 damage
+	-- When this face-up card on the field is destroyed
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_DAMAGE)
-	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
-	e3:SetCode(EVENT_DESTROYED)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCode(EVENT_TO_GRAVE)
 	e3:SetCondition(s.thcon)
 	e3:SetTarget(s.thtg)
 	e3:SetOperation(s.thop)
 	c:RegisterEffect(e3)
+
 end
 
 s.listed_names={94820406}
@@ -93,7 +95,7 @@ end
 -- Trigger when this face-up card is destroyed
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_SZONE) and c:IsPreviousPosition(POS_FACEUP)
+	return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsPreviousPosition(POS_FACEUP) and bit.band(r,REASON_DESTROY)~=0
 end
 function s.thfilter(c)
 	return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsAbleToHand()
