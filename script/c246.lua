@@ -26,7 +26,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
-s.listed_names={94820406,89943723,59432181}
+s.listed_names={94820406,89943723,58554959}
 s.listed_series={0x6008}
 
 function s.fusfilter(c)
@@ -70,7 +70,7 @@ function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 function s.thfilter(c)
-    return (c:IsCode(89943723) or c:IsCode(59432181)) and c:IsAbleToHand()
+    return (c:IsCode(89943723) or c:IsCode(58554959)) and c:IsAbleToHand()
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -81,7 +81,7 @@ end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
     local g=Group.CreateGroup()
     local g1=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_GRAVE,0,nil,89943723)
-    local g2=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_GRAVE,0,nil,59432181)
+    local g2=Duel.GetMatchingGroup(Card.IsCode,tp,LOCATION_GRAVE,0,nil,58554959)
     if #g1>0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
         local sg=g1:Select(tp,1,1,nil)
