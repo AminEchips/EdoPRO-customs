@@ -59,10 +59,12 @@ function s.filter(c,e,tp)
         and c:ListsCode(94820406)
         and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
 end
+
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
 end
+
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
     local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,e,tp)
@@ -75,3 +77,4 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
         Duel.ConfirmCards(1-tp,tc)
     end
 end
+
