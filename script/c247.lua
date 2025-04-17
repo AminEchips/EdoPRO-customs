@@ -22,11 +22,11 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
-s.listed_series={0x8,0x6008}
+s.listed_series={0x3008,0x6008}
 s.listed_names={94820406} -- Dark Fusion
 
 function s.filter(c)
-	return c:IsFaceup() and c:IsSetCard(0x8)
+	return c:IsFaceup() and c:IsSetCard(0x3008)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
