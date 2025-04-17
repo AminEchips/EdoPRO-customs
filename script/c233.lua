@@ -28,7 +28,7 @@ s.listed_names={94820406} -- Dark Fusion
 
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return c:IsPreviousLocation(LOCATION_HAND)
+    return c:IsPreviousLocation(LOCATION_HAND) or c:IsPreviousLocation(LOCATION_GRAVE)
 end
 
 function s.filter(c)
