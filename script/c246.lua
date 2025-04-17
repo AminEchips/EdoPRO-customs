@@ -26,7 +26,7 @@ function s.initial_effect(c)
 end
 
 s.listed_series={0x6008}
-s.listed_names={94820406,21844576,13293158,58554959} -- Dark Fusion, Elemental HERO Neos, Evil HERO Malicious Edge
+s.listed_names={94820406,89943723,58554959} -- Dark Fusion, Elemental HERO Neos, Evil HERO Malicious Edge
 
 function s.fusfilter(c)
 	return c:IsType(TYPE_FUSION) and c:IsSetCard(0x6008) and c:IsAbleToExtraAsCost()
@@ -54,7 +54,7 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return not e:GetHandler():IsStatus(STATUS_BATTLE_DESTROYED) and Duel.GetTurnCount()~=e:GetHandler():GetTurnID()
 end
 function s.thfilter(c)
-	return (c:IsCode(21844576) or c:IsCode(13293158) or c:IsCode(58554959)) and c:IsAbleToHand()
+	return (c:IsCode(89943723) or c:IsCode(58554959)) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
