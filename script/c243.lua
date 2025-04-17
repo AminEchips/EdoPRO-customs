@@ -64,7 +64,7 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=g:GetFirst()
 	if not tc then return end
 	if Duel.SelectYesNo(tp,aux.Stringid(id,2)) and tc:IsCanBeSpecialSummoned(e,0,tp,false,false) then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+		Duel.SpecialSummon(tc,SUMMON_TYPE_SPECIAL,tp,tp,false,true,POS_FACEUP)
 	else
 		Duel.SendtoHand(tc,nil,REASON_EFFECT)
 		Duel.ConfirmCards(1-tp,tc)
