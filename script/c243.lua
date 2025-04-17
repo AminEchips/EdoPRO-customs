@@ -12,7 +12,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.negop)
     c:RegisterEffect(e1)
 
-    --GY effect
+    -- GY effect: Add to hand or Special Summon a monster that lists "Dark Fusion"
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON)
@@ -28,6 +28,7 @@ end
 s.listed_series={0x6008}
 s.listed_names={94820406} -- Dark Fusion
 
+-- Negate Setup
 function s.cfilter(c)
     return c:IsSetCard(0x6008) and c:IsLevelAbove(6)
 end
@@ -52,23 +53,25 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
+-- GY Effect Helpers
 function s.filter(c,e,tp)
-    return c:IsType(TYPE_MONSTER) and c:ListsCode(94820406) and ((c:IsAbleToHand() or c:IsAbleToExtra()) and c:IsCanBeSpecialSummoned(e,0,tp,false,true))
+    return c:IsType(TYPE_MONSTER)
+        and c:ListsCode(94820406)
+        and (c:IsAbleToHand() or c:IsCanBeSpecialSummoned(e,0,tp,true,false))
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil,e,tp) end
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_OPERATECARD)
     local g=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil,e,tp)
     local tc=g:GetFirst()
     if not tc then return end
-    if Duel.SelectYesNo(tp,aux.Stringid(id,2)) and tc:IsCanBeSpecialSummoned(e,0,tp,false,true) then
-        Duel.SpecialSummon(tc,SUMMON_TYPE_SPECIAL,tp,tp,false,true,POS_FACEUP)
-        tc:CompleteProcedure()
+    if Duel.SelectYesNo(tp,aux.Stringid(id,2)) and tc:IsCanBeSpecialSummoned(e,0,tp,true,false) then
+        Duel.SpecialSummon(tc,0,tp,tp,true,false,POS_FACEUP)
     else
         Duel.SendtoHand(tc,nil,REASON_EFFECT)
         Duel.ConfirmCards(1-tp,tc)
     end
 end
-
