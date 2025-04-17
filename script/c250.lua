@@ -20,7 +20,7 @@ function s.condition(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.filter(c,e,tp)
-    return c:IsSetCard(0x6008) and c:IsLevelBelow(7) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
+    return c:IsSetCard(0x6008) and c:IsLevelBelow(8) and c:IsCanBeSpecialSummoned(e,0,tp,true,false)
 end
 
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
