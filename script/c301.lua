@@ -29,12 +29,12 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Filter for Spell/Trap cards (just like Reactor Dragon)
+-- Correct Spell/Trap filter (same as Reactor Dragon)
 function s.desfilter(c)
     return c:IsType(TYPE_SPELL+TYPE_TRAP)
 end
 
--- Effect 1 Target: Gain 300 ATK, destroy if Morningstar is present
+-- Effect 1: Always gain ATK, and destroy Spell/Trap if Morningstar is on field
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
     if Duel.IsExistingMatchingCard(s.desfilter,tp,0,LOCATION_ONFIELD,1,nil)
@@ -43,7 +43,6 @@ function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
     end
 end
 
--- Effect 1 Operation
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if c:IsRelateToEffect(e) and c:IsFaceup() then
@@ -55,7 +54,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
         c:RegisterEffect(e1)
 
-        -- Destroy Spell/Trap if Morningstar is on the field
+        -- Destroy Spell/Trap if Morningstar is present
         if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) then
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
             local g=Duel.SelectMatchingCard(tp,s.desfilter,tp,0,LOCATION_ONFIELD,1,1,nil)
@@ -67,16 +66,18 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2 Condition: Sent as cost by Darklord effect
+-- Effect 2: Revive self if sent to GY as cost by a Darklord card
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return re and re:GetHandler():IsSetCard(0xef) and c:IsReason(REASON_COST)
 end
+
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
+
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if c:IsRelateToEffect(e) then
