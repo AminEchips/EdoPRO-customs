@@ -13,10 +13,11 @@ function s.initial_effect(c)
     e1:SetRange(LOCATION_MZONE)
     e1:SetCountLimit(1)
     e1:SetCost(s.tgcost)
+    e1:SetTarget(s.tgtg)
     e1:SetOperation(s.tgop)
     c:RegisterEffect(e1)
 
-    -- If LP paid for Darklord effect: target, then Fusion Summon using hand/field (targeting in cost)
+    -- If LP paid for Darklord effect: target, then Fusion Summon using hand/field
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON+CATEGORY_FUSION_SUMMON)
@@ -42,12 +43,13 @@ s.listed_series={0xef}
 -- Effect 1: Detach and target to send to GY
 function s.tgcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST)
-        and Duel.IsExistingMatchingCard(Card.IsMonster,tp,0,LOCATION_MZONE,1,nil) end
+        and Duel.IsExistingMatchingCard(Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,nil) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local g=Duel.SelectMatchingCard(tp,Card.IsMonster,tp,0,LOCATION_MZONE,1,1,nil)
+    local g=Duel.SelectMatchingCard(tp,Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,1,nil)
     e:SetLabelObject(g:GetFirst())
 end
+function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk) return true end
 function s.tgop(e,tp,eg,ep,ev,re,r,rp)
     local tc=e:GetLabelObject()
     if tc and tc:IsRelateToEffect(e) then
@@ -65,18 +67,18 @@ function s.fusfilter(c)
     return c:IsSetCard(0xef) and c:IsAbleToHand()
 end
 function s.fuscost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then
-        return Duel.IsExistingMatchingCard(s.fusfilter,tp,LOCATION_GRAVE,0,1,nil)
-    end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.fusfilter,tp,LOCATION_GRAVE,0,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
     local g=Duel.SelectMatchingCard(tp,s.fusfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-    if #g>0 then
-        Duel.SendtoHand(g,nil,REASON_COST)
-        Duel.ConfirmCards(1-tp,g)
-        e:SetLabelObject(g:GetFirst())
-    end
+    e:SetLabelObject(g:GetFirst())
 end
 function s.fusop(e,tp,eg,ep,ev,re,r,rp)
+    local tc=e:GetLabelObject()
+    if tc and tc:IsAbleToHand() then
+        Duel.SendtoHand(tc,nil,REASON_EFFECT)
+        Duel.ConfirmCards(1-tp,tc)
+    end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local fusion=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_EXTRA,0,1,1,nil,TYPE_FUSION):GetFirst()
     if fusion then
         local mat=Duel.SelectMatchingCard(tp,aux.FilterBoolFunction(Card.IsType,TYPE_MONSTER),tp,LOCATION_HAND+LOCATION_MZONE,0,2,2,nil)
