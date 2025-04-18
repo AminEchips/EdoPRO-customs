@@ -30,15 +30,21 @@ function s.initial_effect(c)
 end
 
 -- Effect 1: Gain 300 ATK and optionally destroy 1 Spell/Trap if Morningstar is on field
-function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
-    local b1=true  -- always gain 300 ATK
-    local b2=Duel.IsExistingMatchingCard(Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,1,nil)
-        and Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) -- Darklord Morningstar
+function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) and chkc:IsSpellTrap() end
+    local c=e:GetHandler()
+    local b1=true -- always gain ATK
+    local b2=Duel.IsExistingTarget(Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,1,nil)
+        and Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652)
     if chk==0 then return b1 end
+
     if b2 then
-        Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_ONFIELD)
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+        local g=Duel.SelectTarget(tp,Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,1,1,nil)
+        Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
     end
 end
+
 
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
@@ -51,17 +57,14 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
         c:RegisterEffect(e1)
 
-        -- Check for Morningstar and destroy 1 Spell/Trap
-        if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) then
-            Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-            local g=Duel.SelectMatchingCard(tp,Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,1,1,nil)
-            if #g>0 then
-                Duel.HintSelection(g)
-                Duel.Destroy(g,REASON_EFFECT)
-            end
+        -- If target was set (Morningstar was on field), destroy it
+        local tg=Duel.GetFirstTarget()
+        if tg and tg:IsRelateToEffect(e) and tg:IsSpellTrap() then
+            Duel.Destroy(tg,REASON_EFFECT)
         end
     end
 end
+
 
 -- Effect 2: Revive if sent to GY as cost for a Darklord effect
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
