@@ -2,9 +2,8 @@
 local s,id=GetID()
 function s.initial_effect(c)
     -- Xyz Summon Procedure
-    function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
-        return e:GetHandler():IsSummonType(SUMMON_TYPE_XYZ)
-    end
+    Xyz.AddProcedure(c,nil,4,2)
+	c:EnableReviveLimit()
 
     -- Effect 1: Detach + discard, opponent random discard, draw & recover
     local e1=Effect.CreateEffect(c)
