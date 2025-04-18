@@ -102,12 +102,13 @@ function s.halveop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.costchange(e,re,rp,val)
-    if rp == e:GetOwnerPlayer() then
+    if val == nil then return val end  -- Always guard nil
+    if rp == e:GetOwnerPlayer() then  -- Use GetOwnerPlayer, not GetHandlerPlayer
         return math.ceil(val / 2)
-    else
-        return val
     end
+    return val
 end
+
 
 -- Effect 3: Search Level 8 "Darklord"
 function s.thfilter(c)
