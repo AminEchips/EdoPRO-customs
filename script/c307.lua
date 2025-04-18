@@ -49,7 +49,7 @@ function s.bonusop(e,tp,eg,ep,ev,re,r,rp)
     if not c:IsFaceup() or c:GetFlagEffect(id)>0 then return end
     if not re then return end
     local lpCost = re:GetCost()
-    if rp==tp and Duel.GetCurrentChain()>0 and Duel.GetLP(tp)<c:GetOwner():GetPreviousLP() then
+    if rp==tp and re and re:GetHandler() and re:GetHandler():IsSetCard(0xef) then
         c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
 
         -- Gain 1000 ATK
