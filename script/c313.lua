@@ -43,10 +43,10 @@ s.listed_series={0xef}
 -- Effect 1: Detach and target to send to GY
 function s.tgcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST)
-        and Duel.IsExistingMatchingCard(Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,nil) end
+        and Duel.IsExistingTarget(Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,nil) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local g=Duel.SelectMatchingCard(tp,Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,1,nil)
+    local g=Duel.Target(tp,Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,1,nil)
     e:SetLabelObject(g:GetFirst())
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk) return true end
@@ -67,9 +67,9 @@ function s.fusfilter(c)
     return c:IsSetCard(0xef) and c:IsAbleToHand()
 end
 function s.fuscost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.fusfilter,tp,LOCATION_GRAVE,0,1,nil) end
+    if chk==0 then return Duel.IsExistingTarget(s.fusfilter,tp,LOCATION_GRAVE,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-    local g=Duel.SelectMatchingCard(tp,s.fusfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+    local g=Duel.SelectTarget(tp,s.fusfilter,tp,LOCATION_GRAVE,0,1,1,nil)
     e:SetLabelObject(g:GetFirst())
 end
 function s.fusop(e,tp,eg,ep,ev,re,r,rp)
@@ -79,9 +79,9 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
         Duel.ConfirmCards(1-tp,tc)
     end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local fusion=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_EXTRA,0,1,1,nil,TYPE_FUSION):GetFirst()
+    local fusion=Duel.SelectTarget(tp,Card.IsType,tp,LOCATION_EXTRA,0,1,1,nil,TYPE_FUSION):GetFirst()
     if fusion then
-        local mat=Duel.SelectMatchingCard(tp,aux.FilterBoolFunction(Card.IsType,TYPE_MONSTER),tp,LOCATION_HAND+LOCATION_MZONE,0,2,2,nil)
+        local mat=Duel.SelectTarget(tp,aux.FilterBoolFunction(Card.IsType,TYPE_MONSTER),tp,LOCATION_HAND+LOCATION_MZONE,0,2,2,nil)
         if #mat==2 then
             Duel.SendtoGrave(mat,REASON_MATERIAL+REASON_FUSION)
             Duel.SpecialSummon(fusion,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
