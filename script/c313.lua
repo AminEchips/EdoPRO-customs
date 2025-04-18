@@ -46,7 +46,7 @@ function s.tgcost(e,tp,eg,ep,ev,re,r,rp,chk)
         and Duel.IsExistingTarget(Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,nil) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local g=Duel.Target(tp,Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,1,nil)
+    local g=Duel.IsExistingTarget(tp,Card.IsAbleToGrave,tp,0,LOCATION_MZONE,1,1,nil)
     e:SetLabelObject(g:GetFirst())
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk) return true end
