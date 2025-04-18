@@ -100,9 +100,10 @@ function s.halveop(e,tp,eg,ep,ev,re,r,rp)
     e1:SetReset(RESET_PHASE+PHASE_END)
     Duel.RegisterEffect(e1,tp)
 end
+
 function s.costchange(e,re,rp,val)
-    if rp==e:GetHandlerPlayer() then
-        return math.ceil(val/2)
+    if rp == e:GetOwnerPlayer() then
+        return math.ceil(val / 2)
     else
         return val
     end
