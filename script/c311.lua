@@ -20,7 +20,7 @@ function s.initial_effect(c)
     -- Effect 2: If sent to GY for Darklord S/T activation, halve LP costs for rest of turn
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-    e2:SetCode(EVENT_CHAINING)
+    e2:SetCode(EVENT_TO_GRAVE)
     e2:SetRange(LOCATION_GRAVE)
     e2:SetOperation(s.halveop)
     c:RegisterEffect(e2)
@@ -68,7 +68,9 @@ end
 -- Effect 2: Halve LP costs
 function s.halveop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if not c:IsReason(REASON_COST) or not re then return end
+    if not eg:IsContains(c) then return end
+    local re=Duel.GetChainInfo(0,CHAININFO_TRIGGERING_EFFECT)
+    if not re then return end
     local rc=re:GetHandler()
     if rc:IsSetCard(0xef) and rc:IsType(TYPE_SPELL+TYPE_TRAP) and rc:IsControler(tp) then
         local e1=Effect.CreateEffect(c)
@@ -81,6 +83,7 @@ function s.halveop(e,tp,eg,ep,ev,re,r,rp)
         Duel.RegisterEffect(e1,tp)
     end
 end
+
 function s.costchange(e,re,rp,val)
     if rp==e:GetHandlerPlayer() then
         return math.ceil(val/2)
