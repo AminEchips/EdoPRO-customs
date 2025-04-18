@@ -109,7 +109,7 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Global LP cost tracker
-local ge1=Effect.CreateEffect({})
+local ge1=Effect.CreateEffect()
 ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 ge1:SetCode(EVENT_PAY_LPCOST)
 ge1:SetOperation(function(_,tp,_,_,_,_,_,_) Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1) end)
