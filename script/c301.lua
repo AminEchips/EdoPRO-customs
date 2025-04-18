@@ -36,12 +36,16 @@ end
 
 -- Effect 1: Always gain ATK, and destroy Spell/Trap if Morningstar is on field
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
+    local morningstar_present = Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652)
     if chk==0 then return true end
-    if Duel.IsExistingMatchingCard(s.desfilter,tp,0,LOCATION_ONFIELD,1,nil)
-        and Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) then
+    if morningstar_present and Duel.IsExistingMatchingCard(s.desfilter,tp,0,LOCATION_ONFIELD,1,nil) then
+        e:SetLabel(1)
         Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_ONFIELD)
+    else
+        e:SetLabel(0)
     end
 end
+
 
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
@@ -54,17 +58,18 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
         c:RegisterEffect(e1)
 
-        -- Destroy Spell/Trap if Morningstar is present
-        if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) then
+        -- Only proceed if Morningstar was present during target phase
+        if e:GetLabel() == 1 then
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
             local g=Duel.SelectMatchingCard(tp,s.desfilter,tp,0,LOCATION_ONFIELD,1,1,nil)
-            if #g>0 then
+            if #g > 0 then
                 Duel.HintSelection(g)
                 Duel.Destroy(g,REASON_EFFECT)
             end
         end
     end
 end
+
 
 -- Effect 2: Revive self if sent to GY as cost by a Darklord card
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
