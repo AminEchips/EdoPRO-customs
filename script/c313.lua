@@ -103,7 +103,7 @@ end
 -- EFFECT 3: Return to Extra Deck
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return c:IsReason(REASON_BATTLE+REASON_EFFECT+REASON_RELEASE) and c:IsPreviousLocation(LOCATION_ONFIELD)
+    return c:IsReason(REASON_BATTLE+REASON_RELEASE) and c:IsPreviousLocation(LOCATION_ONFIELD)
 end
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
     Duel.SendtoDeck(e:GetHandler(),nil,SEQ_DECKTOP,REASON_EFFECT)
