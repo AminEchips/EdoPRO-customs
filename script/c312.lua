@@ -31,8 +31,7 @@ function s.initial_effect(c)
     e3:SetOperation(s.thop)
     c:RegisterEffect(e3)
 
-    -- End Phase banish if LP paid for a "Darklord" effect
-    -- End Phase: detach to banish
+    -- End Phase: detach and target as cost → banish that card
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,2))
     e4:SetCategory(CATEGORY_REMOVE)
@@ -45,6 +44,7 @@ function s.initial_effect(c)
     e4:SetTarget(s.rmtg)
     e4:SetOperation(s.rmop)
     c:RegisterEffect(e4)
+
 
 end
 s.listed_series={0xef}
@@ -110,25 +110,28 @@ end
 
 -- Effect 3: End Phase banish
 function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
+    if chk==0 then
+        return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST)
+            and Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
+    end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+    local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
+    e:SetLabelObject(g:GetFirst()) -- store the selected target for operation
 end
 
 
-function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsOnField() end
-    if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
-    Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
+function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
+    return true
 end
 
 
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
-    local tc=Duel.GetFirstTarget()
+    local tc=e:GetLabelObject()
     if tc and tc:IsRelateToEffect(e) then
         Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
     end
 end
+
 
 
