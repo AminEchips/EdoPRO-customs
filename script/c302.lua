@@ -16,17 +16,18 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Copy "Darklord" Spell/Trap in GY (Quick Effect)
+    -- Copy "Darklord" Spell/Trap in GY (Ixchel style)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TODECK)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_FREE_CHAIN)
     e2:SetRange(LOCATION_MZONE)
+    e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e2:SetCountLimit(1,{id,1})
-    e2:SetCost(s.cost)
-    e2:SetTarget(s.target)
-    e2:SetOperation(s.operation)
+    e2:SetCost(s.cpcost)
+    e2:SetTarget(s.cptg)
+    e2:SetOperation(s.cpop)
     c:RegisterEffect(e2)
 end
 s.listed_names={25451652} -- Darklord Morningstar
@@ -38,10 +39,9 @@ function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SendtoGrave(e:GetHandler(),REASON_COST+REASON_DISCARD)
 end
 
--- Filter: Searchable cards that are "Darklord Morningstar" or mention it (excluding this card)
+-- Search filter: "Morningstar" or cards that list it (not self)
 function s.thfilter(c)
-    return (c:IsCode(25451652) or c:ListsCode(25451652))
-        and not c:IsCode(id) and c:IsAbleToHand()
+    return (c:IsCode(25451652) or c:ListsCode(25451652)) and not c:IsCode(id) and c:IsAbleToHand()
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -58,36 +58,49 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Copy "Darklord" Spell/Trap in GY
-function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
+-- Copy cost
+function s.cpcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.CheckLPCost(tp,1000) end
     Duel.PayLPCost(tp,1000)
 end
 
-function s.cpyfilter(c)
-    return c:IsSetCard(0xef) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:CheckActivateEffect(false,true,false)~=nil
+-- Copy target
+function s.cpfilter(c)
+    return c:IsSetCard(0xef) and c:IsSpellTrap() and c:IsAbleToDeck() and c:CheckActivateEffect(false,true,false)~=nil
 end
 
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.cpyfilter,tp,LOCATION_GRAVE,0,1,nil) end
-    Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
+function s.cptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.cpfilter(chkc) end
+    if chk==0 then return Duel.IsExistingTarget(s.cpfilter,tp,LOCATION_GRAVE,0,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+    local g=Duel.SelectTarget(tp,s.cpfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+    Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
 end
 
-function s.operation(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-    local tc=Duel.SelectMatchingCard(tp,s.cpyfilter,tp,LOCATION_GRAVE,0,1,1,nil):GetFirst()
-    if not tc then return end
-    local te=tc:CheckActivateEffect(false,true,true)
-    if te then
-        local tg=te:GetTarget()
-        local op=te:GetOperation()
-        e:SetCategory(te:GetCategory())
-        Duel.ClearTargetCard()
-        if tg then tg(e,tp,eg,ep,ev,re,r,rp,1) end
-        Duel.BreakEffect()
-        if op then op(e,tp,eg,ep,ev,re,r,rp) end
-        Duel.BreakEffect()
-        Duel.SendtoDeck(tc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+-- Copy operation (Ixchel-style)
+function s.cpop(e,tp,eg,ep,ev,re,r,rp)
+    local tc=Duel.GetFirstTarget()
+    if not (tc and tc:IsRelateToEffect(e)) then return end
+    local te,ceg,cep,cev,cre,cr,crp=tc:CheckActivateEffect(false,true,true)
+    if not te then return end
+    local tg=te:GetTarget()
+    local op=te:GetOperation()
+
+    if tg then tg(te,tp,Group.CreateGroup(),PLAYER_NONE,0,e,REASON_EFFECT,PLAYER_NONE,1) end
+    Duel.BreakEffect()
+    tc:CreateEffectRelation(te)
+    Duel.BreakEffect()
+    local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+    for etc in aux.Next(g) do
+        etc:CreateEffectRelation(te)
     end
+    if op then op(te,tp,Group.CreateGroup(),PLAYER_NONE,0,e,REASON_EFFECT,PLAYER_NONE,1) end
+    tc:ReleaseEffectRelation(te)
+    for etc in aux.Next(g) do
+        etc:ReleaseEffectRelation(te)
+    end
+    Duel.BreakEffect()
+    Duel.SendtoDeck(te:GetHandler(),nil,2,REASON_EFFECT)
 end
+
 
