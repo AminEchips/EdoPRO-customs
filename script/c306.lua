@@ -51,16 +51,19 @@ end
 function s.rmfilter2(c,code)
     return c:IsSetCard(0xef) and not c:IsCode(code) and c:IsAbleToHand()
 end
-function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.rmfilter1,tp,LOCATION_GRAVE,0,1,nil) end
-    Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_GRAVE)
+function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.rmfilter1(chkc) end
+    if chk==0 then return Duel.IsExistingTarget(s.rmfilter1,tp,LOCATION_GRAVE,0,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+    local g=Duel.SelectTarget(tp,s.rmfilter1,tp,LOCATION_GRAVE,0,1,1,nil)
+    Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
 end
+
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local rg=Duel.SelectMatchingCard(tp,s.rmfilter1,tp,LOCATION_GRAVE,0,1,1,nil)
-    if #rg>0 and Duel.Remove(rg,POS_FACEUP,REASON_EFFECT)>0 then
-        local code=rg:GetFirst():GetCode()
+    local tc=Duel.GetFirstTarget()
+    if tc and tc:IsRelateToEffect(e) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)>0 then
+        local code=tc:GetCode()
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
         local g=Duel.SelectMatchingCard(tp,s.rmfilter2,tp,LOCATION_GRAVE,0,1,1,nil,code)
         if #g>0 then
@@ -69,6 +72,7 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
 
 -- If Fusion Summoned card leaves field by opponent
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
