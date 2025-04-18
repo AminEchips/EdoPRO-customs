@@ -3,14 +3,6 @@ local s,id=GetID()
 function s.initial_effect(c)
     --Cannot be Special Summoned more than once per turn
     c:SetSPSummonOnce(id)
-    
-    --Special Summon limit
-    local e0=Effect.CreateEffect(c)
-    e0:SetType(EFFECT_TYPE_SINGLE)
-    e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-    e0:SetCode(EFFECT_SPSUMMON_CONDITION)
-    e0:SetValue(aux.limitOncePerTurn)
-    c:RegisterEffect(e0)
 
     --Effect on Normal or Special Summon
     local e1=Effect.CreateEffect(c)
