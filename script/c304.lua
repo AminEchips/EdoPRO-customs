@@ -4,7 +4,7 @@ function s.initial_effect(c)
     -- Can only be Special Summoned once per turn
     c:SetSPSummonOnce(id)
 
-    -- If added to hand, even by drawing: you can Special Summon it and place a "Darklord" from GY on top/bottom of Deck
+    -- If added to hand, even by drawing: you can Special Summon it and place a "Darklord" from GY or banished on top/bottom of Deck
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TODECK)
@@ -32,7 +32,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0xef}
 
--- Effect 1: If added to hand
+-- Effect 1: If added to hand (not by draw)
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return not c:IsReason(REASON_DRAW)
@@ -46,7 +46,7 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
-    Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
+    Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
 end
 
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
@@ -55,7 +55,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
         and c:IsRelateToEffect(e)
         and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
         Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,2)) -- "Choose a Darklord to place"
-        local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+        local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil)
         if #g>0 then
             Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,3)) -- "Top or bottom of Deck"
             local opt=Duel.SelectOption(tp,aux.Stringid(id,4),aux.Stringid(id,5)) -- 0 = top, 1 = bottom
