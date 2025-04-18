@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     --Cannot be Special Summoned more than once per turn
-    c:SetUniqueOnField(1,0,id)
+    c:SetSPSummonOnce(id)
     
     --Special Summon limit
     local e0=Effect.CreateEffect(c)
@@ -40,6 +40,8 @@ function s.initial_effect(c)
     e4:SetCode(EFFECT_UPDATE_DEFENSE)
     c:RegisterEffect(e4)
 end
+
+s.listed_names={25451652}
 
 -- Summon success target
 function s.filter(c,e,tp)
