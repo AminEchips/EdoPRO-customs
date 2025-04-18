@@ -4,15 +4,15 @@ function s.initial_effect(c)
     c:EnableReviveLimit()
     Fusion.AddProcFunRep(c,s.ffilter,2,true)
 
-    -- Effect 1: LP-paid trigger: ATK +1000 & extra attack (once per turn)
+    -- Effect 1: Trigger when you pay LP to activate a card/effect (once per turn)
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-    e1:SetCode(EVENT_CHAIN_SOLVED)
+    e1:SetCode(EVENT_PAY_LPCOST)
     e1:SetRange(LOCATION_MZONE)
-    e1:SetOperation(s.bonusop)
+    e1:SetOperation(s.lppaid)
     c:RegisterEffect(e1)
 
-    -- Effect 2: If 1 Darklord S/T would be shuffled into Deck, add to hand instead
+    -- Effect 2: Replace shuffle of exactly 1 Darklord S/T with optional add to hand
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
     e2:SetCode(EVENT_TO_DECK)
@@ -21,7 +21,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.repop)
     c:RegisterEffect(e2)
 
-    -- Effect 3: GY revive by sending 2 Darklords
+    -- Effect 3: GY revive by sending 2 Darklord cards (once per turn)
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,0))
     e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -42,40 +42,37 @@ function s.ffilter(c,fc,sub,mg,sg,chkfn)
 end
 
 --------------------------------------------------------------
--- Effect 1: Gain 1000 ATK and 1 extra attack if LP was paid
+-- Effect 1: LP payment triggers ATK boost + extra attack
 --------------------------------------------------------------
-function s.bonusop(e,tp,eg,ep,ev,re,r,rp)
+function s.lppaid(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if not c:IsFaceup() or c:GetFlagEffect(id)>0 then return end
-    if not re then return end
-    local lpCost = re:GetCost()
-    if rp==tp and re and re:GetHandler() and re:GetHandler():IsSetCard(0xef) then
-        c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
+    if tp~=rp or not re or c:GetFlagEffect(id)>0 then return end
+    if not c:IsFaceup() then return end
 
-        -- Gain 1000 ATK
-        local e1=Effect.CreateEffect(c)
-        e1:SetType(EFFECT_TYPE_SINGLE)
-        e1:SetCode(EFFECT_UPDATE_ATTACK)
-        e1:SetValue(1000)
-        e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-        c:RegisterEffect(e1)
+    c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
 
-        -- Extra attack
-        local e2=Effect.CreateEffect(c)
-        e2:SetType(EFFECT_TYPE_SINGLE)
-        e2:SetCode(EFFECT_EXTRA_ATTACK_MONSTER)
-        e2:SetValue(1)
-        e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-        c:RegisterEffect(e2)
-    end
+    -- Gain 1000 ATK
+    local e1=Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_SINGLE)
+    e1:SetCode(EFFECT_UPDATE_ATTACK)
+    e1:SetValue(1000)
+    e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+    c:RegisterEffect(e1)
+
+    -- Extra attack
+    local e2=Effect.CreateEffect(c)
+    e2:SetType(EFFECT_TYPE_SINGLE)
+    e2:SetCode(EFFECT_EXTRA_ATTACK)
+    e2:SetValue(1)
+    e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+    c:RegisterEffect(e2)
 end
 
 --------------------------------------------------------------
--- Effect 2: Replace shuffle of exactly 1 Darklord S/T from GY
+-- Effect 2: Replace shuffle with optional hand add
 --------------------------------------------------------------
 function s.repcon(e,tp,eg,ep,ev,re,r,rp)
-    local g=eg:Filter(s.repfilter,nil,tp)
-    return #g==1
+    return eg:IsExists(s.repfilter,1,nil,tp)
 end
 function s.repfilter(c,tp)
     return c:IsSetCard(0xef) and c:IsType(TYPE_SPELL+TYPE_TRAP)
@@ -86,9 +83,11 @@ function s.repop(e,tp,eg,ep,ev,re,r,rp)
     local g=eg:Filter(s.repfilter,nil,tp)
     if #g==1 then
         local tc=g:GetFirst()
-        Duel.SendtoHand(tc,nil,REASON_EFFECT)
-        Duel.ConfirmCards(1-tp,tc)
-        Duel.ShuffleDeck(tp)
+        if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+            Duel.SendtoHand(tc,nil,REASON_EFFECT)
+            Duel.ConfirmCards(1-tp,tc)
+            Duel.ShuffleDeck(tp)
+        end
     end
 end
 
