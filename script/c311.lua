@@ -5,10 +5,10 @@ function s.initial_effect(c)
     Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsRace,RACE_FAIRY),4,2,s.ovfilter,aux.Stringid(id,0),2)
     c:EnableReviveLimit()
 
-    -- Effect 1: Detach 1 + discard 1, then random discard from opponent, both draw, gain LP
+    -- Effect 1: Detach + discard + both players draw + recover LP
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,1))
-    e1:SetCategory(CATEGORY_HANDES+CATEGORY_DRAW)
+    e1:SetCategory(CATEGORY_HANDES+CATEGORY_DRAW+CATEGORY_RECOVER)
     e1:SetType(EFFECT_TYPE_IGNITION)
     e1:SetRange(LOCATION_MZONE)
     e1:SetCountLimit(1,id)
@@ -17,7 +17,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.operation1)
     c:RegisterEffect(e1)
 
-    -- Effect 2: If sent to GY to activate a Darklord S/T effect, LP cost is halved
+    -- Effect 2: If sent to GY for Darklord S/T activation, halve LP costs for rest of turn
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
     e2:SetCode(EVENT_CHAINING)
@@ -25,7 +25,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.halveop)
     c:RegisterEffect(e2)
 
-    -- Effect 3: Banish from GY to search Level 8 Darklord
+    -- Effect 3: Banish from GY to search 1 Level 8 "Darklord"
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -65,11 +65,12 @@ function s.operation1(e,tp,eg,ep,ev,re,r,rp)
     if p2>0 then Duel.Recover(1-tp,Duel.GetFieldGroupCount(1-tp,LOCATION_HAND,0)*100,REASON_EFFECT) end
 end
 
--- Effect 2: Halve LP costs this turn (if sent to GY to activate a Darklord S/T)
+-- Effect 2: Halve LP costs
 function s.halveop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsReason(REASON_COST) or not re then return end
-    if re:GetHandler():IsSetCard(0xef) and re:GetHandler():IsType(TYPE_SPELL+TYPE_TRAP) then
+    local rc=re:GetHandler()
+    if rc:IsSetCard(0xef) and rc:IsType(TYPE_SPELL+TYPE_TRAP) and rc:IsControler(tp) then
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_FIELD)
         e1:SetCode(EFFECT_CHANGE_LPCOST)
@@ -80,13 +81,15 @@ function s.halveop(e,tp,eg,ep,ev,re,r,rp)
         Duel.RegisterEffect(e1,tp)
     end
 end
-function s.costchange(e,rp,val)
+function s.costchange(e,re,rp,val)
     if rp==e:GetHandlerPlayer() then
         return math.ceil(val/2)
-    else return val end
+    else
+        return val
+    end
 end
 
--- Effect 3: Banish to search Level 8 Darklord
+-- Effect 3: Search Level 8 Darklord
 function s.thfilter(c)
     return c:IsSetCard(0xef) and c:IsLevel(8) and c:IsAbleToHand()
 end
