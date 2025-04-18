@@ -40,7 +40,7 @@ end
 
 -- Filter: Searchable cards that are "Darklord Morningstar" or mention it (excluding this card)
 function s.thfilter(c)
-    return (c:IsCode(25451652) or aux.IsCodeListed(c,25451652)) 
+    return (c:IsCode(25451652) or c:ListsCode(25451652))
         and not c:IsCode(id) and c:IsAbleToHand()
 end
 
@@ -90,3 +90,4 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
         Duel.SendtoDeck(tc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
     end
 end
+
