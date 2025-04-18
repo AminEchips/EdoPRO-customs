@@ -4,7 +4,7 @@ function s.initial_effect(c)
     -- Can only be Special Summoned once per turn
     c:SetSPSummonOnce(id)
 
-    -- Effect 1: Gain ATK + optionally destroy Spell/Trap
+    -- Effect 1: Gain ATK + destroy Spell/Trap immediately if Morningstar is on field
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_ATKCHANGE+CATEGORY_DESTROY)
@@ -29,47 +29,43 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Correct Spell/Trap filter (same as Reactor Dragon)
+s.listed_names={25451652}
+
+-- Spell/Trap filter (face-up or face-down)
 function s.desfilter(c)
     return c:IsType(TYPE_SPELL+TYPE_TRAP)
 end
 
--- Effect 1: Always gain ATK, and destroy Spell/Trap if Morningstar is on field
+-- Effect 1: Always gain 300 ATK, destroy 1 Spell/Trap if Morningstar is present
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
-    local morningstar_present = Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652)
     if chk==0 then return true end
-    if morningstar_present and Duel.IsExistingMatchingCard(s.desfilter,tp,0,LOCATION_ONFIELD,1,nil) then
-        e:SetLabel(1)
-        Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_ONFIELD)
-    else
-        e:SetLabel(0)
-    end
+    Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,e:GetHandler(),1,0,0)
+    Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_ONFIELD)
 end
-
 
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if c:IsRelateToEffect(e) and c:IsFaceup() then
-        -- Gain 300 ATK
-        local e1=Effect.CreateEffect(c)
-        e1:SetType(EFFECT_TYPE_SINGLE)
-        e1:SetCode(EFFECT_UPDATE_ATTACK)
-        e1:SetValue(300)
-        e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
-        c:RegisterEffect(e1)
+    if not (c:IsRelateToEffect(e) and c:IsFaceup()) then return end
 
-        -- Only proceed if Morningstar was present during target phase
-        if e:GetLabel() == 1 then
+    -- Gain 300 ATK
+    local e1=Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_SINGLE)
+    e1:SetCode(EFFECT_UPDATE_ATTACK)
+    e1:SetValue(300)
+    e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
+    c:RegisterEffect(e1)
+
+    -- If Morningstar is on field, destroy 1 Spell/Trap on opponent's field (any)
+    if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) then
+        local g=Duel.GetMatchingGroup(s.desfilter,tp,0,LOCATION_ONFIELD,nil)
+        if #g>0 then
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-            local g=Duel.SelectMatchingCard(tp,s.desfilter,tp,0,LOCATION_ONFIELD,1,1,nil)
-            if #g > 0 then
-                Duel.HintSelection(g)
-                Duel.Destroy(g,REASON_EFFECT)
-            end
+            local dg=g:Select(tp,1,1,nil)
+            Duel.HintSelection(dg)
+            Duel.Destroy(dg,REASON_EFFECT)
         end
     end
 end
-
 
 -- Effect 2: Revive self if sent to GY as cost by a Darklord card
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
