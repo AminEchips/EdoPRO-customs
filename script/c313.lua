@@ -79,25 +79,26 @@ function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
-    if tc and tc:IsRelateToEffect(e) and Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 then
+    if not (tc and tc:IsRelateToEffect(e)) then return end
+
+    if Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 then
         Duel.ConfirmCards(1-tp,tc)
         Duel.BreakEffect()
-        local g=Duel.GetMatchingGroup(Card.IsType,tp,LOCATION_EXTRA,0,nil,TYPE_FUSION)
-        if #g>0 then
-            Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-            local fusion=g:Select(tp,1,1,nil):GetFirst()
-            if fusion then
-                Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_MATERIAL)
-                local mat=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_HAND+LOCATION_MZONE,0,2,2,nil,TYPE_MONSTER)
-                if #mat==2 then
-                    Duel.SendtoGrave(mat,REASON_EFFECT+REASON_MATERIAL+REASON_FUSION)
-                    Duel.SpecialSummon(fusion,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
-                    fusion:CompleteProcedure()
-                end
-            end
-        end
+
+        -- Select a Fusion Monster from Extra Deck
+        local fusion=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_EXTRA,0,1,1,nil,TYPE_FUSION):GetFirst()
+        if not fusion then return end
+
+        -- Select 2 monsters as materials
+        local g=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_HAND+LOCATION_MZONE,0,2,2,nil,TYPE_MONSTER)
+        if #g<2 then return end
+
+        Duel.SendtoGrave(g,REASON_EFFECT+REASON_MATERIAL+REASON_FUSION)
+        Duel.SpecialSummon(fusion,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
+        fusion:CompleteProcedure()
     end
 end
+
 
 -- EFFECT 3: Return to Extra Deck
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
