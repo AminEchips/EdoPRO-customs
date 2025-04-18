@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.atkop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Special Summon self when sent to GY for Darklord effect
+    -- Effect 2: Special Summon self if sent to GY as cost for a Darklord effect
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -33,8 +33,7 @@ end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
     local dg=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
-    if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652)
-        and #dg>0 then
+    if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) and #dg>0 then
         Duel.SetOperationInfo(0,CATEGORY_DESTROY,dg,1,0,0)
     end
 end
@@ -51,7 +50,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
         -- Destroy Spell/Trap if Morningstar is on field
         if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) then
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-            local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
+            local g=Duel.SelectMatchingCard(tp,Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,1,1,nil)
             if #g>0 then
                 Duel.Destroy(g,REASON_EFFECT)
             end
@@ -59,10 +58,10 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Special Summon self if sent to GY by a Darklord card effect
+-- Effect 2: Revive if sent to GY as cost for a Darklord effect
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return re and re:GetHandler():IsSetCard(0xef) and c:IsReason(REASON_EFFECT)
+    return re and re:GetHandler():IsSetCard(0xef) and c:IsReason(REASON_COST)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
