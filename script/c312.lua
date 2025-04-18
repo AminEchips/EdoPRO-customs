@@ -32,17 +32,20 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 
     -- End Phase banish if LP paid for a "Darklord" effect
+    -- End Phase: detach to banish
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,2))
     e4:SetCategory(CATEGORY_REMOVE)
     e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e4:SetCode(EVENT_PHASE+PHASE_END)
     e4:SetRange(LOCATION_MZONE)
-    e4:SetCountLimit(1,id)
-    e4:SetCondition(s.rmcon)
+    e4:SetCountLimit(1)
+    e4:SetCondition(function(e,tp,eg,ep,ev,re,r,rp) return Duel.GetTurnPlayer()==tp end)
+    e4:SetCost(s.rmcost)
     e4:SetTarget(s.rmtg)
     e4:SetOperation(s.rmop)
     c:RegisterEffect(e4)
+
 end
 s.listed_series={0xef}
 
@@ -106,19 +109,22 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Effect 3: End Phase banish
-function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetFlagEffect(tp,id)>0
+function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
+    e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
 
+
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
-    Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,1-tp,LOCATION_ONFIELD)
+    if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
+    Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,0,LOCATION_ONFIELD)
 end
 
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
+    local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
     if #g>0 then
         Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
     end
 end
+
