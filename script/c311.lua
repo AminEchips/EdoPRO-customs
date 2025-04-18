@@ -2,8 +2,9 @@
 local s,id=GetID()
 function s.initial_effect(c)
     -- Xyz Summon Procedure
-    Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsRace,RACE_FAIRY),4,2,s.ovfilter,aux.Stringid(id,0),2)
-    c:EnableReviveLimit()
+    function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
+        return e:GetHandler():IsSummonType(SUMMON_TYPE_XYZ)
+    end
 
     -- Effect 1: Detach + discard, opponent random discard, draw & recover
     local e1=Effect.CreateEffect(c)
