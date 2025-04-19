@@ -40,14 +40,18 @@ end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
     Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,e:GetHandler(),1,0,0)
-    Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_ONFIELD)
+    if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) and
+       Duel.IsExistingMatchingCard(s.desfilter,tp,0,LOCATION_ONFIELD,1,nil) then
+        Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_ONFIELD)
+    end
 end
+
 
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not (c:IsRelateToEffect(e) and c:IsFaceup()) then return end
 
-    -- Gain 300 ATK
+    -- Always gain 300 ATK
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetCode(EFFECT_UPDATE_ATTACK)
@@ -55,10 +59,10 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
     c:RegisterEffect(e1)
 
-    -- If Morningstar is on field, destroy 1 Spell/Trap on opponent's field (any)
+    -- Optional destruction if Morningstar is on field
     if Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_MZONE,0,1,nil,25451652) then
         local g=Duel.GetMatchingGroup(s.desfilter,tp,0,LOCATION_ONFIELD,nil)
-        if #g>0 then
+        if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
             local dg=g:Select(tp,1,1,nil)
             Duel.HintSelection(dg)
