@@ -1,8 +1,7 @@
-
 --Darklord Mead
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Special Summon from GY
+    --Special Summon from GY
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -14,7 +13,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
 
-    -- Destroy if summoned by Fairy or another Fairy is summoned
+    --Destroy a monster when Special Summoned by Fairy or when other Fairy is Special Summoned
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DESTROY)
@@ -28,16 +27,20 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Cost: Send 2 "Darklord" monsters from hand/field
+--Cost for SS from GY
 function s.cfilter(c)
     return c:IsSetCard(0xef) and c:IsAbleToGraveAsCost()
 end
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,2,nil) end
+    if chk==0 then
+        return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,2,nil)
+    end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
     local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,2,2,nil)
     Duel.SendtoGrave(g,REASON_COST)
 end
 
+--Target & Summon
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
@@ -50,21 +53,25 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Destroy trigger
-function s.descon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    return (re and re:GetHandler():IsRace(RACE_FAIRY) and c:IsRelateToEffect(re))
-        or eg:IsExists(s.fairyfilter,1,nil,tp)
-end
-function s.fairyfilter(c,tp)
+--Condition to destroy on Fairy summon or by Fairy effect
+function s.desfilter(c,tp)
     return c:IsFaceup() and c:IsRace(RACE_FAIRY) and c:IsControler(tp)
 end
+function s.descon(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    return eg:IsExists(s.desfilter,1,nil,tp) or (re and re:GetHandler():IsRace(RACE_FAIRY) and c:IsPreviousLocation(LOCATION_GRAVE))
+end
+
+--Target any face-up monster on field
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_MZONE,1,nil) end
+    if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
+    if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-    local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_MZONE,1,1,nil)
+    local g=Duel.SelectTarget(tp,Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
+
+--Destroy selected target
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc and tc:IsRelateToEffect(e) then
