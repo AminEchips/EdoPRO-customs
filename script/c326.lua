@@ -54,7 +54,7 @@ function s.untargetcond(e)
     return mg and mg:IsExists(s.mfilter,1,nil)
 end
 function s.mfilter(c)
-    return c:IsCode(25451652) and c:IsSummonType(SUMMON_TYPE_FUSION)
+    return c:IsCode(04167084) and c:IsSummonType(SUMMON_TYPE_FUSION)
 end
 
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
