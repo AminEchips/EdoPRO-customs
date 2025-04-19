@@ -43,7 +43,7 @@ end
 s.listed_series={0xef}
 
 function s.matcheck(g,lc,sumtype,tp)
-    return g:IsExists(Card.IsCode,1,nil,100001001) and g:IsExists(Card.IsCode,1,nil,100001002) -- replace with actual codes for Twin Ark and Twin Covenant
+    return g:IsExists(Card.IsCode,1,nil,316) and g:IsExists(Card.IsCode,1,nil,317) -- replace with actual codes for Twin Ark and Twin Covenant
 end
 
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
