@@ -36,12 +36,12 @@ function s.initial_effect(c)
     e3:SetOperation(s.operation)
     c:RegisterEffect(e3)
 end
-s.listed_names={25451652} -- Darklord Morningstar
+s.listed_names={25451652,04167084} -- Darklord Morningstar
 s.listed_series={0xef} -- Darklord
 
 -- Must include "The First Darklord" as 1 material
 function s.lcheck(g,lc,sumtype,tp)
-    return g:IsExists(Card.IsCode,1,nil,75041269)
+    return g:IsExists(Card.IsCode,1,nil,04167084)
 end
 
 -- Check for Fusion Summoned Darklord Morningstar material
