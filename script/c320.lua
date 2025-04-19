@@ -8,7 +8,8 @@ function s.initial_effect(c)
     e1:SetCode(EVENT_FREE_CHAIN)
     e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
     e1:SetTarget(s.target)
-    e1:SetOperation(s.activate)
+e1:SetCost(s.cost)
+e1:SetOperation(s.activate)
     c:RegisterEffect(e1)
 end
 
@@ -42,4 +43,10 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     else
         Duel.SendtoGrave(hand,REASON_EFFECT)
     end
+end
+function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(Card.IsSetCard,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil,0xef) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+    local g=Duel.SelectMatchingCard(tp,Card.IsSetCard,tp,LOCATION_HAND+LOCATION_MZONE,0,1,1,nil,0xef)
+    Duel.SendtoGrave(g,REASON_COST)
 end
