@@ -67,7 +67,7 @@ function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
     return rc and rc:IsSetCard(0xef) and rc:IsMonster() and re:IsActivated()
 end
 function s.fusfilter(c)
-    return c:IsSetCard(0xef) and c:IsAbleToHand()
+    return c:IsSetCard(0xef) and c:IsAbleToHand() and c:IsMonster()
 end
 function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.fusfilter(chkc) end
