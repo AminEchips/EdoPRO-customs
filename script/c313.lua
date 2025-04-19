@@ -5,7 +5,7 @@ function s.initial_effect(c)
     Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0xef),8,2)
     c:EnableReviveLimit()
 
-    -- Detach and target to send opponent's monster to GY (actual target)
+    -- Detach and target to send opponent's monster to GY
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_TOGRAVE)
@@ -86,19 +86,21 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
         Duel.BreakEffect()
 
         -- Select a Fusion Monster from Extra Deck
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
         local fusion=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_EXTRA,0,1,1,nil,TYPE_FUSION):GetFirst()
         if not fusion then return end
 
-        -- Select 2 monsters as materials
-        local g=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_HAND+LOCATION_MZONE,0,2,2,nil,TYPE_MONSTER)
-        if #g<2 then return end
+        local chkf=tp
+        local mg=Duel.GetFusionMaterial(tp)
+        local matg=Duel.SelectFusionMaterial(tp,fusion,mg,nil)
+        if #matg==0 then return end
 
-        Duel.SendtoGrave(g,REASON_EFFECT+REASON_MATERIAL+REASON_FUSION)
+        fusion:SetMaterial(matg)
+        Duel.SendtoGrave(matg,REASON_EFFECT+REASON_MATERIAL+REASON_FUSION)
         Duel.SpecialSummon(fusion,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
         fusion:CompleteProcedure()
     end
 end
-
 
 -- EFFECT 3: Return to Extra Deck
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
