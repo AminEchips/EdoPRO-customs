@@ -14,7 +14,7 @@ end
 s.listed_names={25451652} -- Darklord Morningstar
 
 function s.spfilter1(c,e,tp)
-    return c:IsSetCard(0xef) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
+    return c:IsSetCard(0xef) and c:IsType(MONSTER) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
 end
 function s.spfilter2(c,e,tp)
     return c:IsRace(RACE_FAIRY) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
