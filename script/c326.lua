@@ -34,7 +34,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
-s.listed_names={25451652} -- Darklord Morningstar
+s.listed_names={25451652,04167084} -- Darklord Morningstar
 s.listed_series={0xef}
 
 function s.matfilter(c)
