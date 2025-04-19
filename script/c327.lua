@@ -37,6 +37,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
+s.listed_names={25451652}
+
 -- Condition for revive
 function s.cfilter(c,tp)
     return c:IsSetCard(0xef) and c:IsControler(tp) and c:IsPreviousControler(tp)
