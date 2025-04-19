@@ -13,6 +13,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 end
 s.listed_series={0xef}
+s.listed_names={25451652}
 
 function s.filter(c)
     return c:IsSetCard(0xef) and c:IsMonster() and c:IsAbleToGrave()
@@ -30,7 +31,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 then
         if tc:IsLocation(LOCATION_GRAVE) then
             local rec=0
-            if tc:GetOriginalCode()==40008897 then -- Darklord Morningstar
+            if tc:GetOriginalCode()==25451652 then -- Darklord Morningstar
                 rec=2000
             else
                 rec=tc:GetLevel()*100
