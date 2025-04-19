@@ -65,7 +65,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Return to hand before damage calc
+-- Return to hand before damage calc if effects negated
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local bc=c:GetBattleTarget()
