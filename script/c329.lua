@@ -94,7 +94,7 @@ end
 
 -- Effect 3: GY summon if opponent controls a negated face-up monster
 function s.spfilter(c)
-    return c:IsFaceup() and ((c:IsType(TYPE_EFFECT) and c:IsDisabled()) or not c:IsType(TYPE_EFFECT))
+    return c:IsFaceup() and (c:IsType(TYPE_EFFECT) and c:IsDisabled())
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsExistingMatchingCard(s.spfilter,tp,0,LOCATION_MZONE,1,nil)
