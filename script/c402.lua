@@ -21,12 +21,12 @@ function s.initial_effect(c)
     e2:SetCategory(CATEGORY_TOHAND)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_SPSUMMON_SUCCESS)
-    e2:SetRange(LOCATION_HAND)
+    e2:SetRange(LOCATION_MZONE)
     e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetCountLimit(1,id+100)
-    e2:SetCondition(s.thcon)
-    e2:SetTarget(s.thtg)
-    e2:SetOperation(s.thop)
+    e2:SetCondition(s.bouncecon)
+    e2:SetCost(s.bouncecost)
+    e2:SetOperation(s.bounceop)
     c:RegisterEffect(e2)
     
 end
@@ -59,46 +59,21 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Trigger condition: opponent Special Summons at least 1 monster
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-    return rp~=tp and eg:IsExists(Card.IsControler,1,nil,1-tp)
+-- Check if opponent Special Summoned at least 1 monster
+function s.bouncecon(e,tp,eg,ep,ev,re,r,rp)
+    return eg:IsExists(Card.IsControler,1,nil,1-tp)
 end
 
--- Target: Wyvern (this card in hand) and opponent’s summoned monster(s)
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then 
-        return e:GetHandler():IsAbleToHand()
-            and eg:IsExists(Card.IsAbleToHand,1,nil)
-    end
-    Duel.SetTargetCard(eg)
-    Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,0)
-    Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,1-tp,LOCATION_MZONE)
-end
-
--- Trigger condition: opponent Special Summons at least 1 monster
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-    return rp~=tp and eg:IsExists(Card.IsControler,1,nil,1-tp)
-end
-
--- Target: Wyvern (this card in hand) and opponent’s summoned monster(s)
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then 
-        return e:GetHandler():IsAbleToHand()
-            and eg:IsExists(Card.IsAbleToHand,1,nil)
-    end
-    Duel.SetTargetCard(eg)
-    Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,0)
-    Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,1-tp,LOCATION_MZONE)
-end
-
--- Operation: return this card to hand, then choose 1 of opponent's new monsters and return it too
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
+-- Return this card to the hand as cost
+function s.bouncecost(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
-    if not c:IsRelateToEffect(e) then return end
-    if Duel.SendtoHand(c,nil,REASON_EFFECT)==0 then return end
+    if chk==0 then return c:IsAbleToHandAsCost() end
+    Duel.SendtoHand(c,nil,REASON_COST)
+end
 
-    Duel.BreakEffect()
-    local g=eg:Filter(Card.IsRelateToEffect,nil,e):Filter(Card.IsAbleToHand,nil)
+-- Return 1 of the opponent’s newly Special Summoned monsters to the hand (non-targeting)
+function s.bounceop(e,tp,eg,ep,ev,re,r,rp)
+    local g=eg:Filter(function(c) return c:IsControler(1-tp) and c:IsRelateToEffect(e) and c:IsAbleToHand() end,nil)
     if #g>0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
         local sg=g:Select(tp,1,1,nil)
@@ -107,7 +82,3 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
-
-
-
-
