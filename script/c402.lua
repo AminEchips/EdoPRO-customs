@@ -63,11 +63,15 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if not c:IsRelateToEffect(e) or not Duel.SendtoHand(c,nil,REASON_EFFECT)>0 then return end
-    local g=eg:Filter(Card.IsControler,nil,1-tp):Filter(Card.IsRelateToEffect,nil,e)
+    if not c:IsRelateToEffect(e) or Duel.SendtoHand(c,nil,REASON_EFFECT)==0 then return end
+    Duel.BreakEffect()
+    local g=eg:Filter(function(tc)
+        return tc:IsControler(1-tp) and tc:IsLocation(LOCATION_MZONE) and tc:IsAbleToHand() and tc:IsRelateToEffect(e)
+    end,nil)
     if #g>0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-        local sg=g:Select(tp,1,1,nil)
-        Duel.SendtoHand(sg,nil,REASON_EFFECT)
+        local tg=g:Select(tp,1,1,nil)
+        Duel.SendtoHand(tg,nil,REASON_EFFECT)
     end
 end
+
