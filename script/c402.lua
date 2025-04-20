@@ -71,14 +71,16 @@ function s.bouncecost(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SendtoHand(c,nil,REASON_COST)
 end
 
--- Return 1 of the opponent’s newly Special Summoned monsters to the hand (non-targeting)
 function s.bounceop(e,tp,eg,ep,ev,re,r,rp)
-    local g=eg:Filter(function(c) return c:IsControler(1-tp) and c:IsRelateToEffect(e) and c:IsAbleToHand() end,nil)
-    if #g>0 then
+    local g=e:GetLabelObject()
+    if not g then return end
+    local og=g:Filter(function(c)
+        return c:IsControler(1-tp) and c:IsRelateToEffect(e) and c:IsAbleToHand()
+    end,nil)
+    if #og>0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-        local sg=g:Select(tp,1,1,nil)
-        if #sg>0 then
-            Duel.SendtoHand(sg,nil,REASON_EFFECT)
-        end
+        local sg=og:Select(tp,1,1,nil)
+        Duel.SendtoHand(sg,nil,REASON_EFFECT)
     end
 end
+
