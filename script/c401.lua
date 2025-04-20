@@ -53,22 +53,25 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Second effect: Tribute to Special Summon another Starry Knight
+-- Second effect: Tribute a LIGHT monster you control; Special Summon a "Starry Knight" monster from your hand or GY
 function s.spfilter2(c,e,tp)
     return c:IsSetCard(0x15b) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
         and not c:IsCode(id)
 end
+function s.tgfilter(c)
+    return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsReleasable()
+end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return false end
-    if chk==0 then return Duel.IsExistingMatchingCard(Card.IsAttribute,tp,LOCATION_MZONE,0,1,nil,ATTRIBUTE_LIGHT)
+    if chk==0 then return Duel.IsExistingTarget(s.tgfilter,tp,LOCATION_MZONE,0,1,nil)
         and Duel.IsExistingMatchingCard(s.spfilter2,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,nil,e,tp) end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local g=Duel.SelectTarget(tp,Card.IsAttribute,tp,LOCATION_MZONE,0,1,1,nil,ATTRIBUTE_LIGHT)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
+    local g=Duel.SelectTarget(tp,s.tgfilter,tp,LOCATION_MZONE,0,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_GRAVE)
 end
 function s.spop2(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
-    if not (tc and tc:IsRelateToEffect(e) and Duel.Release(tc,REASON_COST)) then return end
+    if not tc or not tc:IsRelateToEffect(e) then return end
+    if Duel.Release(tc,REASON_COST) == 0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local g=Duel.SelectMatchingCard(tp,s.spfilter2,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp)
     if #g>0 then
