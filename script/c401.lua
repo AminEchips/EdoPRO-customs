@@ -53,7 +53,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Second effect: Tribute a LIGHT monster you control; Special Summon 1 "Starry Knight" from hand or GY
+-- Second effect: Tribute 1 LIGHT monster you control; Special Summon 1 "Starry Knight" from hand or GY
 function s.spfilter2(c,e,tp)
     return c:IsSetCard(0x15b) and not c:IsCode(id)
         and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
@@ -74,6 +74,7 @@ end
 function s.spop2(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if not tc or not tc:IsRelateToEffect(e) then return end
+    Duel.HintSelection(Group.FromCards(tc))
     if Duel.Release(tc,REASON_COST)==0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local g=Duel.SelectMatchingCard(tp,s.spfilter2,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp)
