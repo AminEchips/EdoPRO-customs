@@ -52,7 +52,7 @@ end
 
 --Overlay filter for Level 7 LIGHT Dragon monsters
 function s.ovfilter(c,tp,lc)
-    return c:IsLevel(7) and c:IsRace(RACE_DRAGON) and c:IsAttribute(ATTRIBUTE_LIGHT)
+    return c:IsLevel(7) and c:IsAttribute(ATTRIBUTE_LIGHT)
 end
 
 --Destroy all DARK monsters on summon from Extra Deck
