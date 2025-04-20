@@ -5,6 +5,13 @@ function s.initial_effect(c)
     Xyz.AddProcedure(c,nil,7,2,s.ovfilter,aux.Stringid(id,0))
     c:EnableReviveLimit()
 
+     -- This card is always treated as Level 7
+    local e0=Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_SINGLE)
+    e0:SetCode(EFFECT_RANK_LEVEL)
+    e0:SetValue(7)
+    c:RegisterEffect(e0)
+
     --Destroy all DARK monsters on summon
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,1))
