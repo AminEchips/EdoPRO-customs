@@ -77,12 +77,18 @@ function s.bouncetg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 function s.bounceop(e,tp,eg,ep,ev,re,r,rp)
-    local g=e:GetLabelObject()
-    if not g or #g==0 then return end
-    local dg=g:Filter(Card.IsOnField,nil)
-    if #dg>0 then
+    local g=Group.CreateGroup()
+    for tc in aux.Next(eg) do
+        if tc:IsControler(1-tp) and tc:IsRelateToChain() and tc:IsAbleToHand() then
+            g:AddCard(tc)
+        end
+    end
+    if #g>0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-        local sg=dg:Select(tp,1,1,nil)
-        Duel.SendtoHand(sg,nil,REASON_EFFECT)
+        local sg=g:Select(tp,1,1,nil)
+        if #sg>0 then
+            Duel.SendtoHand(sg,nil,REASON_EFFECT)
+        end
     end
 end
+
