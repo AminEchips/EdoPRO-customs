@@ -1,3 +1,4 @@
+
 --Luminary Divine Dragon
 local s,id=GetID()
 function s.initial_effect(c)
@@ -20,20 +21,19 @@ function s.initial_effect(c)
     e1:SetTarget(function(e,c) return c:IsAttribute(ATTRIBUTE_DARK) end)
     c:RegisterEffect(e1)
 
-    -- Banish all DARK monsters on field when attack is declared
+    -- Banish all DARK monsters on the field when any attack is declared
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_REMOVE)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_ATTACK_ANNOUNCE)
     e2:SetRange(LOCATION_MZONE)
-    e2:SetCondition(s.rmcon)
     e2:SetCost(s.rmcost)
     e2:SetTarget(s.rmtg)
     e2:SetOperation(s.rmop)
     c:RegisterEffect(e2)
 
-    -- Special Summon banished DARK at End Phase
+    -- Special Summon banished DARK at End Phase (always activates)
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -41,16 +41,12 @@ function s.initial_effect(c)
     e3:SetCode(EVENT_PHASE+PHASE_END)
     e3:SetRange(LOCATION_MZONE)
     e3:SetCountLimit(1,id)
-    e3:SetCondition(s.spcon)
     e3:SetTarget(s.sptg)
     e3:SetOperation(s.spop)
     c:RegisterEffect(e3)
 end
 
--- 2nd Effect: Attack announce + cost
-function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetAttacker()==e:GetHandler()
-end
+-- 2nd Effect: Cost and Banish DARKs
 function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
@@ -61,19 +57,13 @@ function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,#g,0,0)
 end
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
     local g=Duel.GetMatchingGroup(Card.IsAttribute,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil,ATTRIBUTE_DARK)
     if #g>0 then
         Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
-        -- Register flag only if effect resolved
-        c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
     end
 end
 
--- 3rd Effect: End Phase revival
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    return e:GetHandler():GetFlagEffect(id)>0
-end
+-- 3rd Effect: End Phase Special Summon any banished DARK
 function s.spfilter(c,e,tp)
     return c:IsAttribute(ATTRIBUTE_DARK) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
