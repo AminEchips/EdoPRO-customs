@@ -79,7 +79,8 @@ function s.attrtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chk==0 then return Duel.IsExistingTarget(s.attrfilter,tp,0,LOCATION_MZONE,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
     local g=Duel.SelectTarget(tp,s.attrfilter,tp,0,LOCATION_MZONE,1,1,nil)
-    Duel.SetOperationInfo(0,CATEGORY_CHANGE_ATTRIBUTE,g,1,0,0)
+    Duel.SetOperationInfo(0,CATEGORY_CHANGE_ATTRIBUTE,g:GetFirst(),1,0,0)
+
 end
 function s.attrop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
