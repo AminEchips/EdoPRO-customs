@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     --Link Summon
-    aux.AddLinkProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x15b),1,1,s.lcheck)
+    Link.addProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x15b),1,1,s.lcheck)
     c:EnableReviveLimit()
 
     --Add 1 "Starry Knight Sky" from Deck to hand
