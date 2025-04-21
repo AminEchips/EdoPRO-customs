@@ -1,7 +1,6 @@
 --Luminary Divine Dragon
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Xyz Summon setup
     Xyz.AddProcedure(c,nil,7,3)
     c:EnableReviveLimit()
 
@@ -12,16 +11,16 @@ function s.initial_effect(c)
     e0:SetValue(7)
     c:RegisterEffect(e0)
 
-    -- Negate DARK monster effects activated in GY
+    -- Negate DARK monster effects in GY
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_FIELD)
     e1:SetCode(EFFECT_DISABLE)
     e1:SetRange(LOCATION_MZONE)
     e1:SetTargetRange(0,LOCATION_GRAVE)
-    e1:SetTarget(s.distg)
+    e1:SetTarget(function(e,c) return c:IsAttribute(ATTRIBUTE_DARK) end)
     c:RegisterEffect(e1)
 
-    -- Banish all DARK monsters when it attacks
+    -- Banish all DARK monsters on field when attack is declared
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_REMOVE)
@@ -34,7 +33,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.rmop)
     c:RegisterEffect(e2)
 
-    -- Special Summon banished DARK at End Phase if effect was used
+    -- Special Summon banished DARK at End Phase
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -46,21 +45,9 @@ function s.initial_effect(c)
     e3:SetTarget(s.sptg)
     e3:SetOperation(s.spop)
     c:RegisterEffect(e3)
-
-    -- Flag effect to track activation
-    local eflag=Effect.CreateEffect(c)
-    eflag:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-    eflag:SetCode(EVENT_ATTACK_ANNOUNCE)
-    eflag:SetOperation(function(e) e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1) end)
-    c:RegisterEffect(eflag)
 end
 
--- Disable DARK effects in GY
-function s.distg(e,c)
-    return c:IsAttribute(ATTRIBUTE_DARK)
-end
-
--- Banish all DARK monsters on field if this card attacks
+-- 2nd Effect: Attack announce + cost
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetAttacker()==e:GetHandler()
 end
@@ -69,18 +56,21 @@ function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    local g=Duel.GetMatchingGroup(Card.IsAttribute,tp,LOCATION_MZONE,LOCATION_MZONE,nil,ATTRIBUTE_DARK)
+    local g=Duel.GetMatchingGroup(Card.IsAttribute,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil,ATTRIBUTE_DARK)
     if chk==0 then return #g>0 end
     Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,#g,0,0)
 end
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetMatchingGroup(Card.IsAttribute,tp,LOCATION_MZONE,LOCATION_MZONE,nil,ATTRIBUTE_DARK)
+    local c=e:GetHandler()
+    local g=Duel.GetMatchingGroup(Card.IsAttribute,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil,ATTRIBUTE_DARK)
     if #g>0 then
         Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
+        -- Register flag only if effect resolved
+        c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
     end
 end
 
--- End Phase revival
+-- 3rd Effect: End Phase revival
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():GetFlagEffect(id)>0
 end
