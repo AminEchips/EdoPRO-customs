@@ -5,7 +5,7 @@ function s.initial_effect(c)
     Xyz.AddProcedure(c,nil,4,2,s.ovfilter,aux.Stringid(id,0),2,nil)
     c:EnableReviveLimit()
 
-    --ATK/DEF boost for LIGHT monsters
+    -- ATK & DEF increase for your LIGHT monsters
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_FIELD)
     e1:SetCode(EFFECT_UPDATE_ATTACK)
@@ -18,7 +18,7 @@ function s.initial_effect(c)
     e1b:SetCode(EFFECT_UPDATE_DEFENSE)
     c:RegisterEffect(e1b)
 
-    --ATK/DEF reduce for DARK monsters
+    -- ATK & DEF decrease for opponent's DARK monsters
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_FIELD)
     e2:SetCode(EFFECT_UPDATE_ATTACK)
@@ -31,19 +31,20 @@ function s.initial_effect(c)
     e2b:SetCode(EFFECT_UPDATE_DEFENSE)
     c:RegisterEffect(e2b)
 
-    --Make opponent's monsters DARK (targeted)
+    -- Change Attribute to DARK
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
-    e3:SetCategory(CATEGORY_CHANGE_ATTRIBUTE)
-    e3:SetType(EFFECT_TYPE_IGNITION)
-    e3:SetRange(LOCATION_MZONE)
+    e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e3:SetCode(EVENT_SPSUMMON_SUCCESS)
     e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    e3:SetRange(LOCATION_MZONE)
     e3:SetCountLimit(1,id)
+    e3:SetCondition(s.attrcon)
     e3:SetTarget(s.attrtg)
     e3:SetOperation(s.attrop)
     c:RegisterEffect(e3)
 
-    --Destroy a card when a card is destroyed by effect
+    -- Destroy 1 card when another is destroyed by card effect
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,2))
     e4:SetCategory(CATEGORY_DESTROY)
@@ -58,10 +59,12 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 end
 
+-- Xyz condition
 function s.ovfilter(c,tp,lc)
     return c:IsFaceup() and c:IsLevel(4) and c:IsRace(RACE_FAIRY) and c:IsAttribute(ATTRIBUTE_LIGHT)
 end
 
+-- ATK/DEF boost
 function s.atktg(e,c)
     return c:IsAttribute(ATTRIBUTE_LIGHT) and c~=e:GetHandler()
 end
@@ -70,17 +73,21 @@ function s.atktg2(e,c)
     return c:IsAttribute(ATTRIBUTE_DARK)
 end
 
--- Attribute change target (e3)
+-- Change Attribute condition (if has overlay)
+function s.attrcon(e,tp,eg,ep,ev,re,r,rp)
+    return e:GetHandler():GetOverlayCount()>0
+end
+
+-- Target DARK monster to change its Attribute
 function s.attrfilter(c)
-    return c:IsFaceup() and not c:IsAttribute(ATTRIBUTE_DARK)
+    return c:IsFaceup() and c:IsAttribute(ATTRIBUTE_DARK)
 end
 function s.attrtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.attrfilter(chkc) end
     if chk==0 then return Duel.IsExistingTarget(s.attrfilter,tp,0,LOCATION_MZONE,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
     local g=Duel.SelectTarget(tp,s.attrfilter,tp,0,LOCATION_MZONE,1,1,nil)
-    Duel.SetOperationInfo(0,CATEGORY_CHANGE_ATTRIBUTE,g:GetFirst(),1,0,0)
-
+    Duel.SetOperationInfo(0,CATEGORY_CHANGE_ATTRIBUTE,g,1,0,0)
 end
 function s.attrop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
@@ -94,7 +101,7 @@ function s.attrop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Destroy trigger (e4)
+-- Destroy a card when another is destroyed by effect
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(Card.IsReason,1,nil,REASON_EFFECT)
 end
