@@ -44,11 +44,10 @@ function s.initial_effect(c)
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,1))
     e4:SetCategory(CATEGORY_DESTROY)
-    e4:SetType(EFFECT_TYPE_QUICK_O)
-    e4:SetCode(EVENT_FREE_CHAIN)
-    e4:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e4:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
+    e4:SetCode(EVENT_DESTROYED)
     e4:SetRange(LOCATION_MZONE)
-    e4:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_END_PHASE)
     e4:SetCountLimit(1,id)
     e4:SetCondition(s.descon)
     e4:SetCost(s.descost)
@@ -68,15 +67,17 @@ function s.atktg2(e,c)
     return c:IsAttribute(ATTRIBUTE_DARK)
 end
 
--- Only trigger if a card was destroyed by effect this turn
+-- Trigger only if a card on the field was destroyed by a card effect
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetFlagEffect(tp,id)>0
+    return eg:IsExists(function(c)
+        return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsReason(REASON_EFFECT)
+    end,1,nil)
 end
 
--- Pay cost by detaching 1 material
+-- Cost: detach 1 material
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
-    e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
+    return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST)
+        and (not chk or e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST))
 end
 
 -- Target any card on the field
@@ -88,7 +89,7 @@ function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
 
--- Destroy it
+-- Destroy selected card
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc and tc:IsRelateToEffect(e) then
@@ -96,16 +97,3 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Global check for any card destroyed by effect this turn
-if not s.global_check then
-    s.global_check=true
-    local ge1=Effect.CreateEffect(s)
-    ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-    ge1:SetCode(EVENT_DESTROYED)
-    ge1:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
-        if eg:IsExists(Card.IsReason,1,nil,REASON_EFFECT) then
-            Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
-        end
-    end)
-    Duel.RegisterEffect(ge1,0)
-end
