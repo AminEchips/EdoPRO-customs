@@ -1,26 +1,27 @@
 --Starry Knight Starfall
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Return to hand and draw
+    -- Return 1 monster you control to hand, then draw 2
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_TOHAND+CATEGORY_DRAW)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)
     e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
-    e1:SetCountLimit(1,id)
+    e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
     e1:SetCondition(s.thcon)
     e1:SetTarget(s.thtg)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
-    
-    -- Banish and destroy from GY
+
+    -- GY Effect: Banish to pop opponent's card if a Level 7 LIGHT Dragon returns to hand
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DESTROY)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_TO_HAND)
     e2:SetRange(LOCATION_GRAVE)
+    e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
     e2:SetCountLimit(1,{id,1})
     e2:SetCondition(s.descon)
     e2:SetCost(aux.bfgcost)
@@ -30,15 +31,22 @@ function s.initial_effect(c)
 end
 s.listed_series={0x15b}
 
+-- You must control a Starry Knight or Level 7 LIGHT Dragon
+function s.cfilter(c)
+    return c:IsFaceup() and (c:IsSetCard(0x15b) or (c:IsLevel(7) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsRace(RACE_DRAGON)))
+end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.IsExistingMatchingCard(aux.FilterFaceupFunction(Card.IsSetCard,0x15b),tp,LOCATION_MZONE,0,1,nil)
-        or Duel.IsExistingMatchingCard(aux.FilterFaceupFunction(Card.IsRace,RACE_DRAGON),tp,LOCATION_MZONE,0,1,nil)
+    return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
+end
+
+function s.thfilter(c)
+    return c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsAbleToHand() end
-    if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToHand,tp,LOCATION_MZONE,0,1,nil) end
+    if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.thfilter(chkc) end
+    if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_MZONE,0,1,nil) and Duel.IsPlayerCanDraw(tp,2) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-    local g=Duel.SelectTarget(tp,Card.IsAbleToHand,tp,LOCATION_MZONE,0,1,1,nil)
+    local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_MZONE,0,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,2)
 end
@@ -50,18 +58,20 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
-function s.cfilter(c,tp)
-    return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE) and c:IsLevel(7) and c:IsRace(RACE_DRAGON)
-        and c:IsAttribute(ATTRIBUTE_LIGHT)
+-- GY effect condition
+function s.cfilter2(c,tp)
+    return c:IsControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
+        and c:IsPreviousControler(tp) and c:IsLevel(7) and c:IsAttribute(ATTRIBUTE_LIGHT)
+        and c:IsRace(RACE_DRAGON)
 end
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(s.cfilter,1,nil,tp)
+    return eg:IsExists(s.cfilter2,1,nil,tp)
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsLocation(LOCATION_ONFIELD) and chkc:IsControler(1-tp) end
-    if chk==0 then return Duel.IsExistingTarget(nil,tp,0,LOCATION_ONFIELD,1,nil) end
+    if chkc then return chkc:IsOnField() and chkc:IsControler(1-tp) end
+    if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-    local g=Duel.SelectTarget(tp,nil,tp,0,LOCATION_ONFIELD,1,1,nil)
+    local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_ONFIELD,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
