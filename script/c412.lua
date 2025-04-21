@@ -17,7 +17,7 @@ function s.initial_effect(c)
 
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_FIELD)
-    e2:SetCode(EFFECT_CANNOT_NEGATE)
+    e2:SetCode(EFFECT_CANNOT_DISABLE)
     e2:SetRange(LOCATION_SZONE)
     e2:SetValue(s.effectfilter)
     c:RegisterEffect(e2)
