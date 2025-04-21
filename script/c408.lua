@@ -76,9 +76,10 @@ end
 
 -- Cost: detach 1 material
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-    return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST)
-        and (not chk or e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST))
+    if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
+    e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
+
 
 -- Target any card on the field
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
