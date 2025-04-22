@@ -55,7 +55,7 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()~=tp and Duel.IsExistingMatchingCard(Auxiliary.FaceupFilter(Card.IsLevel,7),tp,LOCATION_MZONE,0,1,nil)
 end
 function s.spfilter(c,e,tp)
-    return c:IsSetCard(0x15b) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+    return c:IsRace(RACE_FAIRY) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>1
