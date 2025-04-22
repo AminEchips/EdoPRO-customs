@@ -2,20 +2,21 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMixN(c,true,true,s.ffilter,2)
-    
-    -- Send to GY and add to hand
+    -- Fusion Summon procedure
+    Fusion.AddProcMixN(c,true,true,s.matfilter,2)
+
+    -- On Special Summon: Send 1 Level 7 LIGHT Dragon or "Starry Knight" to GY
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_TOHAND+CATEGORY_TOGRAVE)
+    e1:SetCategory(CATEGORY_TOGRAVE)
     e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)
     e1:SetCountLimit(1,id)
-    e1:SetTarget(s.thtg)
-    e1:SetOperation(s.thop)
+    e1:SetTarget(s.tgtg)
+    e1:SetOperation(s.tgop)
     c:RegisterEffect(e1)
 
-    -- Wipe and Set
+    -- If Fusion Summoned using 4 different names (Quick Effect): Tribute to nuke + set 1 from GY
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DESTROY+CATEGORY_TOGRAVE)
@@ -29,57 +30,67 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
-function s.ffilter(c,fc,sub,mg,sg)
-    return c:IsLevel(7) and c:IsAttribute(ATTRIBUTE_LIGHT)
+s.listed_series={0x15b}
+
+-- Material Filter
+function s.matfilter(c,fc,sub,mg,sg)
+    return c:IsAttribute(ATTRIBUTE_LIGHT) and (c:IsRace(RACE_FAIRY) or (c:IsRace(RACE_DRAGON) and c:IsLevel(7)))
 end
 
-function s.thfilter(c)
-    return c:IsLevel(7) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsAbleToGrave()
-        or (c:IsSetCard(0x15b) and c:IsAbleToHand())
+-- Effect 1: Send from Deck
+function s.tgfilter(c)
+    return (c:IsSetCard(0x15b) or (c:IsLevel(7) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsRace(RACE_DRAGON))) and c:IsAbleToGrave()
 end
-function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
+function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil) end
     Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
-    Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
-function s.thop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-    local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
+function s.tgop(e,tp,eg,ep,ev,re,r,rp)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+    local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_DECK,0,1,1,nil)
     if #g>0 then
-        local tc=g:GetFirst()
-        if tc:IsSetCard(0x15b) then
-            Duel.SendtoHand(tc,nil,REASON_EFFECT)
-            Duel.ConfirmCards(1-tp,tc)
-        else
-            Duel.SendtoGrave(tc,REASON_EFFECT)
-        end
+        Duel.SendtoGrave(g,REASON_EFFECT)
     end
 end
 
+-- Effect 2: Fusion Summoned using 4 materials with different names
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return c:GetMaterialCount()>=4
+    local mat=c:GetMaterial()
+    local codes={}
+    for tc in mat:Iter() do
+        local code=tc:GetCode()
+        if codes[code] then return false end
+        codes[code]=true
+    end
+    return #codes>=4
 end
+
 function s.setfilter(c)
     return c:IsSetCard(0x15b) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsSSetable()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil)
+        and e:GetHandler():IsReleasable() end
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,0,PLAYER_ALL,LOCATION_ONFIELD)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if Duel.Destroy(Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil),REASON_EFFECT)~=0 then
-        local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-        if #g>0 then
-            Duel.SSet(tp,g)
-        end
+    if not c:IsRelateToEffect(e) or not Duel.Release(c,REASON_EFFECT) then return end
+
+    local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
+    if Duel.Destroy(g,REASON_EFFECT)~=0 then
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+        local sc=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil):GetFirst()
+        if sc then Duel.SSet(tp,sc) end
+
+        -- Cannot Special Summon Sabatiel again this turn
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_FIELD)
         e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
         e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
         e1:SetTargetRange(1,0)
-        e1:SetTarget(function(e,c) return c:IsCode(id) end)
+        e1:SetTarget(function(_,c) return c:IsCode(id) end)
         e1:SetReset(RESET_PHASE+PHASE_END)
         Duel.RegisterEffect(e1,tp)
     end
