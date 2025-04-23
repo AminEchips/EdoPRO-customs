@@ -62,19 +62,24 @@ end
 function s.filter(c)
     return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToGrave()
 end
+
 function s.spfilter(c,e,tp)
     return c:IsSetCard(0x103) and c:IsType(TYPE_LINK)
         and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
         and not Duel.IsExistingMatchingCard(s.samecodefilter,tp,LOCATION_MZONE,0,1,nil,c:GetCode())
 end
+
 function s.samecodefilter(c,code)
     return c:IsCode(code)
 end
+
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsLocation(LOCATION_SZONE) and s.filter(chkc) end
-    if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_SZONE,0,1,nil)
-        and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
+    if chkc then return chkc:IsLocation(LOCATION_SZONE) and chkc:IsControler(tp) and s.filter(chkc) end
+    if chk==0 then
+        return Duel.IsExistingTarget(s.filter,tp,LOCATION_SZONE,0,1,nil)
+            and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+            and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
+    end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
     local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_SZONE,0,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,1,0,0)
@@ -87,9 +92,8 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-    local sc=g:GetFirst()
-    if sc then
-        Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
+    if #g>0 then
+        Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
     end
 end
 
