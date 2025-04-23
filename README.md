@@ -6,3 +6,4 @@ Includes:
 - Neos/Neo-Spacian
 - Darklord
 - Starry Knight
+- Altergeist
