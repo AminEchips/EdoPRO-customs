@@ -21,7 +21,7 @@ function s.initial_effect(c)
     -- Effect 2: If sent to GY, Set 1 "Altergeist" Trap (except itself) or "Personal Spoofing"
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetCategory(CATEGORY_SET)
+    e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_LEAVE_GRAVE+CATEGORY_TOHAND)
     e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_TO_GRAVE)
     e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
