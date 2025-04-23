@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
     -- Fusion Summon procedure: 1 Level 7 LIGHT Dragon + 1 or more LIGHT Fairy
-    Fusion.AddProcMixN(c,true,true,s.dragonfilter,1,s.fairyfilter,1,99)
+    Fusion.AddProcMix(c,true,true,s.dragonfilter,s.fairyfilter,1,99)
 
     -- On Special Summon: Send 1 LIGHT Fairy or Dragon to GY
     local e1=Effect.CreateEffect(c)
