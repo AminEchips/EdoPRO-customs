@@ -45,27 +45,9 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Check if summoned to a zone pointed to by an "Altergeist" Link Monster
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    local seq=c:GetSequence()
-    local zone=0
-    local g=Duel.GetMatchingGroup(Card.IsSetCard,tp,LOCATION_MZONE,0,nil,0x103)
-    for tc in aux.Next(g) do
-        if tc:IsType(TYPE_LINK) then
-            zone = zone | tc:GetLinkedZone()
-        end
-    end
-    return bit.extract(zone,seq)~=0
-end
-
--- Send S/T to GY and Special Summon Altergeist Link from GY
-function s.filter(c)
-    return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToGrave()
-end
-
-function s.spfilter(c,e,tp)
+function s.setfilter(c)
     return c:IsSetCard(0x103) and c:IsType(TYPE_LINK)
-        and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+        and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
         and not Duel.IsExistingMatchingCard(s.samecodefilter,tp,LOCATION_MZONE,0,1,nil,c:GetCode())
 end
 
@@ -73,27 +55,31 @@ function s.samecodefilter(c,code)
     return c:IsCode(code)
 end
 
+function s.spfilter(c)
+    return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToGrave()
+end
+
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsLocation(LOCATION_SZONE) and chkc:IsControler(tp) and s.filter(chkc) end
+    if chkc then return chkc:IsLocation(LOCATION_SZONE) and chkc:IsControler(tp) and s.spfilter(chkc) end
     if chk==0 then
-        return Duel.IsExistingTarget(s.filter,tp,LOCATION_SZONE,0,1,nil)
+        return Duel.IsExistingTarget(s.spfilter,tp,LOCATION_SZONE,0,1,nil)
             and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-            and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
+            and Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil)
     end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_SZONE,0,1,1,nil)
+    local g=Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_SZONE,0,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
 
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
-    if not tc or not tc:IsRelateToEffect(e) then return end
-    if Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-    if #g>0 then
-        Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+    if tc and tc:IsRelateToEffect(e) and Duel.SendtoGrave(tc,REASON_EFFECT)~=0 then
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+        local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+        if #g>0 then
+            Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+        end
     end
 end
 
