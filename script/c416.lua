@@ -2,10 +2,10 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    -- Fusion Summon procedure
-    Fusion.AddProcMixN(c,true,true,s.matfilter,2)
+    -- Fusion Summon procedure: 1 Level 7 LIGHT Dragon + 1 or more LIGHT Fairy
+    Fusion.AddProcMix(c,true,true,s.dragonfilter,1,s.fairyfilter,1,99)
 
-    -- On Special Summon: Send 1 Level 7 LIGHT Dragon or "Starry Knight" to GY
+    -- On Special Summon: Send 1 LIGHT Fairy or Dragon to GY
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_TOGRAVE)
@@ -32,14 +32,17 @@ end
 
 s.listed_series={0x15b}
 
--- Material Filter
-function s.matfilter(c,fc,sub,mg,sg)
-    return c:IsAttribute(ATTRIBUTE_LIGHT) and (c:IsRace(RACE_FAIRY) or (c:IsRace(RACE_DRAGON) and c:IsLevel(7)))
+-- Fusion Material Filters
+function s.dragonfilter(c)
+    return c:IsRace(RACE_DRAGON) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsLevel(7)
+end
+function s.fairyfilter(c)
+    return c:IsRace(RACE_FAIRY) and c:IsAttribute(ATTRIBUTE_LIGHT)
 end
 
--- Effect 1: Send from Deck
+-- Effect 1: Send LIGHT Fairy or Dragon to GY
 function s.tgfilter(c)
-    return (c:IsSetCard(0x15b) or (c:IsLevel(7) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsRace(RACE_DRAGON))) and c:IsAbleToGrave()
+    return c:IsAttribute(ATTRIBUTE_LIGHT) and (c:IsRace(RACE_FAIRY) or c:IsRace(RACE_DRAGON)) and c:IsAbleToGrave()
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil) end
