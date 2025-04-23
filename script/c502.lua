@@ -1,7 +1,7 @@
 --Altergeist Abyzec
 local s,id=GetID()
 function s.initial_effect(c)
-    --Activate and Special Summon this card as a monster
+    -- Activate and Special Summon this card as a monster
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -11,7 +11,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.activate)
     c:RegisterEffect(e1)
 
-    --If Summoned to a zone an "Altergeist" Link Monster points to
+    -- Triggered effect if Summoned to a zone an "Altergeist" Link Monster points to
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
@@ -26,23 +26,25 @@ end
 
 s.listed_series={0x103}
 
--- Special Summon this Trap as a monster
+-- Special Summon this card as a monster
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and Duel.IsPlayerCanSpecialSummonMonster(tp,id,0x103,TYPE_EFFECT+TYPE_MONSTER+TYPE_TUNER,0,1000,2,RACE_SPELLCASTER,ATTRIBUTE_WATER) end
+        and Duel.IsPlayerCanSpecialSummonMonster(tp,id,0x103,
+            TYPE_EFFECT+TYPE_MONSTER+TYPE_TUNER,0,1000,2,RACE_SPELLCASTER,ATTRIBUTE_WATER) end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsRelateToEffect(e) then return end
     if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-    if Duel.IsPlayerCanSpecialSummonMonster(tp,id,0x103,TYPE_EFFECT+TYPE_MONSTER+TYPE_TUNER,0,1000,2,RACE_SPELLCASTER,ATTRIBUTE_WATER) then
-        c:AddMonsterAttribute(TYPE_EFFECT+TYPE_TUNER)
+    if Duel.IsPlayerCanSpecialSummonMonster(tp,id,0x103,
+        TYPE_EFFECT+TYPE_MONSTER+TYPE_TUNER,0,1000,2,RACE_SPELLCASTER,ATTRIBUTE_WATER) then
+        c:AddMonsterAttribute(TYPE_EFFECT+TYPE_TUNER, ATTRIBUTE_WATER, RACE_SPELLCASTER, 2, 1000, 0)
         Duel.SpecialSummon(c,0,tp,tp,true,false,POS_FACEUP)
     end
 end
 
--- Check if summoned to a zone pointed to by an Altergeist Link Monster
+-- Check if summoned to a zone pointed to by an "Altergeist" Link Monster
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local seq=c:GetSequence()
@@ -50,19 +52,19 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(Card.IsSetCard,tp,LOCATION_MZONE,0,nil,0x103)
     for tc in aux.Next(g) do
         if tc:IsType(TYPE_LINK) then
-            zone=zone|tc:GetLinkedZone()
+            zone = zone | tc:GetLinkedZone()
         end
     end
     return bit.extract(zone,seq)~=0
 end
 
--- GY filter and summon logic
+-- Send S/T to GY and Special Summon Altergeist Link from GY
 function s.filter(c)
     return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToGrave()
 end
-function s.spfilter(c,tp)
+function s.spfilter(c,e,tp)
     return c:IsSetCard(0x103) and c:IsType(TYPE_LINK)
-        and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
+        and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
         and not Duel.IsExistingMatchingCard(s.samecodefilter,tp,LOCATION_MZONE,0,1,nil,c:GetCode())
 end
 function s.samecodefilter(c,code)
@@ -71,7 +73,7 @@ end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_SZONE,0,1,nil)
         and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,tp) end
+        and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
     Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_SZONE)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
@@ -80,11 +82,12 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local tg=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_SZONE,0,1,1,nil)
     if #tg==0 or Duel.SendtoGrave(tg,REASON_EFFECT)==0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,tp)
+    local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
     local tc=g:GetFirst()
     if tc then
         Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
     end
 end
+
 
 
