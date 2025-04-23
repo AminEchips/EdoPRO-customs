@@ -13,7 +13,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e0)
 
     -- Fusion Summon procedure: 1 Level 7 LIGHT Dragon + 1 or more LIGHT Fairy
-    Fusion.AddProcMixRep(c,true,true,s.fairyfilter,1,99,s.dragonfilter)
+    Fusion.AddProcMix(c,true,true,s.dragonfilter,s.fairyfilter)
 
     -- On Special Summon: Send 1 LIGHT Fairy or Dragon to GY
     local e1=Effect.CreateEffect(c)
@@ -112,3 +112,4 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         Duel.RegisterEffect(e1,tp)
     end
 end
+
