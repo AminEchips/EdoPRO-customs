@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.tgop)
     c:RegisterEffect(e1)
 
-    -- If Fusion Summoned using 4 materials with different names (Quick Effect): Tribute to nuke + set 1 from GY
+    -- Quick Effect: Tribute this card to destroy all cards + set 1 from GY
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DESTROY+CATEGORY_TOGRAVE)
@@ -25,6 +25,7 @@ function s.initial_effect(c)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,1})
     e2:SetCondition(s.setcon)
+    e2:SetCost(s.setcost)
     e2:SetTarget(s.settg)
     e2:SetOperation(s.setop)
     c:RegisterEffect(e2)
@@ -70,17 +71,22 @@ function s.setcon(e,tp,eg,ep,ev,re,r,rp)
     return #codes>=4
 end
 
+function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
+    local c=e:GetHandler()
+    if chk==0 then return c:IsReleasable() end
+    Duel.SetTargetCard(c)
+end
+
 function s.setfilter(c)
     return c:IsSetCard(0x15b) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsSSetable()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil)
-        and e:GetHandler():IsReleasable() end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,0,PLAYER_ALL,LOCATION_ONFIELD)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if not c:IsRelateToEffect(e) or not Duel.Release(c,REASON_EFFECT) then return end
+    local c=Duel.GetFirstTarget()
+    if not c or not c:IsRelateToEffect(e) or not Duel.Release(c,REASON_EFFECT) then return end
 
     local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
     if Duel.Destroy(g,REASON_EFFECT)~=0 then
