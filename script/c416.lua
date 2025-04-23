@@ -74,7 +74,7 @@ end
 function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
     if chk==0 then return c:IsReleasable() end
-    Duel.SetTargetCard(c)
+    Duel.Release(c,REASON_COST)
 end
 
 function s.setfilter(c)
@@ -85,9 +85,6 @@ function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,0,PLAYER_ALL,LOCATION_ONFIELD)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-    local c=Duel.GetFirstTarget()
-    if not c or not c:IsRelateToEffect(e) or not Duel.Release(c,REASON_EFFECT) then return end
-
     local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
     if Duel.Destroy(g,REASON_EFFECT)~=0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
@@ -95,7 +92,7 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         if sc then Duel.SSet(tp,sc) end
 
         -- Cannot Special Summon Sabatiel again this turn
-        local e1=Effect.CreateEffect(c)
+        local e1=Effect.CreateEffect(e:GetHandler())
         e1:SetType(EFFECT_TYPE_FIELD)
         e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
         e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
