@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
     -- Fusion Summon procedure: 1 Level 7 LIGHT Dragon + 1 or more LIGHT Fairy
-    Fusion.AddProcMix(c,true,true,s.dragonfilter,1,s.fairyfilter,1,99)
+    Fusion.AddProcMixN(c,true,true,s.dragonfilter,1,s.fairyfilter,1,99)
 
     -- On Special Summon: Send 1 LIGHT Fairy or Dragon to GY
     local e1=Effect.CreateEffect(c)
@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.tgop)
     c:RegisterEffect(e1)
 
-    -- If Fusion Summoned using 4 different names (Quick Effect): Tribute to nuke + set 1 from GY
+    -- If Fusion Summoned using 4 materials with different names (Quick Effect): Tribute to nuke + set 1 from GY
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DESTROY+CATEGORY_TOGRAVE)
@@ -33,10 +33,10 @@ end
 s.listed_series={0x15b}
 
 -- Fusion Material Filters
-function s.dragonfilter(c)
+function s.dragonfilter(c,fc,sub,mg,sg)
     return c:IsRace(RACE_DRAGON) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsLevel(7)
 end
-function s.fairyfilter(c)
+function s.fairyfilter(c,fc,sub,mg,sg)
     return c:IsRace(RACE_FAIRY) and c:IsAttribute(ATTRIBUTE_LIGHT)
 end
 
@@ -60,8 +60,9 @@ end
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local mat=c:GetMaterial()
+    if not mat then return false end
     local codes={}
-    for tc in mat:Iter() do
+    for tc in aux.Next(mat) do
         local code=tc:GetCode()
         if codes[code] then return false end
         codes[code]=true
