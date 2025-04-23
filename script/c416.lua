@@ -2,6 +2,16 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
+    -- Fusion Material Check
+    local e0=Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_SINGLE)
+    e0:SetCode(EFFECT_MATERIAL_CHECK)
+    e0:SetValue(function(e,c)
+        local mat=c:GetMaterial()
+        e:GetHandler():SetMaterial(mat)
+    end)
+    c:RegisterEffect(e0)
+
     -- Fusion Summon procedure: 1 Level 7 LIGHT Dragon + 1 or more LIGHT Fairy
     Fusion.AddProcMixRep(c,true,true,s.fairyfilter,1,99,s.dragonfilter)
 
@@ -96,9 +106,4 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetType(EFFECT_TYPE_FIELD)
         e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
         e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-        e1:SetTargetRange(1,0)
-        e1:SetTarget(function(_,c) return c:IsCode(id) end)
-        e1:SetReset(RESET_PHASE+PHASE_END)
-        Duel.RegisterEffect(e1,tp)
-    end
-end
+        e1:SetTarge
