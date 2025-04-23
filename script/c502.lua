@@ -70,24 +70,29 @@ end
 function s.samecodefilter(c,code)
     return c:IsCode(code)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.filter,tp,LOCATION_SZONE,0,1,nil)
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsLocation(LOCATION_SZONE) and s.filter(chkc) end
+    if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_SZONE,0,1,nil)
         and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
-    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_SZONE)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+    local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_SZONE,0,1,1,nil)
+    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
+
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local tg=Duel.SelectMatchingCard(tp,s.filter,tp,LOCATION_SZONE,0,1,1,nil)
-    if #tg==0 or Duel.SendtoGrave(tg,REASON_EFFECT)==0 then return end
+    local tc=Duel.GetFirstTarget()
+    if not tc or not tc:IsRelateToEffect(e) then return end
+    if Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-    local tc=g:GetFirst()
-    if tc then
-        Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+    local sc=g:GetFirst()
+    if sc then
+        Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
     end
 end
+
 
 
 
