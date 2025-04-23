@@ -71,14 +71,14 @@ end
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local mat=c:GetMaterial()
-    if not mat then return false end
+    if not mat or #mat<4 then return false end
     local codes={}
     for tc in aux.Next(mat) do
         local code=tc:GetCode()
         if codes[code] then return false end
         codes[code]=true
     end
-    return #codes>=4
+    return true
 end
 
 function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -106,4 +106,9 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetType(EFFECT_TYPE_FIELD)
         e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
         e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-        e1:SetTarge
+        e1:SetTargetRange(1,0)
+        e1:SetTarget(function(_,c) return c:IsCode(id) end)
+        e1:SetReset(RESET_PHASE+PHASE_END)
+        Duel.RegisterEffect(e1,tp)
+    end
+end
