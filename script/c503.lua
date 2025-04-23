@@ -9,7 +9,7 @@ function s.initial_effect(c)
 
     -- Send 1 Trap from Deck to GY when Altergeist monster is Tributed
     local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,0))
+    -- e2:SetDescription(aux.Stringid(id,0)) -- Commented to avoid nil crash
     e2:SetCategory(CATEGORY_TOGRAVE)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_RELEASE)
@@ -22,7 +22,7 @@ function s.initial_effect(c)
 
     -- When sent to GY: Set 1 Altergeist Trap or Personal Spoofing
     local e3=Effect.CreateEffect(c)
-    e3:SetDescription(aux.Stringid(id,1))
+    -- e3:SetDescription(aux.Stringid(id,1)) -- Commented to avoid nil crash
     e3:SetCategory(CATEGORY_SET)
     e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
@@ -55,10 +55,10 @@ end
 
 -- e3: Set when sent to GY
 function s.setfilter(c)
-    return (c:IsSetCard(0x103) and not c:IsCode(id)) or c:IsCode(53936268)
+    return ((c:IsSetCard(0x103) and not c:IsCode(id)) or c:IsCode(53936268)) and c:IsSSetable()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.setfilter(chkc) and chkc:IsSSetable() end
+    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.setfilter(chkc) end
     if chk==0 then return Duel.IsExistingTarget(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
     local g=Duel.SelectTarget(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
@@ -70,3 +70,4 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SSet(tp,tc)
     end
 end
+
