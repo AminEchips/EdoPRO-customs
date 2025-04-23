@@ -2,6 +2,16 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
+    -- Fusion Material Check
+    local e0=Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_SINGLE)
+    e0:SetCode(EFFECT_MATERIAL_CHECK)
+    e0:SetValue(function(e,c)
+        local mat=c:GetMaterial()
+        e:GetHandler():SetMaterial(mat)
+    end)
+    c:RegisterEffect(e0)
+
     -- Fusion Summon procedure: 1 Level 7 LIGHT Dragon + 1 or more LIGHT Fairy
     Fusion.AddProcMixRep(c,true,true,s.fairyfilter,1,99,s.dragonfilter)
 
@@ -24,8 +34,8 @@ function s.initial_effect(c)
     e2:SetCode(EVENT_FREE_CHAIN)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,1})
+    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
     e2:SetCondition(s.setcon)
-    e2:SetCost(s.setcost)
     e2:SetTarget(s.settg)
     e2:SetOperation(s.setop)
     c:RegisterEffect(e2)
@@ -61,32 +71,24 @@ end
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local mat=c:GetMaterial()
-    if not mat then return false end
+    if not mat or #mat<4 then return false end
     local codes={}
     for tc in aux.Next(mat) do
         local code=tc:GetCode()
         if codes[code] then return false end
         codes[code]=true
     end
-    return #codes>=4
+    return true
 end
 
-function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    local c=e:GetHandler()
-    if chk==0 then return c:IsReleasable() end
-    Duel.SetTargetCard(c)
-end
-
-function s.setfilter(c)
-    return c:IsSetCard(0x15b) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsSSetable()
-end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil)
+        and e:GetHandler():IsReleasable() end
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,0,PLAYER_ALL,LOCATION_ONFIELD)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-    local c=Duel.GetFirstTarget()
-    if not c or not c:IsRelateToEffect(e) or not Duel.Release(c,REASON_EFFECT) then return end
+    local c=e:GetHandler()
+    if not c:IsRelateToEffect(e) or not Duel.Release(c,REASON_EFFECT) then return end
 
     local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
     if Duel.Destroy(g,REASON_EFFECT)~=0 then
@@ -104,4 +106,8 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetReset(RESET_PHASE+PHASE_END)
         Duel.RegisterEffect(e1,tp)
     end
+end
+
+function s.setfilter(c)
+    return c:IsSetCard(0x15b) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsSSetable()
 end
