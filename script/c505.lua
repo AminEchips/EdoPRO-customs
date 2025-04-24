@@ -20,7 +20,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.syop)
     c:RegisterEffect(e1)
 
-    --Ritual Summon (Main Phase of either player)
+    --Ritual Summon (Either Main Phase)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetType(EFFECT_TYPE_QUICK_O)
@@ -34,42 +34,43 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
---Synchro
-function s.synfilter(c,tp)
-    return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_SPELLCASTER)
-        and Duel.IsPlayerCanSpecialSummon(tp)
-        and Duel.CheckSynchroMaterial(c,nil,nil,tp)
-end
+-- SYNCHRO SUMMON (basic valid summon)
 function s.sytg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.synfilter,tp,LOCATION_EXTRA,0,1,nil,tp) end
+    if chk==0 then
+        return Duel.IsExistingMatchingCard(s.synfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp)
+    end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
+function s.synfilter(c,e,tp)
+    return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_SPELLCASTER)
+        and Duel.GetLocationCountFromEx(tp,tp,nil,c)>0
+        and c:IsSpecialSummonable(SUMMON_TYPE_SYNCHRO)
+end
 function s.syop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetMatchingGroup(s.synfilter,tp,LOCATION_EXTRA,0,nil,tp)
+    local g=Duel.GetMatchingGroup(s.synfilter,tp,LOCATION_EXTRA,0,nil,e,tp)
     if #g==0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local sc=g:Select(tp,1,1,nil):GetFirst()
-    if sc then
-        Duel.SynchroSummon(tp,sc,nil)
-        if sc:IsFaceup() then
-            local e1=Effect.CreateEffect(e:GetHandler())
-            e1:SetType(EFFECT_TYPE_SINGLE)
-            e1:SetCode(EFFECT_UPDATE_ATTACK)
-            e1:SetValue(500)
-            e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
-            sc:RegisterEffect(e1)
-        end
+    if sc and Duel.SpecialSummon(sc,SUMMON_TYPE_SYNCHRO,tp,tp,false,false,POS_FACEUP)~=0 then
+        sc:CompleteProcedure()
+        -- Gain 500 ATK
+        local e1=Effect.CreateEffect(e:GetHandler())
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_UPDATE_ATTACK)
+        e1:SetValue(500)
+        e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
+        sc:RegisterEffect(e1)
     end
 end
 
---Ritual
+-- RITUAL SUMMON
 function s.ritfilter(c)
     return c:IsSetCard(0x103) and c:IsRitualMonster()
 end
 function s.matfilter(c)
-    return c:IsAbleToRelease() and (c:IsType(TYPE_LINK) or c:IsLevelAbove(1))
+    return c:IsAbleToRelease() and (c:IsLevelAbove(1) or c:IsType(TYPE_LINK))
 end
-function s.checklevel(g,rc)
+function s.checkritual(g,rc)
     local lv=rc:GetLevel()
     local sum=0
     for tc in aux.Next(g) do
@@ -89,7 +90,7 @@ function s.riop(e,tp,eg,ep,ev,re,r,rp)
     local rc=Duel.SelectMatchingCard(tp,s.ritfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil):GetFirst()
     if not rc then return end
     local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil)
-    local g=aux.SelectUnselectGroup(mg,e,tp,1,#mg,s.checklevel,false,rc)
+    local g=aux.SelectUnselectGroup(mg,e,tp,1,#mg,s.checkritual,false,rc)
     if not g then return end
     rc:SetMaterial(g)
     Duel.Release(g,REASON_EFFECT+REASON_MATERIAL+REASON_RITUAL)
