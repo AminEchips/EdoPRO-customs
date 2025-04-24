@@ -39,9 +39,9 @@ function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
         return c:IsPreviousControler(tp)
             and c:IsSetCard(0x103)
             and c:IsType(TYPE_MONSTER)
-            and bit.band(c:GetReason(), REASON_RELEASE) ~= 0
     end,1,nil)
 end
+
 
 function s.tgfilter(c)
     return c:IsType(TYPE_TRAP) and c:IsAbleToGrave()
