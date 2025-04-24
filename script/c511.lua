@@ -64,10 +64,15 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	local dc=Duel.GetOperatedGroup():GetFirst()
 	if dc and dc:IsSetCard(0x103) and Duel.GetMatchingGroupCount(Card.IsSpellTrapOnField,tp,0,LOCATION_ONFIELD,nil)>0 then
 		Duel.ConfirmCards(1-tp,dc)
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-		local g=Duel.SelectMatchingCard(tp,Card.IsSpellTrapOnField,tp,0,LOCATION_ONFIELD,1,1,nil)
-		if #g>0 then
-			Duel.SendtoGrave(g,REASON_EFFECT)
+		if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+			local g=Duel.SelectMatchingCard(tp,Card.IsSpellTrapOnField,tp,0,LOCATION_ONFIELD,1,1,nil)
+			if #g>0 then
+				Duel.SendtoGrave(g,REASON_EFFECT)
+			end
 		end
+	else
+		Duel.ShuffleHand(tp)
 	end
 end
+
