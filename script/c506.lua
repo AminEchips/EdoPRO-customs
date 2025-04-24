@@ -29,15 +29,36 @@ end
 
 s.listed_series={0x103}
 
--- First Effect: Send and Special Summon
-function s.filter1(c,tp)
+-- First Effect
+function s.filter1(c,e,tp)
     return c:IsSetCard(0x103) and c:IsType(TYPE_LINK) and c:IsFaceup() and c:IsAbleToGrave()
-        and Duel.IsExistingMatchingCard(s.filter2,tp,LOCATION_GRAVE,0,1,nil,c:GetLink(),tp)
+        and Duel.IsExistingMatchingCard(s.filter2,tp,LOCATION_GRAVE,0,1,nil,e,tp,c:GetLink())
+end
+function s.filter2(c,e,tp,link)
+    return c:IsSetCard(0x103) and c:IsType(TYPE_LINK) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+        and c:GetLink()<=link
 end
 
-function s.filter2(c,link,tp)
-    return c:IsSetCard(0x103) and c:IsType(TYPE_LINK) and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
-        and c:GetLink()<=link
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter1(chkc,e,tp) end
+    if chk==0 then return Duel.IsExistingTarget(s.filter1,tp,LOCATION_MZONE,0,1,nil,e,tp) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+    local g=Duel.SelectTarget(tp,s.filter1,tp,LOCATION_MZONE,0,1,1,nil,e,tp)
+    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,1,0,0)
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
+end
+
+function s.activate(e,tp,eg,ep,ev,re,r,rp)
+    local tc=Duel.GetFirstTarget()
+    if not tc or not tc:IsRelateToEffect(e) or Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
+    local maxlink=tc:GetLink()
+    local g=Duel.GetMatchingGroup(s.filter2,tp,LOCATION_GRAVE,0,nil,e,tp,maxlink)
+    if #g==0 or Duel.GetLocationCount(tp,LOCATION_MZONE)==0 then return end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+    local sg=aux.SelectUnselectGroup(g,e,tp,1,#g,function(g,...) return s.sumlinkval(g)<=maxlink end,false,tp)
+    if #sg>0 then
+        Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
+    end
 end
 
 function s.sumlinkval(g)
@@ -48,48 +69,19 @@ function s.sumlinkval(g)
     return sum
 end
 
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter1(chkc,tp) end
-    if chk==0 then return Duel.IsExistingTarget(s.filter1,tp,LOCATION_MZONE,0,1,nil,tp) end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-    local g=Duel.SelectTarget(tp,s.filter1,tp,LOCATION_MZONE,0,1,1,nil,tp)
-    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,g,1,0,0)
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
-end
-
-function s.activate(e,tp,eg,ep,ev,re,r,rp)
-    local tc=Duel.GetFirstTarget()
-    if not tc or not tc:IsRelateToEffect(e) or Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
-    local maxlink=tc:GetLink()
-    local g=Duel.GetMatchingGroup(s.filter2,tp,LOCATION_GRAVE,0,nil,maxlink,tp)
-    if #g==0 or Duel.GetLocationCount(tp,LOCATION_MZONE)==0 then return end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local sg=aux.SelectUnselectGroup(g,e,tp,1,#g,s.chklink,false,tp,maxlink)
-    if #sg>0 then
-        Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
-    end
-end
-
-function s.chklink(g,tp,maxlink)
-    return s.sumlinkval(g)<=maxlink
-end
-
 -- Second Effect: GY Negate & Board Wipe
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsBattlePhase() and ep==1-tp and Duel.IsChainNegatable(ev)
         and Duel.IsExistingMatchingCard(s.link4filter,tp,LOCATION_MZONE,0,1,nil)
 end
-
 function s.link4filter(c)
     return c:IsSetCard(0x103) and c:IsType(TYPE_LINK) and c:GetLink()>=4
 end
-
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
     Duel.SetOperationInfo(0,CATEGORY_NEGATE,eg,1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,0,LOCATION_ONFIELD)
 end
-
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.NegateActivation(ev) then
         local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
