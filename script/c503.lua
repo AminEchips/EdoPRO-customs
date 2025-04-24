@@ -36,9 +36,13 @@ s.listed_series={0x103}
 -- e2: Trigger when an Altergeist monster is Tributed
 function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(function(c)
-        return c:IsPreviousControler(tp) and c:IsSetCard(0x103) and c:IsType(TYPE_MONSTER)
+        return c:IsPreviousControler(tp)
+            and c:IsSetCard(0x103)
+            and c:IsType(TYPE_MONSTER)
+            and bit.band(c:GetReason(), REASON_RELEASE) ~= 0
     end,1,nil)
 end
+
 function s.tgfilter(c)
     return c:IsType(TYPE_TRAP) and c:IsAbleToGrave()
 end
