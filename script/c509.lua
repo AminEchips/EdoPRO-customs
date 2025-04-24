@@ -2,30 +2,28 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    -- Link Summon: 2 "Altergeist" monsters
-    Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x103),2,2)
-    
-    -- On Link Summon: Send 1 "Altergeist" Trap from Deck to GY, then Special Summon 1 from hand
+    Link.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x103),2,2)
+
+    -- If Link Summoned: Send 1 Altergeist Trap from Deck to GY, then Special Summon 1 Altergeist monster from hand
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SPECIAL_SUMMON)
     e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)
     e1:SetProperty(EFFECT_FLAG_DELAY)
+    e1:SetCountLimit(1,id)
     e1:SetCondition(s.spcon)
     e1:SetTarget(s.sptg)
     e1:SetOperation(s.spop)
-    e1:SetCountLimit(1,id)
     c:RegisterEffect(e1)
 
-    -- If sent from field to GY: Set 1 "Altergeist" Trap from hand or banishment
+    -- If sent from field to GY: Set 1 Altergeist Trap from hand or banishment
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetCategory(CATEGORY_SET)
     e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetCode(EVENT_TO_GRAVE)
-    e2:SetCondition(s.setcon)
+    e2:SetProperty(EFFECT_FLAG_DELAY)
+    e2:SetCountLimit(1,{id,1})
+    e2:SetCondition(function(e) return e:GetHandler():IsPreviousLocation(LOCATION_ONFIELD) end)
     e2:SetTarget(s.settg)
     e2:SetOperation(s.setop)
     c:RegisterEffect(e2)
@@ -33,7 +31,6 @@ end
 
 s.listed_series={0x103}
 
--- e1: On Link Summon
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
@@ -44,11 +41,9 @@ function s.spfilter(c,e,tp)
     return c:IsSetCard(0x103) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then 
-        return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil)
-            and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND,0,1,nil,e,tp)
-            and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-    end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil)
+        and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_HAND,0,1,nil,e,tp)
+        and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
     Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
 end
@@ -64,24 +59,18 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- e2: Set from GY or banished
-function s.setcon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    return c:IsPreviousLocation(LOCATION_MZONE)
-end
 function s.setfilter(c)
     return c:IsSetCard(0x103) and c:IsType(TYPE_TRAP) and c:IsSSetable()
 end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_HAND+LOCATION_REMOVED) and s.setfilter(chkc) end
-    if chk==0 then return Duel.IsExistingTarget(s.setfilter,tp,LOCATION_HAND+LOCATION_REMOVED,0,1,nil) end
+function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_HAND+LOCATION_REMOVED,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-    local g=Duel.SelectTarget(tp,s.setfilter,tp,LOCATION_HAND+LOCATION_REMOVED,0,1,1,nil)
-    Duel.SetOperationInfo(0,CATEGORY_SET,g,1,0,0)
+    local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_HAND+LOCATION_REMOVED,0,1,1,nil)
+    Duel.SetTargetCard(g)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
-    if tc and tc:IsRelateToEffect(e) then
+    if tc and tc:IsRelateToEffect(e) and tc:IsSSetable() then
         Duel.SSet(tp,tc)
     end
 end
