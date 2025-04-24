@@ -3,6 +3,8 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
 
+    -- Ritual Summon procedure handled by Altergeist Formatting (no builtin AddRitualProc call needed)
+
     -- Gains 1000 ATK during the turn a Trap was activated
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
@@ -13,12 +15,12 @@ function s.initial_effect(c)
     e1:SetValue(1000)
     c:RegisterEffect(e1)
 
-    -- Inflict 1000 damage when either player activates a Trap Card or effect (except during Damage Step)
+    -- Inflict 1000 damage when a Trap is activated (except during Damage Step)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_DAMAGE)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e2:SetCode(EVENT_CHAIN_ACTIVATING)
+    e2:SetCode(EVENT_CHAINING)
     e2:SetRange(LOCATION_MZONE)
     e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetCountLimit(1,id)
@@ -27,7 +29,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.damop)
     c:RegisterEffect(e2)
 
-    -- If sent to GY: Special Summon 1 Altergeist Fusion, Synchro, Xyz, or Link from GY
+    -- If sent to GY: Special Summon 1 Altergeist Fusion/Synchro/Xyz/Link from GY
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -42,14 +44,14 @@ function s.initial_effect(c)
 end
 s.listed_series={0x103}
 
--- ATK Boost Condition: Trap activated this turn
+-- ATK boost if a Trap was activated this turn
 function s.atkcon(e)
     return Duel.GetFlagEffect(e:GetHandlerPlayer(),id)>0
 end
 
--- Damage Effect
+-- Burn damage condition
 function s.damcon(e,tp,eg,ep,ev,re,r,rp)
-    return re:IsActiveType(TYPE_TRAP) and not (Duel.GetCurrentPhase()==PHASE_DAMAGE and not Duel.IsDamageCalculated())
+    return re:IsActiveType(TYPE_TRAP) and not Duel.IsDamageCalculated()
 end
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
@@ -60,14 +62,13 @@ function s.damop(e,tp,eg,ep,ev,re,r,rp)
     Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
 end
 
--- Revival Condition
+-- If sent to GY: Special Summon an Altergeist Extra Deck monster
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return c:IsPreviousLocation(LOCATION_ONFIELD)
 end
 function s.spfilter(c,e,tp)
-    return c:IsSetCard(0x103)
-        and c:IsType(TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ+TYPE_LINK)
+    return c:IsSetCard(0x103) and c:IsType(TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ+TYPE_LINK)
         and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
