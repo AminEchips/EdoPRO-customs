@@ -9,7 +9,6 @@ function s.initial_effect(c)
 
     -- Send 1 Trap from Deck to GY when Altergeist monster is Tributed
     local e2=Effect.CreateEffect(c)
-    -- e2:SetDescription(aux.Stringid(id,0)) -- Commented to avoid nil crash
     e2:SetCategory(CATEGORY_TOGRAVE)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_RELEASE)
@@ -22,8 +21,7 @@ function s.initial_effect(c)
 
     -- When sent to GY: Set 1 Altergeist Trap or Personal Spoofing
     local e3=Effect.CreateEffect(c)
-    -- e3:SetDescription(aux.Stringid(id,1)) -- Commented to avoid nil crash
-    e3:SetCategory(CATEGORY_SET)
+    e3:SetCategory(CATEGORY_LEAVE_GRAVE)
     e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
     e3:SetCode(EVENT_TO_GRAVE)
@@ -35,7 +33,7 @@ end
 
 s.listed_series={0x103}
 
--- e2: Tribute condition
+-- e2: Trigger when an Altergeist monster is Tributed
 function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(Card.IsSetCard,1,nil,0x103)
 end
@@ -44,6 +42,7 @@ function s.tgfilter(c)
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil) end
+    Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
 end
 function s.tgop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
@@ -53,7 +52,7 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- e3: Set when sent to GY
+-- e3: Set 1 Trap from GY
 function s.setfilter(c)
     return ((c:IsSetCard(0x103) and not c:IsCode(id)) or c:IsCode(53936268)) and c:IsSSetable()
 end
@@ -62,7 +61,7 @@ function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chk==0 then return Duel.IsExistingTarget(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
     local g=Duel.SelectTarget(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-    Duel.SetOperationInfo(0,CATEGORY_SET,g,1,0,0)
+    Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,g,1,0,0)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
@@ -70,4 +69,3 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SSet(tp,tc)
     end
 end
-
