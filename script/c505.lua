@@ -35,37 +35,36 @@ function s.initial_effect(c)
 end
 
 -- Synchro Summon logic
-function s.synfilter(c,e,tp,mg)
-    return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_SPELLCASTER) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_SYNCHRO,tp,false,false)
-        and Duel.CheckSynchroMaterial(c,nil,nil,tp)
+-- Valid Synchro Monster Filter
+function s.synfilter(c)
+    return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_SPELLCASTER)
+        and Duel.IsExistingMatchingCard(Card.IsCanBeSynchroMaterial,tp,LOCATION_MZONE,0,1,nil,c)
+        and Duel.IsPlayerCanSpecialSummon(tp)
 end
+
+-- Synchro Summon Target
 function s.syntg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        local mg=Duel.GetMatchingGroup(Card.IsCanBeSynchroMaterial,tp,LOCATION_MZONE,0,nil)
-        return Duel.IsExistingMatchingCard(s.synfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mg)
+        return Duel.IsExistingMatchingCard(s.synfilter,tp,LOCATION_EXTRA,0,1,nil)
     end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
+
+-- Synchro Summon Operation
 function s.synop(e,tp,eg,ep,ev,re,r,rp)
-    local mg=Duel.GetMatchingGroup(Card.IsCanBeSynchroMaterial,tp,LOCATION_MZONE,0,nil)
-    local g=Duel.GetMatchingGroup(s.synfilter,tp,LOCATION_EXTRA,0,nil,e,tp,mg)
-    if #g==0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local sc=g:Select(tp,1,1,nil):GetFirst()
+    local g=Duel.SelectMatchingCard(tp,s.synfilter,tp,LOCATION_EXTRA,0,1,1,nil)
+    local sc=g:GetFirst()
     if not sc then return end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SMATERIAL)
-    local mat=Duel.SelectSynchroMaterial(tp,sc,nil,tp)
-    if not mat then return end
-    Duel.SendtoGrave(mat,REASON_MATERIAL+REASON_SYNCHRO)
-    Duel.BreakEffect()
-    Duel.SpecialSummon(sc,SUMMON_TYPE_SYNCHRO,tp,tp,false,false,POS_FACEUP)
-    sc:CompleteProcedure()
-    local e1=Effect.CreateEffect(e:GetHandler())
-    e1:SetType(EFFECT_TYPE_SINGLE)
-    e1:SetCode(EFFECT_UPDATE_ATTACK)
-    e1:SetValue(500)
-    e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
-    sc:RegisterEffect(e1)
+    Duel.SynchroSummon(tp,sc,nil)
+    if sc:IsFaceup() then
+        local e1=Effect.CreateEffect(e:GetHandler())
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_UPDATE_ATTACK)
+        e1:SetValue(500)
+        e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
+        sc:RegisterEffect(e1)
+    end
 end
 
 -- Ritual Summon logic
