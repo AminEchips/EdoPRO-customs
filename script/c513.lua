@@ -1,82 +1,108 @@
---死霊王 ドーハスーラ
---Doomking Balerdroch
+--Altergeist Halbenkaia
 local s,id=GetID()
 function s.initial_effect(c)
-	--Negate an activated effect or Banish 1 monster from the field or GY.
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_DISABLE+CATEGORY_REMOVE)
-	e1:SetType(EFFECT_TYPE_QUICK_O)
-	e1:SetCode(EVENT_CHAINING)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCondition(s.disrmcon)
-	e1:SetCost(s.disrmcost)
-	e1:SetTarget(s.disrmtg)
-	e1:SetOperation(s.disrmop)
-	c:RegisterEffect(e1)
-	--Special Summon this card in Defense Position
-	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,3))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetRange(LOCATION_GRAVE)
-	e2:SetCode(EVENT_PHASE|PHASE_STANDBY)
-	e2:SetCountLimit(1,id)
-	e2:SetCondition(s.spcon)
-	e2:SetTarget(s.sptg)
-	e2:SetOperation(s.spop)
-	c:RegisterEffect(e2)
+    c:EnableReviveLimit()
+    Link.AddProcedure(c,nil,2,99,s.matcheck,aux.Stringid(id,0))
+
+    --Multiple attacks
+    local e1=Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_SINGLE)
+    e1:SetCode(EFFECT_EXTRA_ATTACK_MONSTER)
+    e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+    e1:SetRange(LOCATION_MZONE)
+    e1:SetValue(s.atkval)
+    c:RegisterEffect(e1)
+
+    --Destroy when Trap sent to GY
+    local e2=Effect.CreateEffect(c)
+    e2:SetDescription(aux.Stringid(id,1))
+    e2:SetCategory(CATEGORY_DESTROY)
+    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e2:SetCode(EVENT_TO_GRAVE)
+    e2:SetRange(LOCATION_MZONE)
+    e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
+    e2:SetCountLimit(1,id)
+    e2:SetCondition(s.descon)
+    e2:SetTarget(s.destg)
+    e2:SetOperation(s.desop)
+    c:RegisterEffect(e2)
+
+    --Set Altergeist Trap from hand/field/GY
+    local e3=Effect.CreateEffect(c)
+    e3:SetDescription(aux.Stringid(id,2))
+    e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+    e3:SetCode(EVENT_LEAVE_FIELD)
+    e3:SetProperty(EFFECT_FLAG_DELAY)
+    e3:SetCountLimit(1,{id,1})
+    e3:SetCondition(s.setcon)
+    e3:SetTarget(s.settg)
+    e3:SetOperation(s.setop)
+    c:RegisterEffect(e3)
 end
-function s.disrmcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:GetFlagEffect(id)==0 end
-	c:RegisterFlagEffect(id,RESET_CHAIN,0,1)
+s.listed_series={0x103}
+
+-- Materials must be "Altergeist" monsters
+function s.matcheck(g,lc,sumtype,tp)
+    return g:IsExists(Card.IsSetCard,1,nil,0x103)
 end
-function s.disrmcon(e,tp,eg,ep,ev,re,r,rp)
-	local trig_typ,trig_race,code1,code2=Duel.GetChainInfo(ev,CHAININFO_TRIGGERING_TYPE,CHAININFO_TRIGGERING_RACE,CHAININFO_TRIGGERING_CODE,CHAININFO_TRIGGERING_CODE2)
-	return trig_typ&TYPE_MONSTER>0 and trig_race&RACE_ZOMBIE>0 and code1~=id and code2~=id
+
+-- Extra attacks equal to # of different-named Altergeist Traps in GY - 1
+function s.atkval(e,c)
+    local g=Duel.GetMatchingGroup(s.trapfilter,c:GetControler(),LOCATION_GRAVE,0,nil)
+    local names={}
+    for tc in g:Iter() do
+        names[tc:GetCode()]=true
+    end
+    return math.max(0,#names-1)
 end
-function s.filter(c)
-	return c:IsMonster() and c:IsAbleToRemove()
+function s.trapfilter(c)
+    return c:IsType(TYPE_TRAP) and c:IsSetCard(0x103)
 end
-function s.disrmtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local b1=Duel.IsChainDisablable(ev) and Duel.GetFlagEffect(tp,id)==0
-	local b2=Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.filter),tp,LOCATION_MZONE|LOCATION_GRAVE,LOCATION_MZONE|LOCATION_GRAVE,1,nil)
-		and Duel.GetFlagEffect(tp,id+1)==0
-	if chk==0 then return b1 or b2 end
-	Duel.SetPossibleOperationInfo(0,CATEGORY_DISABLE,eg,1,0,0)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_REMOVE,nil,1,PLAYER_EITHER,LOCATION_MZONE|LOCATION_GRAVE)
+
+-- Destroy effect when Trap sent to GY
+function s.cfilter(c,tp)
+    return c:IsType(TYPE_TRAP) and c:IsControler(tp)
 end
-function s.disrmop(e,tp,eg,ep,ev,re,r,rp)
-	local b1=Duel.IsChainDisablable(ev) and Duel.GetFlagEffect(tp,id)==0
-	local b2=Duel.IsExistingMatchingCard(aux.NecroValleyFilter(s.filter),tp,LOCATION_MZONE|LOCATION_GRAVE,LOCATION_MZONE|LOCATION_GRAVE,1,nil)
-		and Duel.GetFlagEffect(tp,id+1)==0
-	local op=0
-	if b1 and b2 then op=Duel.SelectOption(tp,aux.Stringid(id,1),aux.Stringid(id,2))
-	elseif b1 then op=Duel.SelectOption(tp,aux.Stringid(id,1))
-	elseif b2 then op=Duel.SelectOption(tp,aux.Stringid(id,2))+1
-	else return end
-	if op==0 then
-		Duel.NegateEffect(ev)
-		Duel.RegisterFlagEffect(tp,id,RESET_PHASE|PHASE_END,0,1)
-	else
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-		local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.filter),tp,LOCATION_MZONE|LOCATION_GRAVE,LOCATION_MZONE|LOCATION_GRAVE,1,1,nil)
-		Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
-		Duel.RegisterFlagEffect(tp,id+1,RESET_PHASE|PHASE_END,0,1)
-	end
+function s.descon(e,tp,eg,ep,ev,re,r,rp)
+    return eg:IsExists(s.cfilter,1,nil,tp)
 end
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_FZONE,LOCATION_FZONE,1,nil)
+function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsOnField() end
+    if chk==0 then return Duel.IsExistingTarget(nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+    local g=Duel.SelectTarget(tp,nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
+    Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,tp,0)
+function s.desop(e,tp,eg,ep,ev,re,r,rp)
+    local tc=Duel.GetFirstTarget()
+    if tc and tc:IsRelateToEffect(e) then
+        Duel.Destroy(tc,REASON_EFFECT)
+    end
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) then return end
-	Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP_DEFENSE)
+
+-- Set Altergeist Trap from hand, field, or GY
+function s.setcon(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_ONFIELD)
+end
+function s.setfilter(c)
+    return c:IsType(TYPE_TRAP) and c:IsSetCard(0x103) and c:IsSSetable()
+end
+function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_HAND+LOCATION_ONFIELD+LOCATION_GRAVE,0,1,nil) end
+    Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,nil,1,tp,LOCATION_GRAVE)
+end
+function s.setop(e,tp,eg,ep,ev,re,r,rp)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+    local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.setfilter),tp,LOCATION_HAND+LOCATION_ONFIELD+LOCATION_GRAVE,0,1,1,nil)
+    local tc=g:GetFirst()
+    if tc and Duel.SSet(tp,tc)>0 then
+        -- Allow activation this turn
+        local e1=Effect.CreateEffect(e:GetHandler())
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_TRAP_ACT_IN_SET_TURN)
+        e1:SetProperty(EFFECT_FLAG_SET_AVAILABLE)
+        e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+        tc:RegisterEffect(e1)
+    end
 end
