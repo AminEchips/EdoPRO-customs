@@ -63,33 +63,37 @@ end
 -----------------------
 -- RITUAL SUMMON EFFECT
 -----------------------
-function s.ritfilter(c)
-    return c:IsSetCard(0x103) and c:IsRitualMonster() and c:IsCanBeSpecialSummoned(nil,SUMMON_TYPE_RITUAL,tp,false,true)
+function s.ritfilter(c,e,tp)
+    return c:IsSetCard(0x103) and c:IsRitualMonster() and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_RITUAL,tp,false,true)
 end
 function s.matfilter(c)
     return (c:IsLevelAbove(1) or c:IsType(TYPE_LINK)) and c:IsReleasable()
 end
-function s.getMaterialValue(c)
-    return c:IsType(TYPE_LINK) and c:GetLink() or c:GetLevel()
+function s.getTotalLevel(g)
+    local total=0
+    for tc in aux.Next(g) do
+        total = total + (tc:IsType(TYPE_LINK) and tc:GetLink() or tc:GetLevel())
+    end
+    return total
 end
 function s.rittg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        return Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,nil)
+        return Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,nil,e,tp)
             and Duel.IsExistingMatchingCard(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil)
     end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_GRAVE)
 end
 function s.ritop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local rc=Duel.SelectMatchingCard(tp,s.ritfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil):GetFirst()
+    local rc=Duel.SelectMatchingCard(tp,s.ritfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil,e,tp):GetFirst()
     if not rc then return end
 
     local lv=rc:GetLevel()
     local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil)
 
-    -- Select materials with sum >= ritual monster's level
+    -- Select materials with total >= ritual monster's level
     local selected=aux.SelectUnselectGroup(mg,e,tp,nil,lv,
-        function(g,...) return s.getTotalLevel(g)>=lv end,
+        function(g) return s.getTotalLevel(g)>=lv end,
         true,tp,HINTMSG_RELEASE,nil,nil,true)
 
     if #selected==0 then return end
@@ -100,15 +104,7 @@ function s.ritop(e,tp,eg,ep,ev,re,r,rp)
     Duel.SpecialSummon(rc,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP)
     rc:CompleteProcedure()
 
-    -- Draw 1 if successful
+    -- Draw 1 card if successful
     Duel.BreakEffect()
     Duel.Draw(tp,1,REASON_EFFECT)
-end
-
-function s.getTotalLevel(g)
-    local total=0
-    for tc in aux.Next(g) do
-        total=total+(tc:IsType(TYPE_LINK) and tc:GetLink() or tc:GetLevel())
-    end
-    return total
 end
