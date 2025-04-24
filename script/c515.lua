@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    aux.AddRitualProcGreaterCode(c,515) -- Assume 515 is Altergeist Formatting, change if needed
+    aux.AddRitualProcGreaterCode(c,505) -- Assume 515 is Altergeist Formatting, change if needed
 
     -- Gains 1000 ATK during the turn a Trap was activated
     local e1=Effect.CreateEffect(c)
