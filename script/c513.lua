@@ -13,19 +13,19 @@ function s.initial_effect(c)
     e1:SetValue(s.atkval)
     c:RegisterEffect(e1)
 
-    --Destroy when Trap sent to GY
+    -- Destroy effect when Trap sent to GY (non-targeting)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DESTROY)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_TO_GRAVE)
     e2:SetRange(LOCATION_MZONE)
-    e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
+    e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetCountLimit(1,id)
     e2:SetCondition(s.descon)
-    e2:SetTarget(s.destg)
     e2:SetOperation(s.desop)
     c:RegisterEffect(e2)
+
 
     --Set Altergeist Trap from hand/field/GY
     local e3=Effect.CreateEffect(c)
@@ -74,11 +74,13 @@ function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
-    local tc=Duel.GetFirstTarget()
-    if tc and tc:IsRelateToEffect(e) then
-        Duel.Destroy(tc,REASON_EFFECT)
-    end
+    local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
+    if #g==0 then return end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+    local dg=g:Select(tp,1,1,nil)
+    Duel.Destroy(dg,REASON_EFFECT)
 end
+
 
 -- Set Altergeist Trap from hand, field, or GY
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
