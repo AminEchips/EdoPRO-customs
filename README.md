@@ -7,3 +7,4 @@ Includes:
 - Darklord
 - Starry Knight
 - Altergeist
+- Blackwing
