@@ -1,11 +1,13 @@
 --Assault Blackwing - Kunifusa the White Rainbow
 local s,id=GetID()
 s.listed_series={SET_BLACKWING,0x33} -- Blackwing archetype
+local s,id=GetID()
+s.listed_series={SET_BLACKWING,0x33}
 function s.initial_effect(c)
     -- Synchro Summon procedure
-    Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsType,TYPE_TUNER),1,1,aux.NonTuner(nil),1,99)
+    Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
     c:EnableReviveLimit()
-    -- Become Tuner if Synchro Summoned using a Blackwing monster
+    -- Become Tuner if Synchro Summoned using a Blackwing
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
