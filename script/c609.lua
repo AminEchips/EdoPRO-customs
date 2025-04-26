@@ -1,6 +1,6 @@
 --Assault Blackwing - Kuniyoshi the White Rainbow
 local s,id=GetID()
-s.listed_series={SET_BLACKWING,0x33} -- Blackwing archetype
+s.listed_series={SET_BLACKWING,0x33}
 function s.initial_effect(c)
     -- Synchro Summon procedure
     Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
@@ -14,13 +14,13 @@ function s.initial_effect(c)
     e1:SetCondition(s.tncon)
     e1:SetValue(TYPE_TUNER)
     c:RegisterEffect(e1)
-    -- Discard 1 Blackwing to activate 1 effect (each once per turn)
+    -- Discard 1 Blackwing to activate 1 effect (each once)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_DAMAGE+CATEGORY_SPECIAL_SUMMON)
     e2:SetType(EFFECT_TYPE_IGNITION)
     e2:SetRange(LOCATION_MZONE)
-    e2:SetCountLimit(2,id) -- 2 activations total (because you can pick each once)
+    e2:SetCountLimit(2,id) -- Up to 2 uses per turn
     e2:SetCost(s.cost)
     e2:SetTarget(s.target)
     e2:SetOperation(s.operation)
@@ -50,27 +50,35 @@ function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 ----------------------------------------------------------
--- Choose effect (each once)
+-- Target
 ----------------------------------------------------------
 function s.spfilter(c,e,tp)
     return c:IsSetCard(0x33) and c:IsType(TYPE_SYNCHRO) and c:IsLevelBelow(3) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return true end
+    local b1=Duel.GetFlagEffect(tp,id)==0 -- Can inflict 300
+    local b2=Duel.GetFlagEffect(tp,id+1)==0 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) -- Can Special Summon
+    if chk==0 then return b1 or b2 end
+    Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,300)
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
-function s.operation(e,tp,eg,ep,ev,re,r,rp)
-    local b1=not Duel.GetFlagEffect(tp,id)==1 -- Damage not used yet
-    local b2=not Duel.GetFlagEffect(tp,id+1)==1 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) -- Special Summon not used yet
-    if not b1 and not b2 then return end -- Can't pick anything
 
-    Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,1))
+----------------------------------------------------------
+-- Operation
+----------------------------------------------------------
+function s.operation(e,tp,eg,ep,ev,re,r,rp)
+    local b1=Duel.GetFlagEffect(tp,id)==0
+    local b2=Duel.GetFlagEffect(tp,id+1)==0 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
+    if not (b1 or b2) then return end
+
     local opt=0
     if b1 and b2 then
-        opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
+        opt=Duel.SelectOption(tp,aux.Stringid(id,1),aux.Stringid(id,2))
     elseif b1 then
-        opt=Duel.SelectOption(tp,aux.Stringid(id,2))
+        Duel.SelectOption(tp,aux.Stringid(id,1))
+        opt=0
     else
-        Duel.SelectOption(tp,aux.Stringid(id,3))
+        Duel.SelectOption(tp,aux.Stringid(id,2))
         opt=1
     end
 
