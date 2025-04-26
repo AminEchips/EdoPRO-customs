@@ -1,6 +1,6 @@
 --Blackwing - Puelche the Blazing
 local s,id=GetID()
-s.listed_series={SET_BLACKWING,0x33}
+s.listed_series={SET_BLACKWING,0x33,0x1033} -- Assault Blackwing = 0x1033
 function s.initial_effect(c)
     -- Synchro Summon procedure
     Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_DARK),1,1,Synchro.NonTuner(nil),1,99)
@@ -15,13 +15,14 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
     -- Destruction replacement
     local e2=Effect.CreateEffect(c)
-    e2:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_FIELD)
+    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
     e2:SetCode(EFFECT_DESTROY_REPLACE)
     e2:SetRange(LOCATION_MZONE)
     e2:SetTarget(s.reptg)
     e2:SetValue(s.repval)
+    e2:SetOperation(s.repop)
     c:RegisterEffect(e2)
-    -- Special Summon Assault Blackwing + Level reduce + Tuner
+    -- Special Summon Assault Blackwing + Level reduce + make Tuner
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,0))
     e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_LVCHANGE)
@@ -37,19 +38,20 @@ end
 -- (2) Destruction replacement
 ----------------------------------------------------------
 function s.repfilter(c,tp)
-    return c:IsFaceup() and c:IsSetCard(0x33) and c:IsAttackPos() and c:IsControler(tp)
-        and c:IsReason(REASON_BATTLE+REASON_EFFECT) and not c:IsReason(REASON_REPLACE)
+    return c:IsFaceup() and c:IsSetCard(0x33) and c:IsAttackPos()
+        and c:IsControler(tp) and c:IsOnField() and c:IsReason(REASON_BATTLE+REASON_EFFECT)
 end
 function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return eg:IsExists(s.repfilter,1,nil,tp) end
-    return true
+    return Duel.SelectYesNo(tp,aux.Stringid(id,1)) -- confirmation
 end
 function s.repval(e,c)
-    if s.repfilter(c,c:GetControler()) then
-        Duel.ChangePosition(c,POS_FACEUP_DEFENSE)
-        return true
-    else
-        return false
+    return s.repfilter(c,c:GetControler())
+end
+function s.repop(e,tp,eg,ep,ev,re,r,rp)
+    local g=eg:Filter(s.repfilter,nil,tp)
+    for tc in aux.Next(g) do
+        Duel.ChangePosition(tc,POS_FACEUP_DEFENSE)
     end
 end
 
@@ -57,20 +59,21 @@ end
 -- (3) Special Summon Assault Blackwing + Level adjust + make Tuner
 ----------------------------------------------------------
 function s.spfilter(c,e,tp)
-    return c:IsSetCard(0x33) and c:IsLevelBelow(7) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
+    return c:IsSetCard(0x1033) and c:IsLevelBelow(7) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,tp) end
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
+        and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+    Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-    local tc=g:GetFirst()
+    local tc=Duel.GetFirstTarget()
     local c=e:GetHandler()
-    if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP_DEFENSE)>0 and c:IsFaceup() and c:IsRelateToEffect(e) then
+    if tc and tc:IsRelateToEffect(e) and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP_DEFENSE)>0 and c:IsFaceup() and c:IsRelateToEffect(e) then
         -- Reduce this card's Level
         local lv=tc:GetOriginalLevel()
         if lv>0 then
@@ -81,9 +84,9 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
             e1:SetReset(RESET_EVENT+RESETS_STANDARD)
             c:RegisterEffect(e1)
         end
-        -- Optionally make it a Tuner
-        if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-            local e2=Effect.CreateEffect(c)
+        -- Optionally make the monster a Tuner
+        if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+            local e2=Effect.CreateEffect(tc)
             e2:SetType(EFFECT_TYPE_SINGLE)
             e2:SetCode(EFFECT_ADD_TYPE)
             e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
