@@ -1,21 +1,28 @@
 --Assault Blackwing - Artemis the Bolt
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Special Summon from GY by tributing 1 "Blackwing"
+    -- Can be Special Summoned from GY by tributing 1 "Blackwing" monster (not treated as an effect)
+    aux.EnableUnsummonable(c)
+    local e0=Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_FIELD)
+    e0:SetCode(EFFECT_SPSUMMON_PROC)
+    e0:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+    e0:SetRange(LOCATION_GRAVE)
+    e0:SetCondition(s.spcon)
+    e0:SetOperation(s.spop)
+    c:RegisterEffect(e0)
+
+    -- If Special Summoned this way, become a Tuner
     local e1=Effect.CreateEffect(c)
-    e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-    e1:SetType(EFFECT_TYPE_IGNITION)
-    e1:SetRange(LOCATION_GRAVE)
-    e1:SetCountLimit(1,id)
-    e1:SetCost(s.spcost)
-    e1:SetTarget(s.sptg)
-    e1:SetOperation(s.spop)
+    e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+    e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+    e1:SetCondition(function(e) return e:GetHandler():IsLocation(LOCATION_MZONE) end)
+    e1:SetOperation(s.tunerop)
     c:RegisterEffect(e1)
 
-    -- Negate effect between ATK declaration and end of damage step, double ATK
+    -- Quick effect: Negate + Double ATK
     local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,1))
+    e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_NEGATE+CATEGORY_ATKCHANGE)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_CHAINING)
@@ -28,41 +35,42 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 s.listed_series={0x33,0x1033}
-s.listed_names={9012916}
+s.listed_names={9012916} -- Black-Winged Dragon
 
--- Tribute 1 "Blackwing" to revive this from GY
-function s.cfilter(c)
+------------------------
+-- Special Summon logic
+------------------------
+function s.spfilter(c)
     return c:IsSetCard(0x33) and c:IsReleasable()
 end
-function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.CheckReleaseGroup(tp,s.cfilter,1,nil) end
-    local g=Duel.SelectReleaseGroup(tp,s.cfilter,1,1,nil)
+function s.spcon(e,c)
+    if c==nil then return true end
+    return Duel.GetLocationCount(c:GetControler(),LOCATION_MZONE)>0
+        and Duel.CheckReleaseGroup(c:GetControler(),s.spfilter,1,nil)
+end
+function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
+    local g=Duel.SelectReleaseGroup(tp,s.spfilter,1,1,nil)
     Duel.Release(g,REASON_COST)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+
+-- Become Tuner after being Special Summoned
+function s.tunerop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
-end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP) > 0 then
-        -- Become Tuner
-        local e1=Effect.CreateEffect(c)
-        e1:SetType(EFFECT_TYPE_SINGLE)
-        e1:SetCode(EFFECT_ADD_TYPE)
-        e1:SetValue(TYPE_TUNER)
-        e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-        c:RegisterEffect(e1)
-    end
+    local e1=Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_SINGLE)
+    e1:SetCode(EFFECT_ADD_TYPE)
+    e1:SetValue(TYPE_TUNER)
+    e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+    c:RegisterEffect(e1)
 end
 
--- During battle: negate and boost ATK
+------------------------
+-- Quick Negate Effect
+------------------------
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetCurrentPhase()>=PHASE_BATTLE_START and Duel.GetCurrentPhase()<=PHASE_DAMAGE
-        and Duel.GetAttacker() and Duel.GetAttackTarget()
-        and re:IsActivated() and re:IsHasType(EFFECT_TYPE_ACTIVATE+EFFECT_TYPE_QUICK_O+EFFECT_TYPE_QUICK_F)
+    local ph=Duel.GetCurrentPhase()
+    return ph>=PHASE_BATTLE_START and ph<=PHASE_DAMAGE and not Duel.IsDamageCalculated()
+        and re:IsActivated()
 end
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
@@ -75,18 +83,16 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.NegateActivation(ev) then
-        local g=Group.CreateGroup()
-        local tc=Duel.GetAttacker()
-        if tc:IsControler(1-tp) then tc=Duel.GetAttackTarget() end
-        if tc and (tc:IsSetCard(0x33) or tc:IsCode(9012916)) and tc:IsFaceup() and tc:IsRelateToBattle() then
-            Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-            local atk=tc:GetAttack()
+        local bc=Duel.GetAttacker()
+        if bc and bc:IsControler(tp) and (bc:IsSetCard(0x33) or bc:IsCode(9012916)) and bc:IsFaceup() and bc:IsRelateToBattle() then
+            local atk=bc:GetAttack()
             local e1=Effect.CreateEffect(e:GetHandler())
             e1:SetType(EFFECT_TYPE_SINGLE)
             e1:SetCode(EFFECT_UPDATE_ATTACK)
             e1:SetValue(atk)
             e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-            tc:RegisterEffect(e1)
+            bc:RegisterEffect(e1)
         end
     end
 end
+
