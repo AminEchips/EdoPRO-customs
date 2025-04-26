@@ -28,14 +28,13 @@ function s.initial_effect(c)
     e2:SetOperation(s.ctop)
     e2:SetCountLimit(1,{id,1})
     c:RegisterEffect(e2)
-    -- Banish from GY to change Level
+    -- Banish from GY to target 1 DARK Synchro, change its Level
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_LVCHANGE)
-    e3:SetType(EFFECT_TYPE_QUICK_O)
+    e3:SetType(EFFECT_TYPE_IGNITION)
     e3:SetRange(LOCATION_GRAVE)
-    e3:SetCode(EVENT_FREE_CHAIN)
-    e3:SetHintTiming(0,TIMING_MAIN_END)
+    e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e3:SetCost(aux.bfgcost)
     e3:SetTarget(s.lvtg)
     e3:SetOperation(s.lvop)
@@ -86,7 +85,7 @@ end
 function s.ctop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
     for tc in aux.Next(g) do
-        tc:AddCounter(0x1106,1)
+        tc:AddCounter(0x1002,1) -- correct Wedge counter code
     end
 end
 
@@ -96,16 +95,17 @@ end
 function s.lvfilter(c)
     return c:IsFaceup() and c:IsType(TYPE_SYNCHRO) and c:IsAttribute(ATTRIBUTE_DARK)
 end
-function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.lvfilter,tp,LOCATION_MZONE,0,1,nil) end
+function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.lvfilter(chkc) end
+    if chk==0 then return Duel.IsExistingTarget(s.lvfilter,tp,LOCATION_MZONE,0,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+    Duel.SelectTarget(tp,s.lvfilter,tp,LOCATION_MZONE,0,1,1,nil)
 end
 function s.lvop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,3))
-    local lv=Duel.AnnounceLevel(tp,1,3)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-    local g=Duel.SelectMatchingCard(tp,s.lvfilter,tp,LOCATION_MZONE,0,1,1,nil)
-    local tc=g:GetFirst()
-    if tc then
+    local tc=Duel.GetFirstTarget()
+    if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
+        Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,3))
+        local lv=Duel.AnnounceLevel(tp,1,3)
         local e1=Effect.CreateEffect(e:GetHandler())
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_CHANGE_LEVEL)
@@ -114,3 +114,4 @@ function s.lvop(e,tp,eg,ep,ev,re,r,rp)
         tc:RegisterEffect(e1)
     end
 end
+
