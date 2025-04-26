@@ -12,14 +12,14 @@ function s.initial_effect(c)
     e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
 
-    -- Quick Effect: Send from hand or field to negate and double ATK
+    -- Quick Effect: Send self to GY to negate and double ATK
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_NEGATE+CATEGORY_ATKCHANGE)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_CHAINING)
     e2:SetRange(LOCATION_HAND+LOCATION_MZONE)
-    e2:SetCountLimit(1,{id,1})
+    e2:SetCountLimit(1,id)
     e2:SetCondition(s.negcon)
     e2:SetCost(s.negcost)
     e2:SetTarget(s.negtg)
@@ -68,11 +68,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 end
 
 ----------------------------------------------------------
--- Quick Effect: Negate and boost ATK
+-- Negate + Double ATK Effect
 ----------------------------------------------------------
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-    local ph=Duel.GetCurrentPhase()
-    return ph>=PHASE_BATTLE_START and ph<=PHASE_DAMAGE and not Duel.IsDamageCalculated()
+    return Duel.IsBattlePhase() and Duel.IsChainNegatable(ev)
 end
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
@@ -80,13 +79,15 @@ function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SendtoGrave(c,REASON_COST)
 end
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsChainDisablable(ev) end
+    if chk==0 then return true end
     Duel.SetOperationInfo(0,CATEGORY_NEGATE,eg,1,0,0)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.NegateActivation(ev) then
+        -- If you control a battling Blackwing or Black-Winged Dragon, double its ATK
         local bc=Duel.GetAttacker()
-        if bc and bc:IsFaceup() and (bc:IsSetCard(0x33) or bc:IsCode(9012916)) and bc:IsRelateToBattle() then
+        if not bc then bc=Duel.GetAttackTarget() end
+        if bc and bc:IsFaceup() and (bc:IsSetCard(0x33) or bc:IsCode(9012916)) then
             local atk=bc:GetAttack()
             if atk>0 then
                 local e1=Effect.CreateEffect(e:GetHandler())
@@ -99,6 +100,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
 
 
 
