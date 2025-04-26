@@ -60,37 +60,42 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ----------------------------------------------------------
--- GY Shuffle and Draw
+-- Corrected GY Shuffle and Draw
 ----------------------------------------------------------
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
     return not e:GetHandler():IsHasEffect(EFFECT_NECRO_VALLEY)
         and Duel.GetTurnCount()~=e:GetHandler():GetTurnID()
 end
 function s.gyfilter(c)
-    return c:IsSetCard(0x33) and c:IsAbleToDeck()
+    return c:IsSetCard(0x33) and (c:IsLocation(LOCATION_GRAVE) or (c:IsFaceup() and c:IsLocation(LOCATION_REMOVED))) and c:IsAbleToDeck()
 end
-function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return false end
     local g=Duel.GetMatchingGroup(s.gyfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,nil)
-    if chk==0 then return g:GetClassCount(Card.GetCode)>=3 end
+    if chk==0 then return g:GetCount()>=3 end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-    local ct=math.min(5,g:GetClassCount(Card.GetCode))
-    if ct>=5 then
-        Duel.SetSelectedCard(g:SelectSubGroup(tp,aux.dncheck,false,3,5))
-    else
-        Duel.SetSelectedCard(g:SelectSubGroup(tp,aux.dncheck,false,3,3))
+    local ct=3
+    if g:GetCount()>=5 and Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+        ct=5
     end
-    Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,3,tp,LOCATION_GRAVE+LOCATION_REMOVED)
+    local sg=g:Select(tp,ct,ct,nil)
+    Duel.SetTargetCard(sg)
+    Duel.SetOperationInfo(0,CATEGORY_TODECK,sg,#sg,0,0)
     Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetOperatedGroup()
-    if #g==0 then return end
-    if Duel.SendtoDeck(g,nil,2,REASON_EFFECT)>0 then
-        local ct=#g
-        if ct==3 then
-            Duel.Draw(tp,1,REASON_EFFECT)
-        elseif ct==5 then
-            Duel.Draw(tp,2,REASON_EFFECT)
+    local g=Duel.GetTargetCards(e)
+    if #g>0 then
+        Duel.SendtoDeck(g,nil,2,REASON_EFFECT)
+        local og=Duel.GetOperatedGroup()
+        if og:FilterCount(Card.IsLocation,nil,LOCATION_DECK+LOCATION_EXTRA)>0 then
+            local ct=#g
+            if ct==3 then
+                Duel.Draw(tp,1,REASON_EFFECT)
+            elseif ct==5 then
+                Duel.Draw(tp,2,REASON_EFFECT)
+            end
         end
     end
 end
+
