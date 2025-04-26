@@ -30,12 +30,36 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     if not c:IsRelateToEffect(e) then return end
     if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP_ATTACK)~=0 then
         Duel.NegateAttack()
-        -- Cannot leave the field this turn
+        -- Cannot be destroyed by battle
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
-        e1:SetCode(EFFECT_CANNOT_BE_LEAVE_FIELD)
-        e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_IGNORE_IMMUNE)
+        e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+        e1:SetValue(1)
         e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
         c:RegisterEffect(e1)
+        -- Cannot be destroyed by card effects
+        local e2=Effect.CreateEffect(c)
+        e2:SetType(EFFECT_TYPE_SINGLE)
+        e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+        e2:SetValue(1)
+        e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+        c:RegisterEffect(e2)
+        -- Cannot be Tributed
+        local e3=Effect.CreateEffect(c)
+        e3:SetType(EFFECT_TYPE_SINGLE)
+        e3:SetCode(EFFECT_UNRELEASABLE_SUM)
+        e3:SetValue(1)
+        e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+        c:RegisterEffect(e3)
+        local e4=e3:Clone()
+        e4:SetCode(EFFECT_UNRELEASABLE_NONSUM)
+        c:RegisterEffect(e4)
+        -- Cannot be banished
+        local e5=Effect.CreateEffect(c)
+        e5:SetType(EFFECT_TYPE_SINGLE)
+        e5:SetCode(EFFECT_CANNOT_REMOVE)
+        e5:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+        c:RegisterEffect(e5)
     end
 end
+
