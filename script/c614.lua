@@ -20,7 +20,6 @@ function s.initial_effect(c)
     e2:SetRange(LOCATION_MZONE)
     e2:SetTarget(s.reptg)
     e2:SetValue(s.repval)
-    e2:SetOperation(s.repop)
     c:RegisterEffect(e2)
     -- Special Summon Assault Blackwing + Level reduce + make Tuner
     local e3=Effect.CreateEffect(c)
@@ -45,8 +44,12 @@ function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
     local g=eg:Filter(s.repfilter,nil,tp)
     if chk==0 then return #g>0 end
     if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
-        g:KeepAlive()
-        e:SetLabelObject(g)
+        -- Immediately change position here
+        for tc in aux.Next(g) do
+            if tc:IsFaceup() and tc:IsAttackPos() then
+                Duel.ChangePosition(tc,POS_FACEUP_DEFENSE)
+            end
+        end
         return true
     else
         return false
@@ -54,16 +57,6 @@ function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.repval(e,c)
     return s.repfilter(c,c:GetControler())
-end
-function s.repop(e,tp,eg,ep,ev,re,r,rp)
-    local g=e:GetLabelObject()
-    if not g then return end
-    for tc in aux.Next(g) do
-        if tc:IsRelateToBattle() or tc:IsRelateToEffect(e) then
-            Duel.ChangePosition(tc,POS_FACEUP_DEFENSE)
-        end
-    end
-    g:DeleteGroup()
 end
 
 ----------------------------------------------------------
@@ -77,13 +70,13 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,0,0)
+    Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
+    if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
     local tc=Duel.GetFirstTarget()
     local c=e:GetHandler()
-    if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
     if tc and tc:IsRelateToEffect(e) and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP_DEFENSE)>0 and c:IsFaceup() and c:IsRelateToEffect(e) then
         -- Reduce this card's Level
         local lv=tc:GetOriginalLevel()
