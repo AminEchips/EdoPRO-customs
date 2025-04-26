@@ -1,6 +1,6 @@
 --Blackwing - Puelche the Blazing
 local s,id=GetID()
-s.listed_series={SET_BLACKWING,0x33,0x1033} -- Assault Blackwing = 0x1033
+s.listed_series={SET_BLACKWING,0x33,0x1033}
 function s.initial_effect(c)
     -- Synchro Summon procedure
     Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_DARK),1,1,Synchro.NonTuner(nil),1,99)
@@ -39,20 +39,31 @@ end
 ----------------------------------------------------------
 function s.repfilter(c,tp)
     return c:IsFaceup() and c:IsSetCard(0x33) and c:IsAttackPos()
-        and c:IsControler(tp) and c:IsOnField() and c:IsReason(REASON_BATTLE+REASON_EFFECT)
+        and c:IsControler(tp) and not c:IsReason(REASON_REPLACE) and c:IsOnField()
 end
 function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return eg:IsExists(s.repfilter,1,nil,tp) end
-    return Duel.SelectYesNo(tp,aux.Stringid(id,1)) -- confirmation
+    local g=eg:Filter(s.repfilter,nil,tp)
+    if chk==0 then return #g>0 end
+    if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+        g:KeepAlive()
+        e:SetLabelObject(g)
+        return true
+    else
+        return false
+    end
 end
 function s.repval(e,c)
     return s.repfilter(c,c:GetControler())
 end
 function s.repop(e,tp,eg,ep,ev,re,r,rp)
-    local g=eg:Filter(s.repfilter,nil,tp)
+    local g=e:GetLabelObject()
+    if not g then return end
     for tc in aux.Next(g) do
-        Duel.ChangePosition(tc,POS_FACEUP_DEFENSE)
+        if tc:IsRelateToBattle() or tc:IsRelateToEffect(e) then
+            Duel.ChangePosition(tc,POS_FACEUP_DEFENSE)
+        end
     end
+    g:DeleteGroup()
 end
 
 ----------------------------------------------------------
@@ -66,13 +77,13 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
+    local g=Duel.SelectTarget(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,0,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-    if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
     local tc=Duel.GetFirstTarget()
     local c=e:GetHandler()
+    if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
     if tc and tc:IsRelateToEffect(e) and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP_DEFENSE)>0 and c:IsFaceup() and c:IsRelateToEffect(e) then
         -- Reduce this card's Level
         local lv=tc:GetOriginalLevel()
