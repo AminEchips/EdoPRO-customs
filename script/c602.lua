@@ -1,5 +1,7 @@
 --Blackwing - Jack the Storm Ripper
 local s,id=GetID()
+s.listed_names={9012916} -- Black-Winged Dragon
+s.listed_series={0x33} -- Blackwing archetype
 function s.initial_effect(c)
     -- Special Summon itself from hand
     local e1=Effect.CreateEffect(c)
@@ -71,3 +73,4 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP_DEFENSE)
     end
 end
+
