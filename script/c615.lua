@@ -102,7 +102,7 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
 function s.thfilter(c)
-    return c:IsSpellTrap() and c:IsAbleToHand() and and (c:ListsArchetype(0x33) or c:IsCode(810000056,511000777,511002900,511004427,511009526,09925982,511002211,810000051,810000052,511002795))
+    return c:IsSpellTrap() and c:IsAbleToHand() and (c:ListsArchetype(0x33) or c:IsCode(810000056,511000777,511002900,511004427,511009526,09925982,511002211,810000051,810000052,511002795))
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
