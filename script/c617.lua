@@ -137,6 +137,5 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
     if #g>0 then
         Duel.Destroy(g,REASON_EFFECT)
     end
-end
 
 end
