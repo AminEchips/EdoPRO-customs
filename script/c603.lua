@@ -2,15 +2,14 @@
 local s,id=GetID()
 s.listed_series={0x33} -- Blackwing archetype
 function s.initial_effect(c)
-    -- Special Summon itself from hand without activation
+    -- Special Summon itself from hand
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_FIELD)
-    e1:SetCode(EFFECT_SPSUMMON_PROC_G) -- <<< Corrected here!
+    e1:SetCode(EFFECT_SPSUMMON_PROC)
     e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
     e1:SetRange(LOCATION_HAND)
-    e1:SetCountLimit(1,id)
+    e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
     e1:SetCondition(s.spcon)
-    e1:SetTarget(s.sptg)
     c:RegisterEffect(e1)
     -- Decrease Level on Normal or Special Summon
     local e2=Effect.CreateEffect(c)
@@ -19,7 +18,7 @@ function s.initial_effect(c)
     e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_SUMMON_SUCCESS)
     e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
-    e2:SetCountLimit(1,id+100)
+    e2:SetCountLimit(1,{id,1})
     e2:SetTarget(s.lvtg)
     e2:SetOperation(s.lvop)
     c:RegisterEffect(e2)
@@ -31,20 +30,15 @@ end
 ----------------------------------------------------------
 -- Special Summon Procedure
 ----------------------------------------------------------
--- Special Summon Procedure
 function s.spfilter(c)
-    return c:IsSetCard(0x33) and not c:IsCode(id)
+    return c:IsFaceup() and c:IsSetCard(0x33) and not c:IsCode(id)
 end
 function s.spcon(e,c)
     if c==nil then return true end
-    local tp=c:GetControler()
+    local tp=e:GetHandlerPlayer()
     return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
         and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,0,1,nil)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
-    Duel.SpecialSummonStep(c,0,tp,tp,false,false,POS_FACEUP)
-end
-
 
 ----------------------------------------------------------
 -- Decrease Level Effect
@@ -74,4 +68,3 @@ function s.lvop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
-
