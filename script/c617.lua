@@ -78,7 +78,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ----------------------------------------------------------
--- (Continuous) ATK boost only if properly Synchro Summoned
+-- (Continuous) ATK boost only if Synchro Summoned
 ----------------------------------------------------------
 function s.atkval(e,c)
     if c:GetFlagEffect(id)>0 then
@@ -89,7 +89,7 @@ function s.atkval(e,c)
 end
 
 ----------------------------------------------------------
--- (Continuous) Indestructibility only if properly Synchro Summoned
+-- (Continuous) Indestructibility only if Synchro Summoned
 ----------------------------------------------------------
 function s.indcon(e)
     return e:GetHandler():GetFlagEffect(id)>0
@@ -102,7 +102,8 @@ function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return Duel.IsChainNegatable(ev)
         and re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
-        and (Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,c) or Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,nil))
+        and (Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,c)
+             or Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,nil))
 end
 function s.bwdcheck(c)
     return c:IsFaceup() and (c:IsCode(9012916) or c:ListsCode(9012916))
@@ -121,11 +122,11 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ----------------------------------------------------------
--- (Ignition Effect) Remove 4 counters: destroy opponent's field
+-- (Ignition Effect) Remove 4 counters to destroy opponent's field
 ----------------------------------------------------------
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsCanRemoveCounter(tp,1,0,0x1002,4,REASON_COST) end
-    Duel.RemoveCounter(tp,1,0,0x1002,4,REASON_COST)
+    if chk==0 then return Duel.IsCanRemoveCounter(tp,LOCATION_ONFIELD,0,0x1002,4,REASON_COST) end
+    Duel.RemoveCounter(tp,LOCATION_ONFIELD,0,0x1002,4,REASON_COST)
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
@@ -137,5 +138,4 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
     if #g>0 then
         Duel.Destroy(g,REASON_EFFECT)
     end
-
 end
