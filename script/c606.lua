@@ -61,7 +61,7 @@ end
 -- Search a Spell/Trap that mentions "Blackwing"
 ----------------------------------------------------------
 function s.thfilter(c)
-    return c:IsSpellTrap() and c:IsAbleToHand() and c:IsSetCard(0x33)
+    return c:IsSpellTrap() and c:IsAbleToHand() and s.listed_series={0x33}
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
