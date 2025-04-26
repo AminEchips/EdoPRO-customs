@@ -14,13 +14,13 @@ function s.initial_effect(c)
     e1:SetCondition(s.tncon)
     e1:SetValue(TYPE_TUNER)
     c:RegisterEffect(e1)
-    -- Discard 1 "Blackwing" to activate 1 effect
+    -- Discard 1 Blackwing to activate 1 effect (each once per turn)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetCategory(CATEGORY_DAMAGE+CATEGORY_SPECIAL_SUMMON)
     e2:SetType(EFFECT_TYPE_IGNITION)
     e2:SetRange(LOCATION_MZONE)
-    e2:SetCountLimit(1,id)
+    e2:SetCountLimit(2,id) -- 2 activations total (because you can pick each once)
     e2:SetCost(s.cost)
     e2:SetTarget(s.target)
     e2:SetOperation(s.operation)
@@ -50,38 +50,41 @@ function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 ----------------------------------------------------------
--- Choose effect
+-- Choose effect (each once)
 ----------------------------------------------------------
 function s.spfilter(c,e,tp)
     return c:IsSetCard(0x33) and c:IsType(TYPE_SYNCHRO) and c:IsLevelBelow(3) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
-    local b1=true -- Inflict 300
-    local b2=Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
-    Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,300)
-    if b2 then Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE) end
 end
 function s.operation(e,tp,eg,ep,ev,re,r,rp)
-    local b1=true -- Inflict 300
-    local b2=Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
+    local b1=not Duel.GetFlagEffect(tp,id)==1 -- Damage not used yet
+    local b2=not Duel.GetFlagEffect(tp,id+1)==1 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp) -- Special Summon not used yet
+    if not b1 and not b2 then return end -- Can't pick anything
+
     Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,1))
-    local op=0
-    if b2 then
-        op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
+    local opt=0
+    if b1 and b2 then
+        opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
+    elseif b1 then
+        opt=Duel.SelectOption(tp,aux.Stringid(id,2))
     else
-        Duel.SelectOption(tp,aux.Stringid(id,2))
-        op=0
+        Duel.SelectOption(tp,aux.Stringid(id,3))
+        opt=1
     end
-    if op==0 then
+
+    if opt==0 then
         -- Inflict 300 damage
         Duel.Damage(1-tp,300,REASON_EFFECT)
+        Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
     else
         -- Special Summon
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
         local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
         if #g>0 then
             Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+            Duel.RegisterFlagEffect(tp,id+1,RESET_PHASE+PHASE_END,0,1)
         end
     end
 end
