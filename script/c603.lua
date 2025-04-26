@@ -31,6 +31,7 @@ end
 ----------------------------------------------------------
 -- Special Summon Procedure
 ----------------------------------------------------------
+-- Special Summon Procedure
 function s.spfilter(c)
     return c:IsSetCard(0x33) and not c:IsCode(id)
 end
@@ -41,8 +42,9 @@ function s.spcon(e,c)
         and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,c)
-    -- No cost needed, just fulfill condition
+    Duel.SpecialSummonStep(c,0,tp,tp,false,false,POS_FACEUP)
 end
+
 
 ----------------------------------------------------------
 -- Decrease Level Effect
