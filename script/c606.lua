@@ -14,7 +14,7 @@ function s.initial_effect(c)
     e1:SetTarget(s.sptg)
     e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
-    -- If banished: Add 1 Spell/Trap that mentions "Blackwing"
+    -- If banished: Add 1 Spell/Trap that lists "Blackwing"
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -58,10 +58,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ----------------------------------------------------------
--- Search a Spell/Trap mentioning "Blackwing" if banished
+-- Search a Spell/Trap that mentions "Blackwing"
 ----------------------------------------------------------
 function s.thfilter(c)
-    return c:IsSpellTrap() and c:IsAbleToHand() and aux.TextContains(c,"Blackwing")
+    return c:IsSpellTrap() and c:IsAbleToHand() and c:IsSetCard(0x33)
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
