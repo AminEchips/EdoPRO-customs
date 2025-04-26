@@ -124,11 +124,11 @@ end
 -- (Ignition Effect) Remove 4 counters: destroy opponent's field
 ----------------------------------------------------------
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsCanRemoveCounter(tp,1,1,0x1002,4,REASON_COST) end
-    Duel.RemoveCounter(tp,1,1,0x1002,4,REASON_COST)
+    if chk==0 then return Duel.IsCanRemoveCounter(tp,1,0,0x1002,4,REASON_COST) end
+    Duel.RemoveCounter(tp,1,0,0x1002,4,REASON_COST)
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
+    if chk==0 then return Duel.IsExistingMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
     local g=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,#g,0,0)
 end
@@ -137,4 +137,6 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
     if #g>0 then
         Duel.Destroy(g,REASON_EFFECT)
     end
+end
+
 end
