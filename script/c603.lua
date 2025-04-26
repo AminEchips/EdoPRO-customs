@@ -2,10 +2,10 @@
 local s,id=GetID()
 s.listed_series={0x33} -- Blackwing archetype
 function s.initial_effect(c)
-    -- Special Summon itself from hand without activating
+    -- Special Summon itself from hand without activation
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_FIELD)
-    e1:SetCode(EFFECT_SPSUMMON_PROC)
+    e1:SetCode(EFFECT_SPSUMMON_PROC_G) -- <<< Corrected here!
     e1:SetProperty(EFFECT_FLAG_UNCOPYABLE)
     e1:SetRange(LOCATION_HAND)
     e1:SetCountLimit(1,id)
@@ -72,3 +72,4 @@ function s.lvop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
