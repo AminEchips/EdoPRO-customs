@@ -142,7 +142,7 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
 function s.spfilter(c,e,tp)
-    return c:IsCode(9012916) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
+    return c:IsCode(73218989) and c:IsCanBeSpecialSummoned(e,0,tp,true,true)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
