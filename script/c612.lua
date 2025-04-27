@@ -34,7 +34,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.desop)
     c:RegisterEffect(e2)
 
-    -- End Phase: Negate monsters with Wedge Counters
+    -- End Phase: Permanently negate monsters with Wedge Counters
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_DISABLE)
@@ -70,7 +70,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -----------------------------------------------------------
--- (2) Quick Effect: Target 1 you control + 1 with Wedge Counter
+-- (2) Quick Effect: Target 1 you control + 1 with Wedge Counter, destroy both
 -----------------------------------------------------------
 function s.wedgefilter(c)
     return c:IsFaceup() and c:GetCounter(0x1002)>0
@@ -98,7 +98,7 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -----------------------------------------------------------
--- (3) End Phase: Negate monsters with Wedge Counters
+-- (3) End Phase: Permanently negate monsters with Wedge Counters
 -----------------------------------------------------------
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()==1-tp
@@ -107,15 +107,16 @@ function s.negfilter(c)
     return c:IsFaceup() and c:GetCounter(0x1002)>0 and not c:IsDisabled()
 end
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.negfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
+    if chk==0 then return Duel.IsExistingMatchingGroup(s.negfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(s.negfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
     for tc in aux.Next(g) do
+        -- Permanent negate
         local e1=Effect.CreateEffect(e:GetHandler())
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_DISABLE)
-        e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+        e1:SetReset(RESET_EVENT+RESETS_STANDARD)
         tc:RegisterEffect(e1)
         local e2=e1:Clone()
         e2:SetCode(EFFECT_DISABLE_EFFECT)
