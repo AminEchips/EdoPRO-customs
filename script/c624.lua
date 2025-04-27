@@ -53,17 +53,19 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -------------------------------------------------------
--- GY Effect: Search + Summon
 -------------------------------------------------------
--------------------------------------------------------
--- GY Effect: Search + Summon
+-- GY Effect: Search + (optional) Normal Summon
 -------------------------------------------------------
 function s.cfilter2(c,tp)
-    return c:IsPreviousControler(tp) and c:IsLocation(LOCATION_GRAVE) 
+    return c:IsPreviousControler(tp) and c:IsLocation(LOCATION_GRAVE)
         and ((c:IsSetCard(0x33) and c:IsType(TYPE_SYNCHRO)) or c:IsCode(9012916))
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.cfilter2,1,nil,tp)
+end
+function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
+    Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
 end
 function s.thfilter(c,atk)
     return c:IsSetCard(0x33) and c:IsAttackBelow(atk) and c:IsAbleToHand()
@@ -90,10 +92,13 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     if #g>0 then
         Duel.SendtoHand(g,nil,REASON_EFFECT)
         Duel.ConfirmCards(1-tp,g)
-        Duel.BreakEffect()
-        local sg=Duel.SelectMatchingCard(tp,Card.IsSummonable,tp,LOCATION_HAND,0,1,1,nil,true,nil)
-        if #sg>0 then
-            Duel.Summon(tp,sg:GetFirst(),true,nil)
+        if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
+            Duel.BreakEffect()
+            Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SUMMON)
+            local sg=Duel.SelectMatchingCard(tp,Card.IsSummonable,tp,LOCATION_HAND,0,1,1,nil,true,nil)
+            if #sg>0 then
+                Duel.Summon(tp,sg:GetFirst(),true,nil)
+            end
         end
     end
 end
