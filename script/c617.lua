@@ -2,7 +2,6 @@
 local s,id=GetID()
 s.listed_names={9012916} -- Black-Winged Dragon
 s.listed_series={0x33} -- Blackwing archetype
-s.counter_place_list={COUNTER_FEATHER}
 
 function s.initial_effect(c)
     -- Synchro Summon procedure
@@ -26,7 +25,7 @@ function s.initial_effect(c)
     e1:SetValue(s.atkval)
     c:RegisterEffect(e1)
 
-    -- Battle + Effect protection
+    -- Battle and Effect protection
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_SINGLE)
     e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -39,7 +38,7 @@ function s.initial_effect(c)
     e3:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
     c:RegisterEffect(e3)
 
-    -- Quick Effect: Negate Spell/Trap and add 2 counters
+    -- Quick Effect: Negate Spell/Trap and add 2 Black Feather Counters
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,0))
     e4:SetCategory(CATEGORY_NEGATE)
@@ -65,7 +64,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e5)
 end
 
--- Synchro Summon check
+-- Synchro Summon registration
 function s.regcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
@@ -73,7 +72,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
     e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
 end
 
--- ATK increase based on counters
+-- ATK gain
 function s.atkval(e,c)
     if c:GetFlagEffect(id)>0 then
         return c:GetCounter(COUNTER_FEATHER)*700
@@ -87,7 +86,7 @@ function s.indcon(e)
     return e:GetHandler():GetFlagEffect(id)>0
 end
 
--- Check for Black-Winged Dragon or card that lists it
+-- Condition to check for Black-Winged Dragon or anything that lists it
 function s.bwdcheck(c)
     return c:IsFaceup() and (c:IsCode(9012916) or c:ListsCode(9012916))
 end
@@ -111,13 +110,11 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Remove 4 Black Feather Counters from anywhere
+-- Board wipe: remove 4 Black Feather Counters from controller's field
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsCanRemoveCounter(tp,1,0,COUNTER_FEATHER,4,REASON_COST) end
     Duel.RemoveCounter(tp,1,0,COUNTER_FEATHER,4,REASON_COST)
 end
-
--- Board wipe
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
     local g=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
