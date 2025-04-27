@@ -39,7 +39,7 @@ function s.initial_effect(c)
     e3:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
     c:RegisterEffect(e3)
 
-    -- Quick Effect: Negate Spell/Trap and place Black Feather Counter
+    -- Quick Effect: Negate Spell/Trap and place 2 Black Feather Counters
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,0))
     e4:SetCategory(CATEGORY_NEGATE)
@@ -52,7 +52,7 @@ function s.initial_effect(c)
     e4:SetOperation(s.negop)
     c:RegisterEffect(e4)
 
-    -- Remove 4 counters to destroy opponent's field
+    -- Remove 4 counters from itself to destroy opponent's field
     local e5=Effect.CreateEffect(c)
     e5:SetDescription(aux.Stringid(id,1))
     e5:SetCategory(CATEGORY_DESTROY)
@@ -78,7 +78,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ----------------------------------------------------------
--- (Continuous) ATK boost only if Synchro Summoned
+-- (Continuous) ATK boost only if properly Synchro Summoned
 ----------------------------------------------------------
 function s.atkval(e,c)
     if c:GetFlagEffect(id)>0 then
@@ -89,14 +89,14 @@ function s.atkval(e,c)
 end
 
 ----------------------------------------------------------
--- (Continuous) Indestructibility only if Synchro Summoned
+-- (Continuous) Indestructibility only if properly Synchro Summoned
 ----------------------------------------------------------
 function s.indcon(e)
     return e:GetHandler():GetFlagEffect(id)>0
 end
 
 ----------------------------------------------------------
--- (Quick Effect) Negate Spell/Trap and place Black Feather Counter
+-- (Quick Effect) Negate Spell/Trap and place 2 Black Feather Counters
 ----------------------------------------------------------
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
@@ -116,17 +116,18 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.NegateActivation(ev) then
         local c=e:GetHandler()
         if c:IsRelateToEffect(e) and c:IsFaceup() then
-            c:AddCounter(0x1002,1)
+            c:AddCounter(0x1002,2) -- Add 2 counters now
         end
     end
 end
 
 ----------------------------------------------------------
--- (Ignition Effect) Remove 4 Black Feather Counters to destroy opponent's field
+-- (Ignition Effect) Remove 4 counters from itself: destroy opponent's field
 ----------------------------------------------------------
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsCanRemoveCounter(tp,1,0,0x1002,4,REASON_COST) end
-    Duel.RemoveCounter(tp,1,0,0x1002,4,REASON_COST)
+    local c=e:GetHandler()
+    if chk==0 then return c:GetCounter(0x1002)>=4 end
+    c:RemoveCounter(tp,0x1002,4,REASON_COST)
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
@@ -139,4 +140,3 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
         Duel.Destroy(g,REASON_EFFECT)
     end
 end
-
