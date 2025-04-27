@@ -4,7 +4,6 @@ function s.initial_effect(c)
     -- Activate and Set 1 Spell/Trap that mentions "Black-Winged Dragon" or "Blackwing"
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_TOFIELD)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)
     e1:SetCountLimit(1,id)
@@ -58,12 +57,11 @@ end
 function s.op(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
-        -- Choose Tuner or Non-Tuner
-        local op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
+        local opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
         local e1=Effect.CreateEffect(e:GetHandler())
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-        if op==0 then
+        if opt==0 then
             e1:SetCode(EFFECT_ADD_TYPE)
             e1:SetValue(TYPE_TUNER)
         else
