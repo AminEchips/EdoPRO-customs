@@ -122,11 +122,11 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ----------------------------------------------------------
--- (Ignition Effect) Remove 4 counters to destroy opponent's field
+-- (Ignition Effect) Remove 4 Black Feather Counters to destroy opponent's field
 ----------------------------------------------------------
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsCanRemoveCounter(tp,LOCATION_ONFIELD,0,0x1002,4,REASON_COST) end
-    Duel.RemoveCounter(tp,LOCATION_ONFIELD,0,0x1002,4,REASON_COST)
+    if chk==0 then return Duel.IsCanRemoveCounter(tp,1,0,0x1002,4,REASON_COST) end
+    Duel.RemoveCounter(tp,1,0,0x1002,4,REASON_COST)
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
@@ -139,3 +139,4 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
         Duel.Destroy(g,REASON_EFFECT)
     end
 end
+
