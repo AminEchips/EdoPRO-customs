@@ -1,23 +1,22 @@
 --Black-Winged Full Moon Dragon
 local s,id=GetID()
 function s.initial_effect(c)
-    --Allow Feather Counters
-    c:EnableCounterPermit(0x1002) -- Black Feather Counters
+    -- Allow Black Feather Counters
+    c:EnableCounterPermit(0x1002)
 
     -- Synchro Summon Procedure
     Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x33),1,1,Synchro.NonTuner(nil),1,99)
     c:EnableReviveLimit()
 
-    -- Place 1 Black Feather Counter when any monster is Synchro Summoned
+    -- Place 1 Black Feather Counter if a Synchro Monster is Summoned
     local e1=Effect.CreateEffect(c)
-    e1:SetDescription(aux.Stringid(id,0))
     e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)
     e1:SetRange(LOCATION_MZONE)
     e1:SetOperation(s.ctop)
     c:RegisterEffect(e1)
 
-    -- Gain 700 ATK for each Black Feather Counter
+    -- ATK gain for each Black Feather Counter
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_SINGLE)
     e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -26,7 +25,7 @@ function s.initial_effect(c)
     e2:SetValue(s.atkval)
     c:RegisterEffect(e2)
 
-    -- Cannot be destroyed by battle if 3 or more counters
+    -- Cannot be destroyed by battle if it has 3 or more counters
     local e3=Effect.CreateEffect(c)
     e3:SetType(EFFECT_TYPE_SINGLE)
     e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -36,7 +35,7 @@ function s.initial_effect(c)
     e3:SetValue(1)
     c:RegisterEffect(e3)
 
-    -- Special Summon itself and recover LP
+    -- Special Summon itself + recover LP
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,1))
     e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_RECOVER)
@@ -48,40 +47,37 @@ function s.initial_effect(c)
     e4:SetOperation(s.spop)
     c:RegisterEffect(e4)
 end
-s.counter_list={0x1002} -- Black Feather Counters
-s.listed_series={0x33} -- Blackwing
+s.counter_list={0x1002}
+s.listed_series={0x33}
 
 -------------------------------------------------------
--- Place 1 Black Feather Counter when any monster Synchro Summoned
+-- Add 1 Black Feather Counter when Synchro Monster Summoned
 -------------------------------------------------------
-function s.ctfilter(c)
-    return c:IsSummonType(SUMMON_TYPE_SYNCHRO)
-end
 function s.ctop(e,tp,eg,ep,ev,re,r,rp)
-    if eg:IsExists(s.ctfilter,1,nil) then
+    if eg:IsExists(Card.IsSummonType,1,nil,SUMMON_TYPE_SYNCHRO) then
         local c=e:GetHandler()
-        if c:IsRelateToEffect(e) and c:IsFaceup() then
+        if c:IsFaceup() and c:IsRelateToEffect(e) then
             c:AddCounter(0x1002,1)
         end
     end
 end
 
 -------------------------------------------------------
--- ATK gain for each counter
+-- ATK Boost
 -------------------------------------------------------
 function s.atkval(e,c)
     return c:GetCounter(0x1002)*700
 end
 
 -------------------------------------------------------
--- Indestructible by battle if it has 3 or more counters
+-- Battle Protection if 3 or more counters
 -------------------------------------------------------
 function s.indcon(e)
     return e:GetHandler():GetCounter(0x1002)>=3
 end
 
 -------------------------------------------------------
--- Special Summon itself and recover LP
+-- Revive + Gain LP
 -------------------------------------------------------
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
