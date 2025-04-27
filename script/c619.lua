@@ -37,20 +37,21 @@ function s.initial_effect(c)
     e3:SetValue(1)
     c:RegisterEffect(e3)
 
-    -- Store counters when leaving field
+    -- Store the number of counters when it leaves
     local e4=Effect.CreateEffect(c)
     e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
     e4:SetCode(EVENT_LEAVE_FIELD_P)
     e4:SetOperation(s.storeop)
     c:RegisterEffect(e4)
 
-    -- Special Summon itself + Recover
+    -- Special Summon itself + Recover based on stored counters
     local e5=Effect.CreateEffect(c)
     e5:SetDescription(aux.Stringid(id,1))
     e5:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_RECOVER)
     e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e5:SetCode(EVENT_PHASE+PHASE_END)
     e5:SetRange(LOCATION_GRAVE+LOCATION_REMOVED)
+    e5:SetCountLimit(1,id)
     e5:SetCondition(s.spcon)
     e5:SetTarget(s.sptg)
     e5:SetOperation(s.spop)
@@ -82,32 +83,31 @@ function s.indcon(e)
 end
 
 -------------------------------------------------------
--- Store counter amount before leaving
+-- Store the counter amount before leaving the field
 -------------------------------------------------------
 function s.storeop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD-RESET_LEAVE,0,0,c:GetCounter(COUNTER_FEATHER))
+    c:SetTurnCounter(c:GetCounter(COUNTER_FEATHER))
 end
 
 -------------------------------------------------------
--- Special Summon itself + Recover
+-- Revive itself + recover LP
 -------------------------------------------------------
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return c:GetFlagEffect(id)>0
+    return c:GetTurnCounter()>0
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+    local c=e:GetHandler()
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
-    Duel.SetOperationInfo(0,CATEGORY_RECOVER,nil,0,tp,0)
+        and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
+    Duel.SetOperationInfo(0,CATEGORY_RECOVER,nil,0,tp,c:GetTurnCounter()*700)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if c:IsRelateToEffect(e) then
-        local ct=c:GetFlagEffectLabel(id) or 0
-        if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 and ct>0 then
-            Duel.Recover(tp,ct*700,REASON_EFFECT)
-        end
+    local ct=c:GetTurnCounter()
+    if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 and ct>0 then
+        Duel.Recover(tp,ct*700,REASON_EFFECT)
     end
 end
