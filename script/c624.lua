@@ -28,6 +28,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0x33}
 s.counter_place_list={0x1002} -- Wedge Counters
+s.listed_names={9012916}
 
 -------------------------------------------------------
 -- Activation: Place counters
@@ -54,8 +55,12 @@ end
 -------------------------------------------------------
 -- GY Effect: Search + Summon
 -------------------------------------------------------
+-------------------------------------------------------
+-- GY Effect: Search + Summon
+-------------------------------------------------------
 function s.cfilter2(c,tp)
-    return c:IsPreviousControler(tp) and c:IsSetCard(0x33) and c:IsType(TYPE_SYNCHRO)
+    return c:IsPreviousControler(tp) and c:IsLocation(LOCATION_GRAVE) 
+        and ((c:IsSetCard(0x33) and c:IsType(TYPE_SYNCHRO)) or c:IsCode(9012916))
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.cfilter2,1,nil,tp)
