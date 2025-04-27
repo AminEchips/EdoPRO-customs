@@ -1,7 +1,13 @@
 --Blackwing - Roost
 local s,id=GetID()
 function s.initial_effect(c)
-    -- 3x per turn: Inflict 350 damage on Summon
+    -- Activate this card
+    local e0=Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_ACTIVATE)
+    e0:SetCode(EVENT_FREE_CHAIN)
+    c:RegisterEffect(e0)
+
+    -- 3x per turn: Optional 350 damage on Summon
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_DAMAGE)
@@ -44,19 +50,23 @@ end
 s.listed_names={9012916} -- Black-Winged Dragon
 
 ------------------------------------------------------------
--- (1) Inflict 350 on Summon (up to 3x/turn)
+-- (1) Optional burn 350 (up to 3x/turn)
 ------------------------------------------------------------
 function s.damcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(Card.IsFaceup,1,nil)
 end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
     for tc in aux.Next(eg) do
-        Duel.Damage(tc:GetControler(),350,REASON_EFFECT)
+        if tc:IsFaceup() then
+            if Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+                Duel.Damage(tc:GetControler(),350,REASON_EFFECT)
+            end
+        end
     end
 end
 
 ------------------------------------------------------------
--- (2) Double ATK when Black-Winged Dragon reaches 0 ATK
+-- (2) Double ATK when Black-Winged Dragon becomes 0
 ------------------------------------------------------------
 function s.atkfilter(c)
     return c:IsFaceup() and c:IsCode(9012916) and c:GetAttack()==0
@@ -90,7 +100,7 @@ function s.dblop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ------------------------------------------------------------
--- (3) Bounce opponent's monsters if this card leaves field
+-- (3) Bounce opponent's monsters if Roost leaves field
 ------------------------------------------------------------
 function s.bouncecon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
