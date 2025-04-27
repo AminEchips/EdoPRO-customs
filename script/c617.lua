@@ -9,7 +9,7 @@ function s.initial_effect(c)
     Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x33),1,1,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_DARK),1,99)
     c:EnableReviveLimit()
 
-    -- Flag when Synchro Summoned
+    -- Flag if properly Synchro Summoned
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
     e0:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -17,7 +17,7 @@ function s.initial_effect(c)
     e0:SetOperation(s.regop)
     c:RegisterEffect(e0)
 
-    -- Gains ATK per Black Feather Counter
+    -- Continuous ATK boost
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -26,7 +26,7 @@ function s.initial_effect(c)
     e1:SetValue(s.atkval)
     c:RegisterEffect(e1)
 
-    -- Cannot be destroyed by battle or card effects
+    -- Indestructibility by battle and effects
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_SINGLE)
     e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -39,7 +39,7 @@ function s.initial_effect(c)
     e3:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
     c:RegisterEffect(e3)
 
-    -- Quick Effect: Negate Spell/Trap and place 2 Black Feather Counters
+    -- Negate Spell/Trap and place 2 counters
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,0))
     e4:SetCategory(CATEGORY_NEGATE)
@@ -52,7 +52,7 @@ function s.initial_effect(c)
     e4:SetOperation(s.negop)
     c:RegisterEffect(e4)
 
-    -- Remove 4 counters from itself to destroy opponent's field
+    -- Remove 4 counters on itself to destroy opponent's field
     local e5=Effect.CreateEffect(c)
     e5:SetDescription(aux.Stringid(id,1))
     e5:SetCategory(CATEGORY_DESTROY)
@@ -69,16 +69,14 @@ end
 -- (Internal) Register Synchro Summon flag
 ----------------------------------------------------------
 function s.regcon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    return c:IsSummonType(SUMMON_TYPE_SYNCHRO)
+    return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
 function s.regop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
+    e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
 end
 
 ----------------------------------------------------------
--- (Continuous) ATK boost only if properly Synchro Summoned
+-- Continuous ATK Boost
 ----------------------------------------------------------
 function s.atkval(e,c)
     if c:GetFlagEffect(id)>0 then
@@ -89,24 +87,22 @@ function s.atkval(e,c)
 end
 
 ----------------------------------------------------------
--- (Continuous) Indestructibility only if properly Synchro Summoned
+-- Indestructibility if Synchro Summoned
 ----------------------------------------------------------
 function s.indcon(e)
     return e:GetHandler():GetFlagEffect(id)>0
 end
 
 ----------------------------------------------------------
--- (Quick Effect) Negate Spell/Trap and place 2 Black Feather Counters
+-- Quick Effect: Negate Spell/Trap and Place 2 Counters
 ----------------------------------------------------------
-function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    return Duel.IsChainNegatable(ev)
-        and re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
-        and (Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,c)
-             or Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,nil))
-end
 function s.bwdcheck(c)
     return c:IsFaceup() and (c:IsCode(9012916) or c:ListsCode(9012916))
+end
+function s.negcon(e,tp,eg,ep,ev,re,r,rp)
+    return Duel.IsChainNegatable(ev)
+        and re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
+        and Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,nil)
 end
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
@@ -115,14 +111,14 @@ end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.NegateActivation(ev) then
         local c=e:GetHandler()
-        if c:IsRelateToEffect(e) and c:IsFaceup() then
-            c:AddCounter(0x1002,2) -- Add 2 counters now
+        if c:IsFaceup() and c:IsRelateToEffect(e) then
+            c:AddCounter(0x1002,2)
         end
     end
 end
 
 ----------------------------------------------------------
--- (Ignition Effect) Remove 4 counters from itself: destroy opponent's field
+-- Ignition Effect: Remove 4 counters from itself to destroy
 ----------------------------------------------------------
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
