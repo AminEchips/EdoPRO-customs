@@ -107,7 +107,7 @@ function s.negfilter(c)
     return c:IsFaceup() and c:GetCounter(0x1002)>0 and not c:IsDisabled()
 end
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingGroup(s.negfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
+    if chk==0 then return Duel.GetMatchingGroupCount(s.negfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)>0 end
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(s.negfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
