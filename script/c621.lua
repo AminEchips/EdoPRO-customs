@@ -115,16 +115,17 @@ function s.lfop(e,tp,eg,ep,ev,re,r,rp)
             local g=Duel.SelectMatchingCard(tp,s.bwfilter,tp,LOCATION_HAND,0,1,1,nil)
             local sc=g:GetFirst()
             if sc then
-                -- Allow summon without tribute
+    -- Allow summon without tributing (real version)
                 local e1=Effect.CreateEffect(e:GetHandler())
                 e1:SetType(EFFECT_TYPE_SINGLE)
-                e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
                 e1:SetCode(EFFECT_SUMMON_PROC)
-                e1:SetCondition(function(e,c) return true end)
-                e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+                e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+                e1:SetCondition(aux.TRUE) -- Always true
+                e1:SetReset(RESET_EVENT+RESETS_STANDARD)
                 sc:RegisterEffect(e1)
                 Duel.Summon(tp,sc,true,nil)
             end
+
         end
     end
 end
