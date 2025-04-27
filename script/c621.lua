@@ -23,8 +23,8 @@ function s.initial_effect(c)
     e2:SetOperation(s.lfop)
     c:RegisterEffect(e2)
 end
-s.listed_names={91351370} -- Correct Black Whirlwind ID
-s.listed_series={0x33} -- Blackwing
+s.listed_names={91351370} -- Black Whirlwind ID
+s.listed_series={0x33} -- Blackwing archetype
 
 --------------------------------------------------------
 -- Optional activate effect
@@ -70,10 +70,8 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
                     e1:SetCode(EFFECT_DISABLE)
                     e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
                     tc:RegisterEffect(e1)
-                    local e2=Effect.CreateEffect(e:GetHandler())
-                    e2:SetType(EFFECT_TYPE_SINGLE)
+                    local e2=e1:Clone()
                     e2:SetCode(EFFECT_DISABLE_EFFECT)
-                    e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
                     tc:RegisterEffect(e2)
                 end
             end
@@ -89,10 +87,11 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------
--- Leave field effect (place Whirlwind, Normal Summon)
+-- Leave field effect (place Whirlwind, then Normal Summon optionally)
 --------------------------------------------------------
+
 function s.whirlwindfilter(c)
-    return c:IsCode(91351370) and c:IsSSetable()
+    return c:IsCode(91351370) and not c:IsForbidden()
 end
 
 function s.bwfilter(c)
@@ -102,7 +101,6 @@ end
 function s.lftg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.IsExistingMatchingCard(s.whirlwindfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
-            and Duel.IsExistingMatchingCard(s.bwfilter,tp,LOCATION_HAND,0,1,nil)
     end
 end
 
@@ -111,10 +109,23 @@ function s.lfop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.SelectMatchingCard(tp,s.whirlwindfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil):GetFirst()
     if tc and Duel.MoveToField(tc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
         Duel.BreakEffect()
-        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SUMMON)
-        local g=Duel.SelectMatchingCard(tp,s.bwfilter,tp,LOCATION_HAND,0,1,1,nil)
-        if #g>0 then
-            Duel.Summon(tp,g:GetFirst(),true,nil) -- ✅ Summon without tributing
+        if Duel.IsExistingMatchingCard(s.bwfilter,tp,LOCATION_HAND,0,1,nil)
+            and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
+            Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SUMMON)
+            local g=Duel.SelectMatchingCard(tp,s.bwfilter,tp,LOCATION_HAND,0,1,1,nil)
+            local sc=g:GetFirst()
+            if sc then
+                -- Allow summon without tribute
+                local e1=Effect.CreateEffect(e:GetHandler())
+                e1:SetType(EFFECT_TYPE_SINGLE)
+                e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+                e1:SetCode(EFFECT_SUMMON_PROC)
+                e1:SetCondition(function(e,c) return true end)
+                e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+                sc:RegisterEffect(e1)
+                Duel.Summon(tp,sc,true,nil)
+            end
         end
     end
 end
+
