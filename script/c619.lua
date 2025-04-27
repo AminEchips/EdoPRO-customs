@@ -2,13 +2,13 @@
 local s,id=GetID()
 function s.initial_effect(c)
     -- Allow Black Feather Counters
-    c:EnableCounterPermit(0x1002)
+    c:EnableCounterPermit(COUNTER_FEATHER)
 
     -- Synchro Summon Procedure
     Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x33),1,1,Synchro.NonTuner(nil),1,99)
     c:EnableReviveLimit()
 
-    -- Place 1 Black Feather Counter when a Synchro Monster is Summoned
+    -- Place 1 Black Feather Counter when a monster is Synchro Summoned
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_COUNTER)
@@ -30,7 +30,7 @@ function s.initial_effect(c)
     e2:SetValue(s.atkval)
     c:RegisterEffect(e2)
 
-    -- Cannot be destroyed by battle if 3 or more counters
+    -- Cannot be destroyed by battle if 3 or more Black Feather Counters
     local e3=Effect.CreateEffect(c)
     e3:SetType(EFFECT_TYPE_SINGLE)
     e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -40,7 +40,7 @@ function s.initial_effect(c)
     e3:SetValue(1)
     c:RegisterEffect(e3)
 
-    -- Special Summon itself + recover LP
+    -- Special Summon itself + Recover LP
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,1))
     e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_RECOVER)
@@ -52,11 +52,11 @@ function s.initial_effect(c)
     e4:SetOperation(s.spop)
     c:RegisterEffect(e4)
 end
-s.counter_list={0x1002}
+s.counter_list={COUNTER_FEATHER}
 s.listed_series={0x33}
 
 -------------------------------------------------------
--- Place Counter
+-- Place Counter when Synchro Summon happens
 -------------------------------------------------------
 function s.synfilter(c)
     return c:IsSummonType(SUMMON_TYPE_SYNCHRO)
@@ -66,12 +66,12 @@ function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return true end
-    Duel.SetOperationInfo(0,CATEGORY_COUNTER,nil,1,0,0x1002)
+    Duel.SetOperationInfo(0,CATEGORY_COUNTER,nil,1,0,COUNTER_FEATHER)
 end
 function s.ctop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if c:IsFaceup() and c:IsRelateToEffect(e) then
-        c:AddCounter(0x1002,1)
+        c:AddCounter(COUNTER_FEATHER,1)
     end
 end
 
@@ -79,18 +79,18 @@ end
 -- ATK Boost
 -------------------------------------------------------
 function s.atkval(e,c)
-    return c:GetCounter(0x1002)*700
+    return c:GetCounter(COUNTER_FEATHER)*700
 end
 
 -------------------------------------------------------
--- Battle Protection
+-- Battle Protection if 3+ counters
 -------------------------------------------------------
 function s.indcon(e)
-    return e:GetHandler():GetCounter(0x1002)>=3
+    return e:GetHandler():GetCounter(COUNTER_FEATHER)>=3
 end
 
 -------------------------------------------------------
--- Revive
+-- Special Summon itself + Recover
 -------------------------------------------------------
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
@@ -106,7 +106,7 @@ end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if c:IsRelateToEffect(e) then
-        local ct=c:GetCounter(0x1002)
+        local ct=c:GetCounter(COUNTER_FEATHER)
         if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 and ct>0 then
             Duel.Recover(tp,ct*700,REASON_EFFECT)
         end
