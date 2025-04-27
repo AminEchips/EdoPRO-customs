@@ -8,7 +8,7 @@ function s.initial_effect(c)
     Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x33),1,1,Synchro.NonTuner(nil),1,99)
     c:EnableReviveLimit()
 
-    -- Place 1 Black Feather Counter if a Synchro Monster is Summoned
+    -- Place 1 Black Feather Counter if a monster is Synchro Summoned
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -51,10 +51,13 @@ s.counter_list={0x1002}
 s.listed_series={0x33}
 
 -------------------------------------------------------
--- Add 1 Black Feather Counter when Synchro Monster Summoned
+-- Place Counter Continuously when Synchro Monster Summoned
 -------------------------------------------------------
+function s.ctfilter(c)
+    return c:IsSummonType(SUMMON_TYPE_SYNCHRO)
+end
 function s.ctop(e,tp,eg,ep,ev,re,r,rp)
-    if eg:IsExists(Card.IsSummonType,1,nil,SUMMON_TYPE_SYNCHRO) then
+    if eg:IsExists(s.ctfilter,1,nil) then
         local c=e:GetHandler()
         if c:IsFaceup() and c:IsRelateToEffect(e) then
             c:AddCounter(0x1002,1)
