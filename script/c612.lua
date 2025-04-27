@@ -20,7 +20,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Quick Effect: Target 1 you control + 1 with Wedge Counter and destroy both
+    -- Quick Effect: Target 1 you control + 1 with Wedge Counter, destroy both
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DESTROY)
@@ -34,7 +34,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.desop)
     c:RegisterEffect(e2)
 
-    -- End Phase: Negate effects of monsters with Wedge Counters
+    -- End Phase: Negate monsters with Wedge Counters
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_DISABLE)
@@ -70,7 +70,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -----------------------------------------------------------
--- (2) Quick Effect: Destroy 1 you control + 1 with Wedge Counter
+-- (2) Quick Effect: Target 1 you control + 1 with Wedge Counter
 -----------------------------------------------------------
 function s.wedgefilter(c)
     return c:IsFaceup() and c:GetCounter(0x1002)>0
@@ -86,12 +86,14 @@ function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
     local g2=Duel.SelectTarget(tp,s.wedgefilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
     g1:Merge(g2)
-    Duel.SetOperationInfo(0,CATEGORY_DESTROY,g1,#g1,0,0)
+    Duel.SetOperationInfo(0,CATEGORY_DESTROY,g1,2,0,0)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetTargetsRelateToChain()
-    if #g>0 then
-        Duel.Destroy(g,REASON_EFFECT)
+    local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+    if not g then return end
+    local sg=g:Filter(Card.IsRelateToEffect,nil,e)
+    if #sg>0 then
+        Duel.Destroy(sg,REASON_EFFECT)
     end
 end
 
