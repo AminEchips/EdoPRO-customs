@@ -12,12 +12,9 @@ function s.initial_effect(c)
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_COUNTER)
-    e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e1:SetProperty(EFFECT_FLAG_DELAY)
+    e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)
     e1:SetRange(LOCATION_MZONE)
-    e1:SetCondition(s.ctcon)
-    e1:SetTarget(s.cttg)
     e1:SetOperation(s.ctop)
     c:RegisterEffect(e1)
 
@@ -40,38 +37,33 @@ function s.initial_effect(c)
     e3:SetValue(1)
     c:RegisterEffect(e3)
 
-    -- Special Summon itself + Recover LP
+    -- Store counters when leaving field
     local e4=Effect.CreateEffect(c)
-    e4:SetDescription(aux.Stringid(id,1))
-    e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_RECOVER)
-    e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e4:SetCode(EVENT_PHASE+PHASE_END)
-    e4:SetRange(LOCATION_GRAVE+LOCATION_REMOVED)
-    e4:SetCondition(s.spcon)
-    e4:SetTarget(s.sptg)
-    e4:SetOperation(s.spop)
+    e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+    e4:SetCode(EVENT_LEAVE_FIELD_P)
+    e4:SetOperation(s.storeop)
     c:RegisterEffect(e4)
+
+    -- Special Summon itself + Recover
+    local e5=Effect.CreateEffect(c)
+    e5:SetDescription(aux.Stringid(id,1))
+    e5:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_RECOVER)
+    e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e5:SetCode(EVENT_PHASE+PHASE_END)
+    e5:SetRange(LOCATION_GRAVE+LOCATION_REMOVED)
+    e5:SetCondition(s.spcon)
+    e5:SetTarget(s.sptg)
+    e5:SetOperation(s.spop)
+    c:RegisterEffect(e5)
 end
-s.counter_list={COUNTER_FEATHER}
 s.listed_series={0x33}
 
 -------------------------------------------------------
 -- Place Counter when Synchro Summon happens
 -------------------------------------------------------
-function s.synfilter(c)
-    return c:IsSummonType(SUMMON_TYPE_SYNCHRO)
-end
-function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(s.synfilter,1,nil)
-end
-function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return true end
-    Duel.SetOperationInfo(0,CATEGORY_COUNTER,nil,1,0,COUNTER_FEATHER)
-end
 function s.ctop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if c:IsFaceup() and c:IsRelateToEffect(e) then
-        c:AddCounter(COUNTER_FEATHER,1)
+    if eg:IsExists(Card.IsSummonType,1,nil,SUMMON_TYPE_SYNCHRO) then
+        e:GetHandler():AddCounter(COUNTER_FEATHER,1)
     end
 end
 
@@ -90,23 +82,30 @@ function s.indcon(e)
 end
 
 -------------------------------------------------------
+-- Store counter amount before leaving
+-------------------------------------------------------
+function s.storeop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD-RESET_LEAVE,0,0,c:GetCounter(COUNTER_FEATHER))
+end
+
+-------------------------------------------------------
 -- Special Summon itself + Recover
 -------------------------------------------------------
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return c:IsFaceup() and c:IsReason(REASON_EFFECT) and c:IsPreviousControler(tp)
+    return c:GetFlagEffect(id)>0
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    local c=e:GetHandler()
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
+        and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_RECOVER,nil,0,tp,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if c:IsRelateToEffect(e) then
-        local ct=c:GetCounter(COUNTER_FEATHER)
+        local ct=c:GetFlagEffectLabel(id) or 0
         if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 and ct>0 then
             Duel.Recover(tp,ct*700,REASON_EFFECT)
         end
