@@ -23,13 +23,12 @@ function s.initial_effect(c)
     e2:SetOperation(s.lfop)
     c:RegisterEffect(e2)
 end
-s.listed_names={91351370} -- Black Whirlwind ID
-s.listed_series={0x33} -- Blackwing archetype
+s.listed_names={91351370} -- Black Whirlwind
+s.listed_series={0x33} -- Blackwing
 
 --------------------------------------------------------
 -- Optional activate effect
 --------------------------------------------------------
-
 function s.negfilter(c)
     return c:IsFaceup() and not c:IsDisabled()
 end
@@ -87,11 +86,10 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------
--- Leave field effect (place Whirlwind, then Normal Summon optionally)
+-- Leave field effect (place Whirlwind, Normal Summon without tributing)
 --------------------------------------------------------
-
 function s.whirlwindfilter(c)
-    return c:IsCode(91351370) and not c:IsForbidden()
+    return c:IsCode(91351370) and c:IsSSetable()
 end
 
 function s.bwfilter(c)
@@ -101,6 +99,7 @@ end
 function s.lftg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.IsExistingMatchingCard(s.whirlwindfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
+            and Duel.IsExistingMatchingCard(s.bwfilter,tp,LOCATION_HAND,0,1,nil)
     end
 end
 
@@ -109,24 +108,24 @@ function s.lfop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.SelectMatchingCard(tp,s.whirlwindfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil):GetFirst()
     if tc and Duel.MoveToField(tc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
         Duel.BreakEffect()
-        if Duel.IsExistingMatchingCard(s.bwfilter,tp,LOCATION_HAND,0,1,nil)
-            and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
+        -- Allow all Blackwing monsters in hand to be Normal Summoned without tribute
+        local g=Duel.GetMatchingGroup(Card.IsSetCard,tp,LOCATION_HAND,0,nil,0x33)
+        for sc in aux.Next(g) do
+            local e1=Effect.CreateEffect(e:GetHandler())
+            e1:SetType(EFFECT_TYPE_SINGLE)
+            e1:SetCode(EFFECT_SUMMON_PROC)
+            e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+            e1:SetCondition(aux.TRUE)
+            e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+            sc:RegisterEffect(e1)
+        end
+        -- Now select a monster to summon
+        if Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SUMMON)
-            local g=Duel.SelectMatchingCard(tp,s.bwfilter,tp,LOCATION_HAND,0,1,1,nil)
-            local sc=g:GetFirst()
-            if sc then
-    -- Allow summon without tributing (real version)
-                local e1=Effect.CreateEffect(e:GetHandler())
-                e1:SetType(EFFECT_TYPE_SINGLE)
-                e1:SetCode(EFFECT_SUMMON_PROC)
-                e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-                e1:SetCondition(aux.TRUE) -- Always true
-                e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-                sc:RegisterEffect(e1)
-                Duel.Summon(tp,sc,true,nil)
+            local sg=Duel.SelectMatchingCard(tp,s.bwfilter,tp,LOCATION_HAND,0,1,1,nil)
+            if #sg>0 then
+                Duel.Summon(tp,sg:GetFirst(),true,nil)
             end
-
         end
     end
 end
-
