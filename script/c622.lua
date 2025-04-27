@@ -32,7 +32,7 @@ function s.setfilter(c)
     return c:IsType(TYPE_SPELL+TYPE_TRAP) 
         and (c:ListsCode(9012916) or (c:ListsArchetype(0x33) or c:IsCode(810000056,511000777,511002900,511004427,511009526,09925982,511002211,810000051,810000052,511002795))
         and not c:IsCode(id)
-        and c:IsSSetable()
+        and c:IsSSetable())
 end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
