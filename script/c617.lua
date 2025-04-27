@@ -1,8 +1,8 @@
 --Blackwing Tamer - Darkage Master
 local s,id=GetID()
-s.counter_list={0x1002} -- Black Feather Counter
 s.listed_names={9012916} -- Black-Winged Dragon
 s.listed_series={0x33} -- Blackwing archetype
+s.counter_place_list={COUNTER_FEATHER}
 
 function s.initial_effect(c)
     -- Synchro Summon procedure
@@ -17,7 +17,7 @@ function s.initial_effect(c)
     e0:SetOperation(s.regop)
     c:RegisterEffect(e0)
 
-    -- ATK gain (Continuous)
+    -- Continuous ATK gain
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -52,7 +52,7 @@ function s.initial_effect(c)
     e4:SetOperation(s.negop)
     c:RegisterEffect(e4)
 
-    -- Board wipe: Remove 4 counters from itself
+    -- Board wipe: Remove 4 Black Feather Counters from anywhere
     local e5=Effect.CreateEffect(c)
     e5:SetDescription(aux.Stringid(id,1))
     e5:SetCategory(CATEGORY_DESTROY)
@@ -65,9 +65,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e5)
 end
 
-----------------------------------------------------------
--- (internal) Register Synchro Summon flag
-----------------------------------------------------------
+-- Synchro Summon check
 function s.regcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
@@ -75,32 +73,28 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
     e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
 end
 
-----------------------------------------------------------
--- ATK boost (continuous)
-----------------------------------------------------------
+-- ATK increase based on counters
 function s.atkval(e,c)
     if c:GetFlagEffect(id)>0 then
-        return c:GetCounter(0x1002)*700
+        return c:GetCounter(COUNTER_FEATHER)*700
     else
         return 0
     end
 end
 
-----------------------------------------------------------
 -- Protection if Synchro Summoned
-----------------------------------------------------------
 function s.indcon(e)
     return e:GetHandler():GetFlagEffect(id)>0
 end
 
-----------------------------------------------------------
--- Negate Spell/Trap Quick Effect
-----------------------------------------------------------
+-- Check for Black-Winged Dragon or card that lists it
 function s.bwdcheck(c)
     return c:IsFaceup() and (c:IsCode(9012916) or c:ListsCode(9012916))
 end
+
+-- Negate Spell/Trap
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.IsChainNegatable(ev) 
+    return Duel.IsChainNegatable(ev)
         and re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
         and Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,nil)
 end
@@ -112,20 +106,20 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.NegateActivation(ev) then
         local c=e:GetHandler()
         if c:IsFaceup() and c:IsRelateToEffect(e) then
-            c:AddCounter(0x1002,2)
+            c:AddCounter(COUNTER_FEATHER,2)
         end
     end
 end
 
-----------------------------------------------------------
--- Remove 4 counters on itself → destroy all opponent cards
-----------------------------------------------------------
+-- Remove 4 Black Feather Counters from anywhere
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return e:GetHandler():IsCanRemoveCounter(tp,0x1002,4,REASON_COST) end
-    e:GetHandler():RemoveCounter(tp,0x1002,4,REASON_COST)
+    if chk==0 then return Duel.IsCanRemoveCounter(tp,1,0,COUNTER_FEATHER,4,REASON_COST) end
+    Duel.RemoveCounter(tp,1,0,COUNTER_FEATHER,4,REASON_COST)
 end
+
+-- Board wipe
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetMatchingGroupCount(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)>0 end
+    if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
     local g=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,#g,0,0)
 end
@@ -135,5 +129,3 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
         Duel.Destroy(g,REASON_EFFECT)
     end
 end
-
-
