@@ -121,12 +121,11 @@ end
 -- Remove 4 counters on itself → destroy all opponent cards
 ----------------------------------------------------------
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
-    local c=e:GetHandler()
-    if chk==0 then return c:GetCounter(0x1002)>=4 end
-    c:RemoveCounter(tp,0x1002,4,REASON_COST)
+    if chk==0 then return e:GetHandler():IsCanRemoveCounter(tp,0x1002,4,REASON_COST) end
+    e:GetHandler():RemoveCounter(tp,0x1002,4,REASON_COST)
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,1,nil) end
+    if chk==0 then return Duel.GetMatchingGroupCount(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)>0 end
     local g=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_ONFIELD,nil)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,#g,0,0)
 end
@@ -136,4 +135,5 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
         Duel.Destroy(g,REASON_EFFECT)
     end
 end
+
 
