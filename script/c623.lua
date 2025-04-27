@@ -57,6 +57,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 end
 
+s.listed_names={9012916}
+
 -------------------------------------------------------
 -- Burn damage
 -------------------------------------------------------
