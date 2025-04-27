@@ -20,15 +20,16 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Quick Effect: Destroy 1 you control + 1 with Wedge Counter
+    -- Quick Effect: Target 1 you control + 1 with Wedge Counter and destroy both
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DESTROY)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_FREE_CHAIN)
+    e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_END_PHASE)
     e2:SetRange(LOCATION_MZONE)
-    e2:SetCountLimit(1,id)
-    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
+    e2:SetCountLimit(1,id+100)
     e2:SetTarget(s.destg)
     e2:SetOperation(s.desop)
     c:RegisterEffect(e2)
@@ -40,7 +41,7 @@ function s.initial_effect(c)
     e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e3:SetCode(EVENT_PHASE+PHASE_END)
     e3:SetRange(LOCATION_MZONE)
-    e3:SetCountLimit(1)
+    e3:SetCountLimit(1,id+200)
     e3:SetCondition(s.negcon)
     e3:SetTarget(s.negtg)
     e3:SetOperation(s.negop)
@@ -69,32 +70,33 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -----------------------------------------------------------
--- (2) Destroy 1 you control + 1 with Wedge Counter
+-- (2) Quick Effect: Destroy 1 you control + 1 with Wedge Counter
 -----------------------------------------------------------
-function s.ctfilter(c)
+function s.wedgefilter(c)
     return c:IsFaceup() and c:GetCounter(0x1002)>0
 end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return false end
     if chk==0 then
-        return Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,0,1,nil)
-            and Duel.IsExistingMatchingCard(s.ctfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
+        return Duel.IsExistingTarget(aux.TRUE,tp,LOCATION_ONFIELD,0,1,nil)
+            and Duel.IsExistingTarget(s.wedgefilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
     end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-    local g1=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_ONFIELD,0,1,1,nil)
+    local g1=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,0,1,1,nil)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-    local g2=Duel.SelectMatchingCard(tp,s.ctfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
+    local g2=Duel.SelectTarget(tp,s.wedgefilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
     g1:Merge(g2)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,g1,#g1,0,0)
 end
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetMatchingGroup(Card.IsRelateToEffect,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil,e)
+    local g=Duel.GetTargetsRelateToChain()
     if #g>0 then
         Duel.Destroy(g,REASON_EFFECT)
     end
 end
 
 -----------------------------------------------------------
--- (3) End Phase: Negate all monsters with Wedge Counters
+-- (3) End Phase: Negate monsters with Wedge Counters
 -----------------------------------------------------------
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()==1-tp
