@@ -10,9 +10,14 @@ function s.initial_effect(c)
 
     -- Place 1 Black Feather Counter when a Synchro Monster is Summoned
     local e1=Effect.CreateEffect(c)
-    e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+    e1:SetDescription(aux.Stringid(id,0))
+    e1:SetCategory(CATEGORY_COUNTER)
+    e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e1:SetProperty(EFFECT_FLAG_DELAY)
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)
     e1:SetRange(LOCATION_MZONE)
+    e1:SetCondition(s.ctcon)
+    e1:SetTarget(s.cttg)
     e1:SetOperation(s.ctop)
     c:RegisterEffect(e1)
 
@@ -25,7 +30,7 @@ function s.initial_effect(c)
     e2:SetValue(s.atkval)
     c:RegisterEffect(e2)
 
-    -- Cannot be destroyed by battle if it has 3 or more counters
+    -- Cannot be destroyed by battle if 3 or more counters
     local e3=Effect.CreateEffect(c)
     e3:SetType(EFFECT_TYPE_SINGLE)
     e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -51,17 +56,22 @@ s.counter_list={0x1002}
 s.listed_series={0x33}
 
 -------------------------------------------------------
--- Place Counter when a Synchro Monster Summoned
+-- Place Counter
 -------------------------------------------------------
+function s.synfilter(c)
+    return c:IsSummonType(SUMMON_TYPE_SYNCHRO)
+end
+function s.ctcon(e,tp,eg,ep,ev,re,r,rp)
+    return eg:IsExists(s.synfilter,1,nil)
+end
+function s.cttg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return true end
+    Duel.SetOperationInfo(0,CATEGORY_COUNTER,nil,1,0,0x1002)
+end
 function s.ctop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    for tc in aux.Next(eg) do
-        if tc:IsSummonType(SUMMON_TYPE_SYNCHRO) then
-            if c:IsFaceup() and c:IsRelateToEffect(e) then
-                c:AddCounter(0x1002,1)
-            end
-            -- Only add once per monster (even if multiple summoned)
-        end
+    if c:IsFaceup() and c:IsRelateToEffect(e) then
+        c:AddCounter(0x1002,1)
     end
 end
 
@@ -73,14 +83,14 @@ function s.atkval(e,c)
 end
 
 -------------------------------------------------------
--- Battle Protection if 3 or more counters
+-- Battle Protection
 -------------------------------------------------------
 function s.indcon(e)
     return e:GetHandler():GetCounter(0x1002)>=3
 end
 
 -------------------------------------------------------
--- Revive + Gain LP
+-- Revive
 -------------------------------------------------------
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
