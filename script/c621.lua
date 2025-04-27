@@ -29,27 +29,36 @@ s.listed_series={0x33} -- Blackwing
 --------------------------------------------------------
 -- Optional activate
 --------------------------------------------------------
+
+-- Filter for monsters that can be negated
 function s.negfilter(c)
-    return c:IsFaceup() and aux.NegatableMonsterFilter(c)
+    return c:IsFaceup() and not (c:IsDisabled() or c:IsImmuneToEffect(EFFECT_DISABLE))
 end
+
+-- Filter for Blackwing Level 5 or lower Synchro Monsters
 function s.spfilter(c,e,tp)
     return c:IsSetCard(0x33) and c:IsType(TYPE_SYNCHRO) and c:IsLevelBelow(5) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
+
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
-    local b1=Duel.IsExistingTarget(s.negfilter,tp,LOCATION_MZONE,0,1,nil) and Duel.IsExistingTarget(s.negfilter,tp,0,LOCATION_MZONE,1,nil)
+    local b1=Duel.IsExistingTarget(s.negfilter,tp,LOCATION_MZONE,0,1,nil) 
+         and Duel.IsExistingTarget(s.negfilter,tp,0,LOCATION_MZONE,1,nil)
     local b2=Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
-    local options={}
-    if b1 then table.insert(options,aux.Stringid(id,2)) end
-    if b2 then table.insert(options,aux.Stringid(id,3)) end
 
-    if #options==0 then return end -- no valid effects
+    if not (b1 or b2) then return end
 
-    if Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
-        local opt=Duel.SelectOption(tp,table.unpack(options))
-        if not b1 then
-            opt=opt+1
+    if Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+        local opt=0
+        if b1 and b2 then
+            opt=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4))
+        elseif b1 then
+            opt=Duel.SelectOption(tp,aux.Stringid(id,3))
+        else
+            opt=Duel.SelectOption(tp,aux.Stringid(id,4))+1
         end
+
         if opt==0 then
+            -- negate
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
             local g1=Duel.SelectTarget(tp,s.negfilter,tp,LOCATION_MZONE,0,1,1,nil)
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
@@ -71,6 +80,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
                 end
             end
         elseif opt==1 then
+            -- special summon
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
             local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
             if #g>0 then
@@ -81,27 +91,32 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------
--- Leave field effect (place Black Whirlwind + Summon)
+-- Leave field effect
 --------------------------------------------------------
 function s.whirlwindfilter(c)
     return c:IsCode(91349449) and c:IsSSetable()
 end
+
 function s.bwfilter(c)
     return c:IsSetCard(0x33) and c:IsSummonable(true,nil)
 end
+
 function s.lftg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.whirlwindfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
-        and Duel.IsExistingMatchingCard(s.bwfilter,tp,LOCATION_HAND,0,1,nil)
+    if chk==0 then
+        return Duel.IsExistingMatchingCard(s.whirlwindfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
+            and Duel.IsExistingMatchingCard(s.bwfilter,tp,LOCATION_HAND,0,1,nil)
     end
 end
+
 function s.lfop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
     local tc=Duel.SelectMatchingCard(tp,s.whirlwindfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil):GetFirst()
     if tc and Duel.MoveToField(tc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
+        Duel.BreakEffect()
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SUMMON)
         local g=Duel.SelectMatchingCard(tp,s.bwfilter,tp,LOCATION_HAND,0,1,1,nil)
         if #g>0 then
-            Duel.Summon(tp,g:GetFirst(),true,nil,1) -- Summon without Tribute
+            Duel.Summon(tp,g:GetFirst(),true,nil,1) -- Normal Summon without tributing
         end
     end
 end
