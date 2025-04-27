@@ -2,12 +2,12 @@
 local s,id=GetID()
 s.listed_names={9012916} -- Black-Winged Dragon
 s.listed_series={0x33} -- Blackwing archetype
-c:EnableCounterPermit(COUNTER_FEATHER)
 
 function s.initial_effect(c)
     -- Synchro Summon procedure
     Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x33),1,1,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_DARK),1,99)
     c:EnableReviveLimit()
+    c:EnableCounterPermit(COUNTER_FEATHER)
 
     -- Register Synchro Summoned
     local e0=Effect.CreateEffect(c)
