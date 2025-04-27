@@ -29,7 +29,7 @@ s.listed_names={91351370} -- Black Whirlwind
 -- Activation choice
 -------------------------------------------------------
 function s.negfilter(c)
-    return aux.disfilter1(c)
+    return c:IsFaceup() and c:IsNegatableMonster()
 end
 function s.spfilter(c,e,tp)
     return c:IsSetCard(0x33) and c:IsLevelBelow(5) and c:IsType(TYPE_SYNCHRO) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
