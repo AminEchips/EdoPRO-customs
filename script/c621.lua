@@ -23,25 +23,23 @@ function s.initial_effect(c)
     e2:SetOperation(s.lfop)
     c:RegisterEffect(e2)
 end
-s.listed_names={91349449} -- Black Whirlwind
+s.listed_names={91351370} -- Correct Black Whirlwind ID
 s.listed_series={0x33} -- Blackwing
 
 --------------------------------------------------------
--- Optional activate
+-- Optional activate effect
 --------------------------------------------------------
 
--- Filter for monsters that can be negated
 function s.negfilter(c)
-    return c:IsFaceup() and not (c:IsDisabled() or c:IsImmuneToEffect(EFFECT_DISABLE))
+    return c:IsFaceup() and not c:IsDisabled()
 end
 
--- Filter for Blackwing Level 5 or lower Synchro Monsters
 function s.spfilter(c,e,tp)
     return c:IsSetCard(0x33) and c:IsType(TYPE_SYNCHRO) and c:IsLevelBelow(5) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
-    local b1=Duel.IsExistingTarget(s.negfilter,tp,LOCATION_MZONE,0,1,nil) 
+    local b1=Duel.IsExistingTarget(s.negfilter,tp,LOCATION_MZONE,0,1,nil)
          and Duel.IsExistingTarget(s.negfilter,tp,0,LOCATION_MZONE,1,nil)
     local b2=Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE,0,1,nil,e,tp)
 
@@ -58,7 +56,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
         end
 
         if opt==0 then
-            -- negate
+            -- Negate effects
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
             local g1=Duel.SelectTarget(tp,s.negfilter,tp,LOCATION_MZONE,0,1,1,nil)
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
@@ -80,7 +78,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
                 end
             end
         elseif opt==1 then
-            -- special summon
+            -- Special Summon from GY
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
             local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
             if #g>0 then
@@ -91,7 +89,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 end
 
 --------------------------------------------------------
--- Leave field effect
+-- Leave field effect (place Whirlwind, Normal Summon)
 --------------------------------------------------------
 function s.whirlwindfilter(c)
     return c:IsCode(91351370) and c:IsSSetable()
@@ -116,7 +114,7 @@ function s.lfop(e,tp,eg,ep,ev,re,r,rp)
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SUMMON)
         local g=Duel.SelectMatchingCard(tp,s.bwfilter,tp,LOCATION_HAND,0,1,1,nil)
         if #g>0 then
-            Duel.Summon(tp,g:GetFirst(),true,nil,1) -- Normal Summon without tributing
+            Duel.Summon(tp,g:GetFirst(),true,nil) -- ✅ Summon without tributing
         end
     end
 end
