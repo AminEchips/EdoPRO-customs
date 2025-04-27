@@ -94,7 +94,7 @@ end
 -- Leave field effect
 --------------------------------------------------------
 function s.whirlwindfilter(c)
-    return c:IsCode(91349449) and c:IsSSetable()
+    return c:IsCode(91351370) and c:IsSSetable()
 end
 
 function s.bwfilter(c)
