@@ -2,6 +2,7 @@
 local s,id=GetID()
 s.listed_names={9012916} -- Black-Winged Dragon
 s.listed_series={0x33} -- Blackwing archetype
+c:EnableCounterPermit(COUNTER_FEATHER)
 
 function s.initial_effect(c)
     -- Synchro Summon procedure
