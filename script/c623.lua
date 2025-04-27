@@ -45,6 +45,8 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
+s.listed_names={9012916}
+
 -------------------------------------------------------
 -- 1st effect: Burn
 -------------------------------------------------------
