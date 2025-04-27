@@ -9,7 +9,7 @@ function s.initial_effect(c)
     Synchro.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x33),1,1,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_DARK),1,99)
     c:EnableReviveLimit()
 
-    -- Flag if properly Synchro Summoned
+    -- Register Synchro Summoned
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
     e0:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -17,7 +17,7 @@ function s.initial_effect(c)
     e0:SetOperation(s.regop)
     c:RegisterEffect(e0)
 
-    -- Continuous ATK boost
+    -- ATK gain (Continuous)
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -26,7 +26,7 @@ function s.initial_effect(c)
     e1:SetValue(s.atkval)
     c:RegisterEffect(e1)
 
-    -- Indestructibility by battle and effects
+    -- Battle + Effect protection
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_SINGLE)
     e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -39,7 +39,7 @@ function s.initial_effect(c)
     e3:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
     c:RegisterEffect(e3)
 
-    -- Negate Spell/Trap and place 2 counters
+    -- Quick Effect: Negate Spell/Trap and add 2 counters
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,0))
     e4:SetCategory(CATEGORY_NEGATE)
@@ -52,7 +52,7 @@ function s.initial_effect(c)
     e4:SetOperation(s.negop)
     c:RegisterEffect(e4)
 
-    -- Remove 4 counters on itself to destroy opponent's field
+    -- Board wipe: Remove 4 counters from itself
     local e5=Effect.CreateEffect(c)
     e5:SetDescription(aux.Stringid(id,1))
     e5:SetCategory(CATEGORY_DESTROY)
@@ -66,7 +66,7 @@ function s.initial_effect(c)
 end
 
 ----------------------------------------------------------
--- (Internal) Register Synchro Summon flag
+-- (internal) Register Synchro Summon flag
 ----------------------------------------------------------
 function s.regcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
@@ -76,7 +76,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ----------------------------------------------------------
--- Continuous ATK Boost
+-- ATK boost (continuous)
 ----------------------------------------------------------
 function s.atkval(e,c)
     if c:GetFlagEffect(id)>0 then
@@ -87,20 +87,20 @@ function s.atkval(e,c)
 end
 
 ----------------------------------------------------------
--- Indestructibility if Synchro Summoned
+-- Protection if Synchro Summoned
 ----------------------------------------------------------
 function s.indcon(e)
     return e:GetHandler():GetFlagEffect(id)>0
 end
 
 ----------------------------------------------------------
--- Quick Effect: Negate Spell/Trap and Place 2 Counters
+-- Negate Spell/Trap Quick Effect
 ----------------------------------------------------------
 function s.bwdcheck(c)
     return c:IsFaceup() and (c:IsCode(9012916) or c:ListsCode(9012916))
 end
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.IsChainNegatable(ev)
+    return Duel.IsChainNegatable(ev) 
         and re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
         and Duel.IsExistingMatchingCard(s.bwdcheck,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,1,nil)
 end
@@ -118,7 +118,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 ----------------------------------------------------------
--- Ignition Effect: Remove 4 counters from itself to destroy
+-- Remove 4 counters on itself → destroy all opponent cards
 ----------------------------------------------------------
 function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
@@ -136,3 +136,4 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
         Duel.Destroy(g,REASON_EFFECT)
     end
 end
+
