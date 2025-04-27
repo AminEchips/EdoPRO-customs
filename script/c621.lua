@@ -4,7 +4,6 @@ function s.initial_effect(c)
     --Activate and choose 1 effect
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
-    e1:SetCategory(CATEGORY_DISABLE+CATEGORY_SPECIAL_SUMMON)
     e1:SetType(EFFECT_TYPE_ACTIVATE)
     e1:SetCode(EVENT_FREE_CHAIN)
     e1:SetCountLimit(1,id)
@@ -15,7 +14,6 @@ function s.initial_effect(c)
     --If this card leaves the field
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetCategory(CATEGORY_TOFIELD+CATEGORY_SUMMON)
     e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetCode(EVENT_LEAVE_FIELD)
@@ -31,7 +29,7 @@ s.listed_names={91351370} -- Black Whirlwind
 -- Activation choice
 -------------------------------------------------------
 function s.negfilter(c)
-    return c:IsFaceup() and c:IsCanBeDisabled()
+    return aux.disfilter1(c)
 end
 function s.spfilter(c,e,tp)
     return c:IsSetCard(0x33) and c:IsLevelBelow(5) and c:IsType(TYPE_SYNCHRO) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
