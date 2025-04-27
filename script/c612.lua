@@ -4,6 +4,10 @@ function s.initial_effect(c)
     -- Enable Wedge Counters
     c:EnableCounterPermit(0x1002)
 
+    -- Synchro Summon Procedure
+    Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x33),1,1,Synchro.NonTuner(nil),1,99)
+    c:EnableReviveLimit()
+
     -- Add "Black Souls Whirlwind" to hand on Special Summon
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
