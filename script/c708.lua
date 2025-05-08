@@ -36,6 +36,7 @@ function s.initial_effect(c)
     e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e3:SetCode(EVENT_PHASE+PHASE_END)
     e3:SetRange(LOCATION_GRAVE)
+    e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e3:SetCountLimit(1,{id,2})
     e3:SetCondition(s.negcon)
     e3:SetTarget(s.negtg)
@@ -50,7 +51,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 end
 
--- Effect 1: Equip up to 2 Equip Spells from GY
+-- Equip up to 2 Equip Spells
 function s.eqfilter(c)
     return c:IsType(TYPE_EQUIP) and not c:IsForbidden()
 end
@@ -76,7 +77,7 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Send 1 LIGHT Noble Knight, destroy 1 S/T, gain 1000 ATK
+-- Send LIGHT Noble Knight, destroy Spell/Trap
 function s.tgfilter(c)
     return c:IsSetCard(0x107a) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsAbleToGrave()
 end
@@ -107,10 +108,12 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3: End Phase Negate
+-- Register graveyard condition
 function s.regop(e,tp,eg,ep,ev,re,r,rp)
     e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
 end
+
+-- End Phase negate
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return c:GetFlagEffect(id)>0 and c:IsPreviousLocation(LOCATION_ONFIELD)
