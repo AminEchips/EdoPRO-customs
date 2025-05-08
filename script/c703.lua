@@ -42,7 +42,7 @@ s.listed_series={0x107a}
 function s.attval(e,c)
     local eg=c:GetEquipGroup()
     local mg=eg:Filter(Card.IsType,nil,TYPE_MONSTER)
-    if #mg==1 then return mg:GetFirst():GetAttribute() end
+    if #mg==1 then return ATTRIBUTE_FIRE end
     return 0
 end
 
