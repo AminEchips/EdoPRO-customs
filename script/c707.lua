@@ -20,9 +20,12 @@ function s.initial_effect(c)
     -- Effect 2: When this card becomes equipped, Synchro Summon and optionally re-equip
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_EQUIP)
-    e2:SetCondition(function(e) return e:GetHandler():IsLocation(LOCATION_MZONE) end)
+    e2:SetRange(LOCATION_MZONE)
+    e2:SetCountLimit(1,{id,1})
+    e2:SetCondition(s.eqcon)
+    e2:SetTarget(s.syntg)
     e2:SetOperation(s.synop)
     c:RegisterEffect(e2)
 
@@ -57,7 +60,8 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
     local g=Duel.SelectMatchingCard(tp,s.eqfilter,tp,LOCATION_GRAVE,0,1,1,nil)
     local ec=g:GetFirst()
-    if ec and Duel.Equip(tp,ec,c) then
+    if ec and Duel.Equip(tp,ec,c,true) then
+        -- Equip limit
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_EQUIP_LIMIT)
@@ -71,10 +75,15 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
         e2:SetValue(5)
         e2:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
         c:RegisterEffect(e2)
+    else
+        Duel.SendtoGrave(ec,REASON_EFFECT)
     end
 end
 
--- Effect 2 Helpers: Synchro using this + others, then equip from GY
+-- Effect 2 Helpers
+function s.eqcon(e,tp,eg,ep,ev,re,r,rp)
+    return eg:IsContains(e:GetHandler())
+end
 function s.matfilter(c,sc,mc)
     return c~=mc and c:IsCanBeSynchroMaterial(sc,mc)
 end
@@ -83,6 +92,13 @@ function s.synfilter(c,e,tp,mc)
         and Duel.IsExistingMatchingCard(s.matfilter,tp,LOCATION_MZONE,0,1,nil,c,mc)
         and mc:IsCanBeSynchroMaterial(c)
         and Duel.GetLocationCountFromEx(tp,tp,Group.FromCards(mc),c)>0
+end
+function s.syntg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then
+        local c=e:GetHandler()
+        return Duel.IsExistingMatchingCard(s.synfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,c)
+    end
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
 function s.synop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
@@ -111,7 +127,7 @@ function s.synop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 3 Helpers: Flip 1 monster when this or equipped monster attacks
+-- Effect 3 Helpers
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
     local at=Duel.GetAttacker()
     local ec=e:GetHandler()
