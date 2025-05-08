@@ -16,15 +16,12 @@ function s.initial_effect(c)
     e1:SetOperation(s.eqop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Quick Synchro Summon using this card on the field
+    -- Effect 2: When this card becomes equipped, Synchro Summon and optionally re-equip
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetType(EFFECT_TYPE_QUICK_O)
-    e2:SetCode(EVENT_FREE_CHAIN)
-    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
-    e2:SetRange(LOCATION_MZONE)
-    e2:SetCountLimit(1,{id,1})
-    e2:SetTarget(s.syntg)
+    e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+    e2:SetCode(EVENT_EQUIP)
+    e2:SetCondition(s.eqcon)
     e2:SetOperation(s.synop)
     c:RegisterEffect(e2)
 
@@ -78,37 +75,37 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2 Helpers
-function s.matfilter(c,sc,mc)
-    return c~=mc and c:IsCanBeSynchroMaterial(sc,mc)
-end
-function s.synfilter(c,e,tp,mc)
-    return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_WARRIOR)
-        and Duel.IsExistingMatchingCard(s.matfilter,tp,LOCATION_MZONE,0,1,nil,c,mc)
-        and mc:IsCanBeSynchroMaterial(c)
-        and Duel.GetLocationCountFromEx(tp,tp,Group.FromCards(mc),c)>0
-end
-function s.syntg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then
-        local c=e:GetHandler()
-        return Duel.IsExistingMatchingCard(s.synfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,c)
-    end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+-- Effect 2: Regular Synchro Summon when equipped
+function s.eqcon(e,tp,eg,ep,ev,re,r,rp)
+    return eg:IsContains(e:GetHandler())
 end
 function s.synop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if not c:IsRelateToEffect(e) or not c:IsControler(tp) then return end
+    if not c:IsRelateToEffect(e) or not c:IsControler(tp) or not c:IsFaceup() then return end
+    local mg=Duel.GetMatchingGroup(Card.IsCanBeSynchroMaterial,tp,LOCATION_MZONE,0,nil)
+    if not mg:IsContains(c) then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,s.synfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp,c)
+    local g=Duel.SelectMatchingCard(tp,function(c,e,tp,mg)
+        return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_WARRIOR)
+            and Duel.GetLocationCountFromEx(tp,tp,mg,c)>0
+            and c:IsSynchroSummonable(nil,mg)
+    end,tp,LOCATION_EXTRA,0,1,1,nil,e,tp,mg)
     local sc=g:GetFirst()
-    if not sc then return end
-    local mg=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE,0,nil,sc,c)
-    if #mg==0 then return end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SMATERIAL)
-    local m2=mg:Select(tp,1,1,nil)
-    m2:AddCard(c)
-    Duel.SetSynchroMaterial(m2)
-    Duel.SynchroSummon(tp,sc,nil)
+    if sc then
+        Duel.SynchroSummon(tp,sc,nil,mg)
+        -- Optionally equip from GY
+        if c:IsLocation(LOCATION_GRAVE) and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
+            and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+            Duel.Equip(tp,c,sc)
+            local e1=Effect.CreateEffect(c)
+            e1:SetType(EFFECT_TYPE_SINGLE)
+            e1:SetCode(EFFECT_EQUIP_LIMIT)
+            e1:SetProperty(EFFECT_FLAG_COPY_INHERIT+EFFECT_FLAG_OWNER_RELATE)
+            e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+            e1:SetValue(function(e,c) return c==e:GetOwner() end)
+            c:RegisterEffect(e1)
+        end
+    end
 end
 
 -- Effect 3 Helpers
