@@ -17,18 +17,16 @@ function s.initial_effect(c)
     e1:SetOperation(s.eqop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: When this card becomes equipped, Synchro Summon + re-equip
+    -- Effect 2: When this card becomes equipped, Synchro Summon and optionally re-equip
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e2:SetCode(EVENT_BE_EQUIPEE)
-    e2:SetProperty(EFFECT_FLAG_DELAY)
-    e2:SetCountLimit(1,{id,1})
-    e2:SetTarget(s.syntg)
+    e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+    e2:SetCode(EVENT_EQUIP)
+    e2:SetCondition(function(e) return e:GetHandler():IsLocation(LOCATION_MZONE) end)
     e2:SetOperation(s.synop)
     c:RegisterEffect(e2)
 
-    -- Effect 3: Flip target when this or equipped monster attacks
+    -- Effect 3: Flip a monster face-down if this or equipped monster attacks
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_POSITION)
@@ -42,10 +40,9 @@ function s.initial_effect(c)
     e3:SetOperation(s.posop)
     c:RegisterEffect(e3)
 end
-
 s.listed_series={0x107a}
 
--- Equip FIRE monster from GY and reduce level
+-- Effect 1 Helpers
 function s.eqfilter(c)
     return c:IsAttribute(ATTRIBUTE_FIRE) and c:IsType(TYPE_MONSTER) and not c:IsForbidden()
 end
@@ -77,7 +74,7 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Quick Synchro Summon (use this + other monsters, then optionally equip this from GY)
+-- Effect 2 Helpers: Synchro using this + others, then equip from GY
 function s.matfilter(c,sc,mc)
     return c~=mc and c:IsCanBeSynchroMaterial(sc,mc)
 end
@@ -86,13 +83,6 @@ function s.synfilter(c,e,tp,mc)
         and Duel.IsExistingMatchingCard(s.matfilter,tp,LOCATION_MZONE,0,1,nil,c,mc)
         and mc:IsCanBeSynchroMaterial(c)
         and Duel.GetLocationCountFromEx(tp,tp,Group.FromCards(mc),c)>0
-end
-function s.syntg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then
-        local c=e:GetHandler()
-        return Duel.IsExistingMatchingCard(s.synfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,c)
-    end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
 function s.synop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
@@ -108,7 +98,6 @@ function s.synop(e,tp,eg,ep,ev,re,r,rp)
     m2:AddCard(c)
     Duel.SetSynchroMaterial(m2)
     if Duel.SynchroSummon(tp,sc,nil)==0 then return end
-
     if c:IsLocation(LOCATION_GRAVE) and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
         and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
         Duel.Equip(tp,c,sc)
@@ -122,7 +111,7 @@ function s.synop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Flip a monster face-down when this or equipped monster attacks
+-- Effect 3 Helpers: Flip 1 monster when this or equipped monster attacks
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
     local at=Duel.GetAttacker()
     local ec=e:GetHandler()
