@@ -14,18 +14,24 @@ function s.initial_effect(c)
     e1:SetOperation(s.equipop)
     c:RegisterEffect(e1)
 
-    -- Draw 1 if another monster is destroyed by battle or card effect
+    -- Draw 1 card if another monster is destroyed by BATTLE (not the equipped one)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DRAW)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e2:SetCode(EVENT_DESTROYED)
+    e2:SetCode(EVENT_BATTLE_DESTROYED)
     e2:SetRange(LOCATION_SZONE)
     e2:SetCountLimit(1,{id,1})
-    e2:SetCondition(s.drcon)
+    e2:SetCondition(s.drcon_battle)
     e2:SetTarget(s.drtg)
     e2:SetOperation(s.drop)
     c:RegisterEffect(e2)
+
+    -- Draw 1 card if another monster is destroyed by EFFECT (not the equipped one)
+    local e3=e2:Clone()
+    e3:SetCode(EVENT_DESTROYED)
+    e3:SetCondition(s.drcon_effect)
+    c:RegisterEffect(e3)
 end
 
 -- Equip to Warrior monster you control
@@ -65,15 +71,23 @@ function s.eqlimit(e,c)
     return c==e:GetLabelObject()
 end
 
--- Draw effect when any other monster is destroyed by battle or card effect
-function s.drcon(e,tp,eg,ep,ev,re,r,rp)
+-- Draw if another monster is destroyed by battle (not the equipped one)
+function s.drcon_battle(e,tp,eg,ep,ev,re,r,rp)
     local ec=e:GetHandler():GetEquipTarget()
     return ec and eg:IsExists(function(tc)
-        return tc:IsType(TYPE_MONSTER)
-            and tc:IsReason(REASON_BATTLE+REASON_EFFECT)
-            and tc~=ec
+        return tc:IsType(TYPE_MONSTER) and tc:IsReason(REASON_BATTLE) and tc~=ec
     end,1,nil)
 end
+
+-- Draw if another monster is destroyed by effect (not the equipped one)
+function s.drcon_effect(e,tp,eg,ep,ev,re,r,rp)
+    local ec=e:GetHandler():GetEquipTarget()
+    return ec and eg:IsExists(function(tc)
+        return tc:IsType(TYPE_MONSTER) and tc:IsReason(REASON_EFFECT) and tc~=ec
+    end,1,nil)
+end
+
+-- Draw 1
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
     Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
