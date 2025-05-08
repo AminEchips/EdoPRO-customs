@@ -1,7 +1,7 @@
 --Infernoble Knight Fiery Athen
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Quick Effect: Equip this card to a Warrior
+    -- (Quick Effect): Equip this card to a Warrior monster you control
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetType(EFFECT_TYPE_QUICK_O)
@@ -22,7 +22,6 @@ function s.initial_effect(c)
     e2:SetCode(EVENT_DESTROYED)
     e2:SetRange(LOCATION_SZONE)
     e2:SetCountLimit(1,{id,1})
-    e2:SetHintTiming(0,TIMINGS_DAMAGE_STEP+TIMINGS_END_PHASE)
     e2:SetCondition(s.drcon)
     e2:SetTarget(s.drtg)
     e2:SetOperation(s.drop)
@@ -66,11 +65,13 @@ function s.eqlimit(e,c)
     return c==e:GetLabelObject()
 end
 
--- Draw effect: another monster is destroyed by battle or effect, while this is equipped
+-- Draw effect when any other monster is destroyed by battle or card effect
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
     local ec=e:GetHandler():GetEquipTarget()
     return ec and eg:IsExists(function(tc)
-        return tc:IsType(TYPE_MONSTER) and tc:IsReason(REASON_BATTLE+REASON_EFFECT) and tc~=ec
+        return tc:IsType(TYPE_MONSTER)
+            and tc:IsReason(REASON_BATTLE+REASON_EFFECT)
+            and tc~=ec
     end,1,nil)
 end
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
