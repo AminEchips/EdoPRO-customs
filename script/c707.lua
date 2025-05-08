@@ -17,18 +17,18 @@ function s.initial_effect(c)
     e1:SetOperation(s.eqop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Quick Synchro while equipped
+    -- Effect 2: Quick Synchro Summon while equipped (like Pulao)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_FREE_CHAIN)
-    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
     e2:SetRange(LOCATION_SZONE)
+    e2:SetHintTiming(0,TIMING_BATTLE_START+TIMING_BATTLE_END+TIMINGS_CHECK_MONSTER)
     e2:SetCountLimit(1,{id,1})
-    e2:SetCondition(function(e,tp) return Duel.IsMainPhase() end)
-    e2:SetTarget(s.syntg)
-    e2:SetOperation(s.synop)
+    e2:SetCondition(s.sccon)
+    e2:SetTarget(s.sctg)
+    e2:SetOperation(s.scop)
     c:RegisterEffect(e2)
 
     -- Effect 3: Flip a monster face-down if this or equipped monster attacks
@@ -53,8 +53,7 @@ function s.eqfilter(c)
 end
 function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.eqfilter(chkc) end
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
-        and Duel.IsExistingTarget(s.eqfilter,tp,LOCATION_GRAVE,0,1,nil) end
+    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0 and Duel.IsExistingTarget(s.eqfilter,tp,LOCATION_GRAVE,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
     local g=Duel.SelectTarget(tp,s.eqfilter,tp,LOCATION_GRAVE,0,1,1,nil)
     Duel.SetOperationInfo(0,CATEGORY_EQUIP,g,1,0,0)
@@ -81,32 +80,27 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Quick Synchro Summon while equipped
-function s.syntg(e,tp,eg,ep,ev,re,r,rp,chk)
+-- Effect 2: Quick Synchro (like Pulao)
+function s.sccon(e,tp,eg,ep,ev,re,r,rp)
+    return Duel.IsTurnPlayer(1-tp) and (Duel.IsMainPhase() or Duel.IsBattlePhase())
+end
+function s.mfilter(c)
+    return c:IsFaceup() and c:IsType(TYPE_MONSTER)
+end
+function s.sctg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        local mg=Duel.GetMatchingGroup(Card.IsCanBeSynchroMaterial,tp,LOCATION_MZONE,0,nil)
-        return Duel.IsExistingMatchingCard(function(c) return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_WARRIOR) and c:IsSynchroSummonable(nil,mg) end,tp,LOCATION_EXTRA,0,1,nil)
+        local mg=Duel.GetMatchingGroup(s.mfilter,tp,LOCATION_MZONE,0,nil)
+        return Duel.IsExistingMatchingCard(Card.IsSynchroSummonable,tp,LOCATION_EXTRA,0,1,nil,nil,mg)
     end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
-function s.synop(e,tp,eg,ep,ev,re,r,rp)
-    local mg=Duel.GetMatchingGroup(Card.IsCanBeSynchroMaterial,tp,LOCATION_MZONE,0,nil)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,function(c) return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_WARRIOR) and c:IsSynchroSummonable(nil,mg) end,tp,LOCATION_EXTRA,0,1,1,nil)
-    local sc=g:GetFirst()
-    if sc then
-        Duel.SynchroSummon(tp,sc,nil,mg)
-        local c=e:GetHandler()
-        if c:IsLocation(LOCATION_GRAVE) and Duel.GetLocationCount(tp,LOCATION_SZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-            Duel.Equip(tp,c,sc)
-            local e1=Effect.CreateEffect(c)
-            e1:SetType(EFFECT_TYPE_SINGLE)
-            e1:SetCode(EFFECT_EQUIP_LIMIT)
-            e1:SetProperty(EFFECT_FLAG_COPY_INHERIT+EFFECT_FLAG_OWNER_RELATE)
-            e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-            e1:SetValue(function(e,c) return c==e:GetOwner() end)
-            c:RegisterEffect(e1)
-        end
+function s.scop(e,tp,eg,ep,ev,re,r,rp)
+    local mg=Duel.GetMatchingGroup(s.mfilter,tp,LOCATION_MZONE,0,nil)
+    local g=Duel.GetMatchingGroup(Card.IsSynchroSummonable,tp,LOCATION_EXTRA,0,nil,nil,mg)
+    if #g>0 then
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+        local sg=g:Select(tp,1,1,nil)
+        Duel.SynchroSummon(tp,sg:GetFirst(),nil,mg)
     end
 end
 
@@ -114,8 +108,7 @@ end
 function s.poscon(e,tp,eg,ep,ev,re,r,rp)
     local at=Duel.GetAttacker()
     local ec=e:GetHandler()
-    return (ec:IsLocation(LOCATION_MZONE) and at==ec)
-        or (ec:IsLocation(LOCATION_SZONE) and at:GetEquipGroup():IsContains(ec))
+    return (ec:IsLocation(LOCATION_MZONE) and at==ec) or (ec:IsLocation(LOCATION_SZONE) and at:GetEquipGroup():IsContains(ec))
 end
 function s.postg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsCanTurnSet() end
