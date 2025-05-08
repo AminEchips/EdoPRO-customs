@@ -71,7 +71,7 @@ end
 
 -- Effect 2a: Trigger when targeted by a card effect
 function s.cecon(e,tp,eg,ep,ev,re,r,rp)
-    if rp==tp or not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return false end
+    if not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return false end
     local g=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
     return g and g:IsContains(e:GetHandler())
 end
