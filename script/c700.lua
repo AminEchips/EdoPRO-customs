@@ -100,8 +100,7 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
     end
 
     -- Redirect attack
-    if Duel.GetAttacker() and Duel.GetAttackTarget()==c and Duel.GetAttacker():IsControler(1-tp)
-        and sc:IsAttackable() and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
-        Duel.ChangeAttackTarget(sc)
+    if Duel.GetAttacker() and Duel.GetAttackTarget()==c and Duel.GetAttacker():IsControler(1-tp) and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
+    Duel.ChangeAttackTarget(sc)
     end
 end
