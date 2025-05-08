@@ -65,9 +65,12 @@ function s.eqlimit(e,c)
 end
 
 -- Draw effect when a monster is destroyed, excluding equipped monster
+-- Draw 1 card if another monster is destroyed by battle or card effect (excluding the equipped monster)
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
     local ec=e:GetHandler():GetEquipTarget()
-    return ec and eg:IsExists(function(tc) return tc:IsType(TYPE_MONSTER) and tc~=ec end,1,nil)
+    return ec and eg:IsExists(function(tc)
+        return tc:IsType(TYPE_MONSTER) and tc:IsReason(REASON_EFFECT+REASON_BATTLE) and tc~=ec
+    end,1,nil)
 end
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
@@ -76,3 +79,4 @@ end
 function s.drop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Draw(tp,1,REASON_EFFECT)
 end
+
