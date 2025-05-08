@@ -30,7 +30,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Equip to a face-up Warrior monster you control
+-- EQUIP EFFECT (unchanged, works like Roland)
 function s.eqfilter(c)
     return c:IsFaceup() and c:IsRace(RACE_WARRIOR)
 end
@@ -52,8 +52,7 @@ function s.equipop(e,tp,eg,ep,ev,re,r,rp)
         return
     end
     Duel.Equip(tp,c,tc,true)
-
-    -- Equip limit: only to that monster
+    -- Equip Limit
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetCode(EFFECT_EQUIP_LIMIT)
@@ -67,7 +66,7 @@ function s.eqlimit(e,c)
     return c==e:GetLabelObject()
 end
 
--- Draw if another monster is destroyed by battle or effect while this is equipped
+-- DRAW EFFECT (only this part is new)
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
     local ec=e:GetHandler():GetEquipTarget()
     return ec and eg:IsExists(function(tc)
