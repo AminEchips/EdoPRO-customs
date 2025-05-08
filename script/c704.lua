@@ -27,7 +27,7 @@ function s.initial_effect(c)
 end
 
 s.listed_series={0x107a, 0xa7} -- Noble Knight + Artorigus
-s.listed_names={82140600} -- Noble Arms - Chalice Holy Grail
+s.listed_names={715} -- Noble Arms - Chalice Holy Grail
 
 -- Effect 1: You control Noble Knight (not DARK)
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
@@ -66,7 +66,7 @@ end
 -- Effect 2: GY effect - Buff any "Artorigus" monster
 function s.buffcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_GRAVE,0,1,nil,82140600) -- Chalice Holy Grail
+    return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_GRAVE,0,1,nil,715) -- Chalice Holy Grail
         and c:GetTurnID()~=Duel.GetTurnCount()
 end
 function s.artfilter(c)
