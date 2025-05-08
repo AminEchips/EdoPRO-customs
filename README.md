@@ -8,3 +8,4 @@ Includes:
 - Starry Knight
 - Altergeist
 - Blackwing
+- Noble/Infernoble Knight/Noble Arms
