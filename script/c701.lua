@@ -1,7 +1,7 @@
 --Infernoble Knight Fiery Athen
 local s,id=GetID()
 function s.initial_effect(c)
-    -- (Quick Effect) Equip this card to a Warrior monster you control
+    -- Quick Effect: Equip this card to a Warrior
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetType(EFFECT_TYPE_QUICK_O)
@@ -9,13 +9,12 @@ function s.initial_effect(c)
     e1:SetRange(LOCATION_HAND+LOCATION_MZONE)
     e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e1:SetCategory(CATEGORY_EQUIP)
-    e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMINGS_END_PHASE)
     e1:SetCountLimit(1,id)
     e1:SetTarget(s.equiptg)
     e1:SetOperation(s.equipop)
     c:RegisterEffect(e1)
 
-    -- Draw 1 card if another monster is destroyed by battle or effect (excluding equipped monster)
+    -- Draw 1 if another monster is destroyed by battle or card effect
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DRAW)
@@ -30,7 +29,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- EQUIP EFFECT (unchanged, works like Roland)
+-- Equip to Warrior monster you control
 function s.eqfilter(c)
     return c:IsFaceup() and c:IsRace(RACE_WARRIOR)
 end
@@ -52,6 +51,7 @@ function s.equipop(e,tp,eg,ep,ev,re,r,rp)
         return
     end
     Duel.Equip(tp,c,tc,true)
+
     -- Equip Limit
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
@@ -66,7 +66,7 @@ function s.eqlimit(e,c)
     return c==e:GetLabelObject()
 end
 
--- DRAW EFFECT (only this part is new)
+-- Draw effect: another monster is destroyed by battle or effect, while this is equipped
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
     local ec=e:GetHandler():GetEquipTarget()
     return ec and eg:IsExists(function(tc)
