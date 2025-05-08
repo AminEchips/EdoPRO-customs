@@ -5,26 +5,25 @@ function s.initial_effect(c)
     Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x107a),1,1,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_FIRE),1,99)
     c:EnableReviveLimit()
 
-    -- Effect 1: Equip FIRE from GY and change Level to 5
+    -- Effect 1: Equip FIRE from GY to this card and change Level to 5
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_EQUIP+CATEGORY_LVCHANGE)
     e1:SetType(EFFECT_TYPE_IGNITION)
     e1:SetRange(LOCATION_MZONE)
     e1:SetCountLimit(1,id)
-    e1:SetCondition(function(e) return e:GetHandler():GetLevel()==6 end)
     e1:SetTarget(s.eqtg)
     e1:SetOperation(s.eqop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: When this card becomes equipped, Synchro Summon and optionally re-equip
+    -- Effect 2: Quick Synchro Summon using this card on the field
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e2:SetCode(EVENT_EQUIP)
+    e2:SetType(EFFECT_TYPE_QUICK_O)
+    e2:SetCode(EVENT_FREE_CHAIN)
+    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,1})
-    e2:SetCondition(s.eqcon)
     e2:SetTarget(s.syntg)
     e2:SetOperation(s.synop)
     c:RegisterEffect(e2)
@@ -49,25 +48,26 @@ s.listed_series={0x107a}
 function s.eqfilter(c)
     return c:IsAttribute(ATTRIBUTE_FIRE) and c:IsType(TYPE_MONSTER) and not c:IsForbidden()
 end
-function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.eqfilter(chkc) end
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
-        and Duel.IsExistingMatchingCard(s.eqfilter,tp,LOCATION_GRAVE,0,1,nil) end
-    Duel.SetOperationInfo(0,CATEGORY_EQUIP,nil,1,tp,LOCATION_GRAVE)
+        and Duel.IsExistingTarget(s.eqfilter,tp,LOCATION_GRAVE,0,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
+    local g=Duel.SelectTarget(tp,s.eqfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+    Duel.SetOperationInfo(0,CATEGORY_EQUIP,g,1,0,0)
 end
 function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if Duel.GetLocationCount(tp,LOCATION_SZONE)<=0 or not c:IsRelateToEffect(e) then return end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
-    local g=Duel.SelectMatchingCard(tp,s.eqfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-    local ec=g:GetFirst()
-    if ec and Duel.Equip(tp,ec,c,true) then
-        -- Equip limit
+    if Duel.GetLocationCount(tp,LOCATION_SZONE)<=0 then return end
+    local tc=Duel.GetFirstTarget()
+    if tc and tc:IsRelateToEffect(e) and Duel.Equip(tp,tc,c) then
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_EQUIP_LIMIT)
         e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-        e1:SetValue(function(e,c) return c==e:GetOwner():GetEquipTarget() end)
-        ec:RegisterEffect(e1)
+        e1:SetValue(function(e,cc) return cc==e:GetOwner() end)
+        e1:SetOwnerPlayer(tp)
+        tc:RegisterEffect(e1)
         -- Change level to 5
         local e2=Effect.CreateEffect(c)
         e2:SetType(EFFECT_TYPE_SINGLE)
@@ -75,15 +75,10 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
         e2:SetValue(5)
         e2:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
         c:RegisterEffect(e2)
-    else
-        Duel.SendtoGrave(ec,REASON_EFFECT)
     end
 end
 
 -- Effect 2 Helpers
-function s.eqcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsContains(e:GetHandler())
-end
 function s.matfilter(c,sc,mc)
     return c~=mc and c:IsCanBeSynchroMaterial(sc,mc)
 end
@@ -113,18 +108,7 @@ function s.synop(e,tp,eg,ep,ev,re,r,rp)
     local m2=mg:Select(tp,1,1,nil)
     m2:AddCard(c)
     Duel.SetSynchroMaterial(m2)
-    if Duel.SynchroSummon(tp,sc,nil)==0 then return end
-    if c:IsLocation(LOCATION_GRAVE) and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
-        and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-        Duel.Equip(tp,c,sc)
-        local e1=Effect.CreateEffect(c)
-        e1:SetType(EFFECT_TYPE_SINGLE)
-        e1:SetCode(EFFECT_EQUIP_LIMIT)
-        e1:SetProperty(EFFECT_FLAG_COPY_INHERIT+EFFECT_FLAG_OWNER_RELATE)
-        e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-        e1:SetValue(function(e,c) return c==e:GetOwner() end)
-        c:RegisterEffect(e1)
-    end
+    Duel.SynchroSummon(tp,sc,nil)
 end
 
 -- Effect 3 Helpers
