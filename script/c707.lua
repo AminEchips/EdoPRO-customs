@@ -17,15 +17,16 @@ function s.initial_effect(c)
     e1:SetOperation(s.eqop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: When this card becomes equipped to a monster, trigger Synchro Summon
+    -- Effect 2: Quick Synchro while equipped
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
-    e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e2:SetCode(EVENT_EQUIP)
+    e2:SetType(EFFECT_TYPE_QUICK_O)
+    e2:SetCode(EVENT_FREE_CHAIN)
+    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
     e2:SetRange(LOCATION_SZONE)
     e2:SetCountLimit(1,{id,1})
-    e2:SetCondition(s.eqcon)
+    e2:SetCondition(function(e,tp) return Duel.IsMainPhase() end)
     e2:SetTarget(s.syntg)
     e2:SetOperation(s.synop)
     c:RegisterEffect(e2)
@@ -80,10 +81,7 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Triggered Synchro Summon when this card is equipped to a monster
-function s.eqcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(function(tc) return tc:GetEquipGroup():IsContains(e:GetHandler()) end,1,nil)
-end
+-- Effect 2: Quick Synchro Summon while equipped
 function s.syntg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         local mg=Duel.GetMatchingGroup(Card.IsCanBeSynchroMaterial,tp,LOCATION_MZONE,0,nil)
