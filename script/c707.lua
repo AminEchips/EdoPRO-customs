@@ -86,4 +86,43 @@ function s.synop(e,tp,eg,ep,ev,re,r,rp)
 
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SYNCHRO)
     local sg=Duel.GetMatchingGroup(Card.IsType,tp,LOCATION_EXTRA,0,nil,TYPE_SYNCHRO)
-    local g=Duel.SelectMatchingCard(tp,Card
+    local g=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_EXTRA,0,1,1,nil,TYPE_SYNCHRO)
+    local sc=g:GetFirst()
+    if not sc then return end
+
+    Duel.SendtoGrave(c,REASON_EFFECT) -- Send this to GY to use as material
+    if Duel.SynchroSummon(tp,sc,nil)==0 then return end
+
+    if c:IsLocation(LOCATION_GRAVE) and Duel.GetLocationCount(tp,LOCATION_SZONE)>0
+        and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+        Duel.Equip(tp,c,sc)
+        -- Equip limit
+        local e1=Effect.CreateEffect(c)
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_EQUIP_LIMIT)
+        e1:SetProperty(EFFECT_FLAG_COPY_INHERIT+EFFECT_FLAG_OWNER_RELATE)
+        e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+        e1:SetValue(function(e,c) return c==e:GetOwner() end)
+        c:RegisterEffect(e1)
+    end
+end
+
+-- Effect 3: Flip 1 monster if this or equipped monster attacks
+function s.poscon(e,tp,eg,ep,ev,re,r,rp)
+    local at=Duel.GetAttacker()
+    local ec=e:GetHandler()
+    return (ec:IsLocation(LOCATION_MZONE) and at==ec)
+        or (ec:IsLocation(LOCATION_SZONE) and at:GetEquipGroup():IsContains(ec))
+end
+function s.postg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsCanTurnSet() end
+    if chk==0 then return Duel.IsExistingTarget(Card.IsCanTurnSet,tp,0,LOCATION_MZONE,1,nil) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+    Duel.SelectTarget(tp,Card.IsCanTurnSet,tp,0,LOCATION_MZONE,1,1,nil)
+end
+function s.posop(e,tp,eg,ep,ev,re,r,rp)
+    local tc=Duel.GetFirstTarget()
+    if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and tc:IsCanTurnSet() then
+        Duel.ChangePosition(tc,POS_FACEDOWN_DEFENSE)
+    end
+end
