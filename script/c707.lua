@@ -17,12 +17,13 @@ function s.initial_effect(c)
     e1:SetOperation(s.eqop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: When this card becomes equipped, Synchro Summon and optionally re-equip
+    -- Effect 2: When this card becomes equipped to a monster, trigger Synchro Summon
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
+    e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_EQUIP)
-    e2:SetRange(LOCATION_MZONE)
+    e2:SetRange(LOCATION_SZONE)
     e2:SetCountLimit(1,{id,1})
     e2:SetCondition(s.eqcon)
     e2:SetTarget(s.syntg)
@@ -79,13 +80,12 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Regular Synchro Summon when this becomes the equipped monster
+-- Effect 2: Triggered Synchro Summon when this card is equipped to a monster
 function s.eqcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(function(tc) return tc:IsFaceup() and tc:GetEquipGroup():IsContains(e:GetHandler()) end,1,nil)
+    return eg:IsExists(function(tc) return tc:GetEquipGroup():IsContains(e:GetHandler()) end,1,nil)
 end
 function s.syntg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
-        local c=e:GetHandler()
         local mg=Duel.GetMatchingGroup(Card.IsCanBeSynchroMaterial,tp,LOCATION_MZONE,0,nil)
         return Duel.IsExistingMatchingCard(function(c) return c:IsType(TYPE_SYNCHRO) and c:IsRace(RACE_WARRIOR) and c:IsSynchroSummonable(nil,mg) end,tp,LOCATION_EXTRA,0,1,nil)
     end
