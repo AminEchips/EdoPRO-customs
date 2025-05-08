@@ -1,7 +1,7 @@
 --Infernoble Knight Fiery Athen
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Quick Effect: Equip this card to a Warrior
+    -- (Quick Effect) Equip this card to a Warrior monster you control
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetType(EFFECT_TYPE_QUICK_O)
@@ -9,12 +9,13 @@ function s.initial_effect(c)
     e1:SetRange(LOCATION_HAND+LOCATION_MZONE)
     e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e1:SetCategory(CATEGORY_EQUIP)
+    e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMINGS_END_PHASE)
     e1:SetCountLimit(1,id)
     e1:SetTarget(s.equiptg)
     e1:SetOperation(s.equipop)
     c:RegisterEffect(e1)
 
-    -- Draw 1 if another monster is destroyed while this is equipped
+    -- Draw 1 card if another monster is destroyed by battle or effect (excluding equipped monster)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_DRAW)
@@ -22,13 +23,14 @@ function s.initial_effect(c)
     e2:SetCode(EVENT_DESTROYED)
     e2:SetRange(LOCATION_SZONE)
     e2:SetCountLimit(1,{id,1})
+    e2:SetHintTiming(0,TIMINGS_DAMAGE_STEP+TIMINGS_END_PHASE)
     e2:SetCondition(s.drcon)
     e2:SetTarget(s.drtg)
     e2:SetOperation(s.drop)
     c:RegisterEffect(e2)
 end
 
--- Equip to Warrior monster you control
+-- Equip to a face-up Warrior monster you control
 function s.eqfilter(c)
     return c:IsFaceup() and c:IsRace(RACE_WARRIOR)
 end
@@ -51,11 +53,12 @@ function s.equipop(e,tp,eg,ep,ev,re,r,rp)
     end
     Duel.Equip(tp,c,tc,true)
 
-    -- Equip Limit
+    -- Equip limit: only to that monster
     local e1=Effect.CreateEffect(c)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetCode(EFFECT_EQUIP_LIMIT)
-    e1:SetReset(RESET_EVENT|RESETS_STANDARD)
+    e1:SetProperty(EFFECT_FLAG_COPY_INHERIT+EFFECT_FLAG_OWNER_RELATE)
+    e1:SetReset(RESET_EVENT+RESETS_STANDARD)
     e1:SetValue(s.eqlimit)
     e1:SetLabelObject(tc)
     c:RegisterEffect(e1)
@@ -64,12 +67,11 @@ function s.eqlimit(e,c)
     return c==e:GetLabelObject()
 end
 
--- Draw effect when a monster is destroyed, excluding equipped monster
--- Draw 1 card if another monster is destroyed by battle or card effect (excluding the equipped monster)
+-- Draw if another monster is destroyed by battle or effect while this is equipped
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
     local ec=e:GetHandler():GetEquipTarget()
     return ec and eg:IsExists(function(tc)
-        return tc:IsType(TYPE_MONSTER) and tc:IsReason(REASON_EFFECT+REASON_BATTLE) and tc~=ec
+        return tc:IsType(TYPE_MONSTER) and tc:IsReason(REASON_BATTLE+REASON_EFFECT) and tc~=ec
     end,1,nil)
 end
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -79,4 +81,3 @@ end
 function s.drop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Draw(tp,1,REASON_EFFECT)
 end
-
