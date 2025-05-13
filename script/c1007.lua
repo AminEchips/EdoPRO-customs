@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetCondition(s.spcon)
 	c:RegisterEffect(e1)
 
-	-- On Special Summon: Add 1 "Spright" card from GY to hand
+	-- On Special Summon (any way): Add 1 "Spright" card from GY to hand
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_TOHAND)
@@ -69,7 +69,7 @@ function s.thop1(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- If banished: Add Fallen of Albaz or a card that lists it from GY
+-- If banished: Add Fallen of Albaz or a card that lists it
 function s.thfilter2(c)
 	return (c:IsCode(68468459) or (c.ListsCode and c:ListsCode(68468459)))
 		and c:IsAbleToHand() and not c:IsCode(id)
