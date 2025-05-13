@@ -53,7 +53,7 @@ end
 
 -- Effect 2: Trigger on Special Summon
 function s.thfilter1(c)
-	return c:IsSetCard(181) and c:IsAbleToHand() and c:IsType(MONSTER)
+	return c:IsSetCard(0x181) and c:IsAbleToHand() and c:IsType(MONSTER)
 end
 function s.thcon1(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SPECIAL)
