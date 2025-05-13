@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	s.listed_series={0x14f} -- Tri-Brigade
 
-	-- Special Summon from hand or GY
+	-- Special Summon from hand or GY when a Beast/Beast-Warrior/Winged Beast Link is Summoned
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -17,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- Banish if it leaves field after being summoned from GY
+	-- Banish if leaves field after being summoned from GY
 	local e1b=Effect.CreateEffect(c)
 	e1b:SetType(EFFECT_TYPE_SINGLE)
 	e1b:SetCode(EFFECT_LEAVE_FIELD_REDIRECT)
@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	e1b:SetValue(LOCATION_REMOVED)
 	c:RegisterEffect(e1b)
 
-	-- Special Summon Tri-Brigade from GY when this goes to GY
+	-- If sent to GY: Special Summon 1 "Tri-Brigade" from GY (except self)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -39,10 +39,10 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
--- e1: Special Summon if Beast/Beast-Warrior/Winged Beast Link is summoned
+-- e1: Special Summon when appropriate Link is summoned
 function s.cfilter(c,tp)
 	return c:IsFaceup() and c:IsType(TYPE_LINK)
-		and c:IsRace(RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINDBEAST)
+		and (c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINDBEAST))
 		and c:IsControler(tp)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
@@ -62,7 +62,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e2: GY effect to summon a Tri-Brigade from GY
+-- e2: If sent to GY, revive a "Tri-Brigade" from GY (not itself)
 function s.gyfilter(c,e,tp)
 	return c:IsSetCard(0x14f) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 		and not c:IsCode(id)
