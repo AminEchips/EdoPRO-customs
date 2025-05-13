@@ -46,7 +46,7 @@ function s.cfilter(c,tp)
 		and c:IsControler(tp)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(s.cfilter,1,nil,tp)
+	return eg:IsExists(function(c) return s.cfilter(c,tp) end,1,nil)
 		and not (Duel.GetCurrentPhase() == PHASE_DAMAGE and not Duel.IsDamageCalculated())
 end
 
