@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetCondition(s.spcon)
 	c:RegisterEffect(e1)
 
-	-- On Special Summon (any way): Add 1 "Spright" card from GY to hand
+	-- On Special Summon: Add 1 "Spright" card from GY to hand
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_TOHAND)
@@ -22,11 +22,12 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
 	e2:SetCountLimit(1,{id,1})
+	e2:SetCondition(s.thcon1)
 	e2:SetTarget(s.thtg1)
 	e2:SetOperation(s.thop1)
 	c:RegisterEffect(e2)
 
-	-- If banished: Add 1 "Fallen of Albaz" or a card that mentions it from GY to hand
+	-- If banished: Add 1 "Fallen of Albaz" or card that mentions it from GY to hand
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_TOHAND)
@@ -39,7 +40,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Self Special Summon condition (like Spright Red)
+-- Self Special Summon condition
 function s.cfilter(c)
 	return c:IsFaceup() and (c:IsLevel(2) or c:IsRank(2)) or c:IsCode(68468459)
 end
@@ -50,9 +51,12 @@ function s.spcon(e,c)
 		and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,1,nil)
 end
 
--- On Special Summon: Add 1 "Spright" card from GY
+-- Effect 2: Trigger on Special Summon
 function s.thfilter1(c)
 	return c:IsSetCard(0x28d) and c:IsAbleToHand()
+end
+function s.thcon1(e,tp,eg,ep,ev,re,r,rp)
+	return e:GetHandler():IsSummonType(SUMMON_TYPE_SPECIAL)
 end
 function s.thtg1(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter1(chkc) end
@@ -69,7 +73,7 @@ function s.thop1(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- If banished: Add Fallen of Albaz or a card that lists it
+-- Effect 3: Trigger on banish
 function s.thfilter2(c)
 	return (c:IsCode(68468459) or (c.ListsCode and c:ListsCode(68468459)))
 		and c:IsAbleToHand() and not c:IsCode(id)
