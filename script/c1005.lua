@@ -46,8 +46,10 @@ function s.cfilter(c,tp)
 		and c:IsControler(tp)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(s.cfilter,1,nil,tp) and not Duel.IsDamageStep()
+	return eg:IsExists(s.cfilter,1,nil,tp)
+		and not (Duel.GetCurrentPhase() == PHASE_DAMAGE and not Duel.IsDamageCalculated())
 end
+
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then 
 		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
