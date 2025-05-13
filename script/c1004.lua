@@ -4,7 +4,7 @@ function s.initial_effect(c)
 	s.listed_series={0x16d} -- Swordsoul
 	s.listed_names={68468459} -- Fallen of Albaz
 
-	-- Return a monster to hand; Special Summon this and a Token
+	-- Bounce monster, then summon this + Token
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
@@ -30,10 +30,9 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
--- Target a valid monster to bounce
+-- Valid bounce target
 function s.tgfilter(c)
-	return c:IsFaceup() and (c:IsSetCard(0x16d) or c:IsRace(RACE_WYRM) or
-		c:IsCode(68468459) or (c.ListsCode and c:ListsCode(68468459))) and c:IsAbleToHand()
+	return c:IsFaceup() and (c:IsSetCard(0x16d) or c:IsRace(RACE_WYRM) or c:IsCode(68468459) or (c.ListsCode and c:ListsCode(68468459))) and c:IsAbleToHand()
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
@@ -54,16 +53,22 @@ end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
-	if not tc or not tc:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<2 then return end
+	if not tc or not tc:IsRelateToEffect(e) then return end
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<2 then return end
+	if not c:IsRelateToEffect(e) then return end
 
-	if Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 and c:IsRelateToEffect(e) then
-		if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
-		if not Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,4,RACE_WYRM,ATTRIBUTE_WATER,tp) then return end
+	-- Summon this card first
+	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
 
+	-- Now bounce the target
+	if Duel.SendtoHand(tc,nil,REASON_EFFECT)==0 then return end
+
+	-- Then summon token
+	if Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,4,RACE_WYRM,ATTRIBUTE_WATER,tp) then
 		local token=Duel.CreateToken(tp,id+1)
 		Duel.SpecialSummonStep(token,0,tp,tp,false,false,POS_FACEUP)
 
-		-- Cannot Special Summon non-Synchro from Extra Deck
+		-- Restriction effect (only Synchros from Extra Deck)
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_FIELD)
 		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
@@ -74,7 +79,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		token:RegisterEffect(e1,true)
 
-		-- Lizard check (prevents cheating out non-Synchros)
+		-- Lizard check
 		local e2=aux.createContinuousLizardCheck(c,LOCATION_MZONE,function(_,c) return not c:IsOriginalType(TYPE_SYNCHRO) end)
 		e2:SetReset(RESET_EVENT+RESETS_STANDARD)
 		token:RegisterEffect(e2,true)
@@ -83,7 +88,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Gain 1200 LP if used as Synchro Material
+-- LP Gain effect
 function s.reccon(e,tp,eg,ep,ev,re,r,rp)
 	return r==REASON_SYNCHRO and e:GetHandler():IsLocation(LOCATION_GRAVE)
 end
