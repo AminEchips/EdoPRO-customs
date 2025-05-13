@@ -57,7 +57,7 @@ end
 
 -- Banished trigger: Add Fallen of Albaz or card that mentions it
 function s.thfilter(c)
-	return (c:IsCode(68468459) or (c:ListsCode and c:ListsCode(68468459)))
+	return (c:IsCode(68468459) or (c:ListsCode(68468459)))
 		and c:IsAbleToHand() and not c:IsCode(id)
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
