@@ -1,7 +1,7 @@
 --Spright Punk
 local s,id=GetID()
 function s.initial_effect(c)
-	s.listed_series={0x28d} -- Spright
+	s.listed_series={0x181} -- Spright
 	s.listed_names={68468459} -- Fallen of Albaz
 
 	-- Special Summon itself from hand if you control a Level/Rank 2 monster or "Fallen of Albaz" (field or GY)
