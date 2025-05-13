@@ -1,7 +1,7 @@
 --Spright Punk
 local s,id=GetID()
 function s.initial_effect(c)
-	s.listed_series={0x181} -- Spright
+	s.listed_series={0x181} -- Correct Spright archetype
 	s.listed_names={68468459} -- Fallen of Albaz
 
 	-- Special Summon itself from hand if you control a Level/Rank 2 monster or "Fallen of Albaz" (field or GY)
@@ -22,7 +22,6 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
 	e2:SetCountLimit(1,{id,1})
-	e2:SetCondition(s.thcon1)
 	e2:SetTarget(s.thtg1)
 	e2:SetOperation(s.thop1)
 	c:RegisterEffect(e2)
@@ -40,7 +39,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Self Special Summon condition
+-- Effect 1: Special Summon condition (like Spright Red)
 function s.cfilter(c)
 	return c:IsFaceup() and (c:IsLevel(2) or c:IsRank(2)) or c:IsCode(68468459)
 end
@@ -51,12 +50,9 @@ function s.spcon(e,c)
 		and Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,1,nil)
 end
 
--- Effect 2: Trigger on Special Summon
+-- Effect 2: On Special Summon, add 1 "Spright" card from GY
 function s.thfilter1(c)
-	return c:IsSetCard(0x181) and c:IsAbleToHand() and c:IsType(MONSTER)
-end
-function s.thcon1(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():IsSummonType(SUMMON_TYPE_SPECIAL)
+	return c:IsSetCard(0x181) and c:IsAbleToHand()
 end
 function s.thtg1(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter1(chkc) end
@@ -73,7 +69,7 @@ function s.thop1(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 3: Trigger on banish
+-- Effect 3: If banished, add Albaz or card that lists it from GY
 function s.thfilter2(c)
 	return (c:IsCode(68468459) or (c.ListsCode and c:ListsCode(68468459)))
 		and c:IsAbleToHand() and not c:IsCode(id)
