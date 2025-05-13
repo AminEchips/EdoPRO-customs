@@ -4,7 +4,7 @@ function s.initial_effect(c)
 	s.listed_series={0x16d} -- Swordsoul
 	s.listed_names={68468459} -- Fallen of Albaz
 
-	-- Bounce monster, then summon this + Token
+	-- Return a monster to hand; Special Summon this and a Token
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
@@ -30,9 +30,9 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
--- Valid bounce target
+-- Target a valid monster to bounce
 function s.tgfilter(c)
-	return c:IsFaceup() and (c:IsSetCard(0x16d) or c:IsRace(RACE_WYRM) or c:IsCode(68468459) or (c.ListsCode and c:ListsCode(68468459))) and c:IsAbleToHand()
+	return c:IsFaceup() and (c:IsSetCard(0x16d) or c:IsRace(RACE_WYRM) or c:IsCode(68468459) or c:ListsCode(68468459)) and c:IsAbleToHand()
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
@@ -55,40 +55,39 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<2 then return end
-	if not c:IsRelateToEffect(e) then return end
 
-	-- Summon this card first
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
-
-	-- Now bounce the target
+	-- Bounce first
 	if Duel.SendtoHand(tc,nil,REASON_EFFECT)==0 then return end
 
-	-- Then summon token
-	if Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,4,RACE_WYRM,ATTRIBUTE_WATER,tp) then
-		local token=Duel.CreateToken(tp,id+1)
-		Duel.SpecialSummonStep(token,0,tp,tp,false,false,POS_FACEUP)
+	-- Then check again and Special Summon this card
+	if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)~=0 then
+		-- Then create and summon token
+		if Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,4,RACE_WYRM,ATTRIBUTE_WATER,tp) then
+			local token=Duel.CreateToken(tp,id+1)
+			Duel.SpecialSummonStep(token,0,tp,tp,false,false,POS_FACEUP)
 
-		-- Restriction effect (only Synchros from Extra Deck)
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_FIELD)
-		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-		e1:SetRange(LOCATION_MZONE)
-		e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-		e1:SetAbsoluteRange(tp,1,0)
-		e1:SetTarget(function(_,c) return c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_SYNCHRO) end)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		token:RegisterEffect(e1,true)
+			-- Restrict to Synchros only
+			local e1=Effect.CreateEffect(c)
+			e1:SetType(EFFECT_TYPE_FIELD)
+			e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+			e1:SetRange(LOCATION_MZONE)
+			e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
+			e1:SetAbsoluteRange(tp,1,0)
+			e1:SetTarget(function(_,c) return c:IsLocation(LOCATION_EXTRA) and not c:IsType(TYPE_SYNCHRO) end)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+			token:RegisterEffect(e1,true)
 
-		-- Lizard check
-		local e2=aux.createContinuousLizardCheck(c,LOCATION_MZONE,function(_,c) return not c:IsOriginalType(TYPE_SYNCHRO) end)
-		e2:SetReset(RESET_EVENT+RESETS_STANDARD)
-		token:RegisterEffect(e2,true)
+			-- Lizard check
+			local e2=aux.createContinuousLizardCheck(c,LOCATION_MZONE,function(_,c) return not c:IsOriginalType(TYPE_SYNCHRO) end)
+			e2:SetReset(RESET_EVENT+RESETS_STANDARD)
+			token:RegisterEffect(e2,true)
 
-		Duel.SpecialSummonComplete()
+			Duel.SpecialSummonComplete()
+		end
 	end
 end
 
--- LP Gain effect
+-- LP gain on Synchro use
 function s.reccon(e,tp,eg,ep,ev,re,r,rp)
 	return r==REASON_SYNCHRO and e:GetHandler():IsLocation(LOCATION_GRAVE)
 end
