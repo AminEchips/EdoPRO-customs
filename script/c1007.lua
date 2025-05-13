@@ -31,7 +31,7 @@ end
 
 -- First Effect: Condition
 function s.cfilter(c)
-	return c:IsFaceup() and (c:IsLevel(2) or c:IsRank(2)) or c:IsCode(68468459)
+	return c:IsFaceup() and (c:IsLevel(2) or c:IsRank(2)) or c:IsCode(68468459))
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE+LOCATION_GRAVE,0,1,nil)
