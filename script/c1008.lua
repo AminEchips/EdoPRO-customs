@@ -43,7 +43,7 @@ end
 
 -- e1: Special Summon condition
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FilterFaceupFunction(Card.IsCode,68468459),tp,LOCATION_MZONE,0,1,nil)
+	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,68468459),tp,LOCATION_MZONE,0,1,nil)
 		or Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_GRAVE,0,1,nil,68468459)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
