@@ -16,7 +16,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- Send 1 monster; add Level 7 "Therion"
+	-- Send 1 monster (including this card) to GY; add Level 7 "Therion"
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SEARCH+CATEGORY_TOHAND)
@@ -66,8 +66,8 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e2: Send monster to GY; add Level 7 "Therion"
-function s.thfilter(c)
+-- e2: Send monster (including itself) to GY as cost; search Level 7 Therion
+function s.thcostfilter(c)
 	return c:IsMonster() and c:IsAbleToGraveAsCost()
 end
 function s.thtgfilter(c)
@@ -75,18 +75,21 @@ function s.thtgfilter(c)
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then 
-		return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil)
-			and Duel.IsExistingMatchingCard(s.thtgfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil) 
+		return Duel.IsExistingMatchingCard(s.thcostfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil)
+			and Duel.IsExistingMatchingCard(s.thtgfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK+LOCATION_GRAVE)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.DiscardHand(tp,s.thfilter,1,1,REASON_COST,nil)==0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+	local g=Duel.SelectMatchingCard(tp,s.thcostfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,1,nil)
+	if #g==0 then return end
+	if Duel.SendtoGrave(g,REASON_COST)==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.thtgfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoHand(g,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,g)
+	local tg=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.thtgfilter),tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
+	if #tg>0 then
+		Duel.SendtoHand(tg,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,tg)
 	end
 end
 
