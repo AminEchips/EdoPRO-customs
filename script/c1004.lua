@@ -1,21 +1,22 @@
 --Swordsoul Zhan Lu
 local s,id=GetID()
 function s.initial_effect(c)
-	s.listed_series={0x27d} -- Swordsoul
+	s.listed_series={0x16d} -- Correct Swordsoul archetype code
 	s.listed_names={68468459} -- Fallen of Albaz
 
-	-- Special Summon this or Token by returning a target
+	-- Return a monster to hand, then Special Summon this card or a Token
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
+	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_HAND+LOCATION_GRAVE)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_DUEL)
 	e1:SetTarget(s.sptg)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- Gain 1200 LP if sent to GY as Synchro Material
+	-- Gain 1200 LP if used as Synchro Material
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_RECOVER)
@@ -29,37 +30,40 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
--- Effect 1: Return a valid card to Special Summon this or a Token
+-- Target a monster you control (Swordsoul, Wyrm, Albaz, or card that lists Albaz)
 function s.tgfilter(c)
-	return c:IsFaceup() and (c:IsSetCard(0x27d) or c:IsRace(RACE_WYRM)
+	return c:IsFaceup() and (c:IsSetCard(0x16d) or c:IsRace(RACE_WYRM)
 		or c:IsCode(68468459) or (c.ListsCode and c:ListsCode(68468459))) and c:IsAbleToHand()
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local c=e:GetHandler()
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.tgfilter(chkc) end
 	if chk==0 then
-		return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_MZONE,0,1,nil)
+		return Duel.IsExistingTarget(s.tgfilter,tp,LOCATION_MZONE,0,1,nil)
 			and (c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 				or Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,4,RACE_WYRM,ATTRIBUTE_WATER,tp))
 	end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
 	local g=Duel.SelectTarget(tp,s.tgfilter,tp,LOCATION_MZONE,0,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_MZONE)
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND+LOCATION_GRAVE)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
 	if Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then
-		local c=e:GetHandler()
 		local opt=0
-		if c:IsRelateToEffect(e) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-			and Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,4,RACE_WYRM,ATTRIBUTE_WATER,tp) then
-			opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- Choose: 0 = this card, 1 = token
-		elseif c:IsRelateToEffect(e) and c:IsCanBeSpecialSummoned(e,0,tp,false,false) then
+		local can_token=Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,4,RACE_WYRM,ATTRIBUTE_WATER,tp)
+		local can_self=c:IsRelateToEffect(e) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+
+		if can_self and can_token then
+			opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 0 = this card, 1 = token
+		elseif can_self then
 			opt=0
-		elseif Duel.IsPlayerCanSpecialSummonMonster(tp,id+1,0,TYPES_TOKEN,0,0,4,RACE_WYRM,ATTRIBUTE_WATER,tp) then
+		elseif can_token then
 			opt=1
-		end
+		else return end
 
 		if opt==0 then
 			Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
@@ -67,8 +71,8 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 			local token=Duel.CreateToken(tp,id+1)
 			Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
 
-			-- Restriction: No non-Synchro monsters from Extra Deck
-			local e1=Effect.CreateEffect(e:GetHandler())
+			-- Restrict to Synchro Summons from Extra Deck
+			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_FIELD)
 			e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
 			e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
@@ -80,7 +84,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 2: Gain 1200 LP if used as Synchro Material
+-- LP gain effect
 function s.reccon(e,tp,eg,ep,ev,re,r,rp)
 	return r==REASON_SYNCHRO and e:GetHandler():IsLocation(LOCATION_GRAVE)
 end
