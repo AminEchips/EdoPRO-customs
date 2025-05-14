@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	Fusion.AddProcMix(c,true,true,44146295,aux.FilterBoolFunction(Card.IsSetCard,0x166)) -- Mirrorjade + 1 Despia monster
+	Fusion.AddProcMix(c,true,true,44146295,aux.FilterBoolFunction(Card.IsSetCard,0x119)) -- Mirrorjade + 1 Despia monster
 
 	-- Cannot be destroyed or banished if you control another Fusion Monster that mentions Fallen of Albaz
 	local e1=Effect.CreateEffect(c)
