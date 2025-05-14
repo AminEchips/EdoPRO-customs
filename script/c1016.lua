@@ -2,7 +2,8 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	Fusion.AddProcMix(c,true,true,68468459,s.matfilter) -- Fallen of Albaz + 4 Level 6 Bystial monsters
+	-- Fusion Summon procedure: Fallen of Albaz + 2 Level 6 Bystial monsters
+	Fusion.AddProcMixN(c,true,true,68468459,2,s.matfilter)
 
 	-- (Quick Effect): Tribute 1 Level 8 Fusion Monster; destroy opponent's monsters
 	local e1=Effect.CreateEffect(c)
@@ -18,7 +19,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.desop)
 	c:RegisterEffect(e1)
 
-	-- If a monster is banished face-up: SS a banished Bystial, then Synchro Summon
+	-- If a monster is banished face-up: Special Summon 1 banished "Bystial", then Synchro Summon
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -32,7 +33,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.ssop)
 	c:RegisterEffect(e2)
 
-	-- If this card leaves the field by opponent: shuffle all banished LIGHT and DARK
+	-- If this Fusion Summoned card leaves the field by opponent: shuffle all banished LIGHT and DARK monsters into the Deck
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
 	e3:SetCode(EVENT_LEAVE_FIELD)
@@ -40,9 +41,10 @@ function s.initial_effect(c)
 	e3:SetOperation(s.retop)
 	c:RegisterEffect(e3)
 end
-s.listed_series={0x185, 0x1f} -- Bystial and LIGHT/DARK
 s.listed_names={68468459} -- Fallen of Albaz
+s.listed_series={0x185} -- Bystial
 
+-- Material filter for Fusion
 function s.matfilter(c,scard,sumtype,tp)
 	return c:IsLevel(6) and c:IsSetCard(0x185,scard,sumtype,tp)
 end
@@ -72,7 +74,7 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Trigger on banish
+-- Triggered SS and Synchro
 function s.sscon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(Card.IsFaceup,1,nil)
 end
@@ -80,13 +82,13 @@ function s.ssfilter(c,e,tp)
 	return c:IsSetCard(0x185) and c:IsCanBeSpecialSummoned(e,0,tp,false,false) and c:IsFaceup()
 end
 function s.sstg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.ssfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and Duel.IsExistingMatchingCard(s.ssfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp)
 		and Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_EXTRA,0,1,nil,TYPE_SYNCHRO) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_REMOVED)
 end
 function s.ssop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local tc=Duel.SelectMatchingCard(tp,s.ssfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp):GetFirst()
 	if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)>0 then
 		Duel.BreakEffect()
@@ -101,14 +103,14 @@ function s.ssop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Shuffle banished LIGHT/DARK monsters
+-- Shuffle all banished LIGHT and DARK monsters
 function s.retcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return rp==1-tp and c:IsPreviousPosition(POS_FACEUP) and c:IsPreviousControler(tp)
 end
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(function(c)
-		return c:IsFaceup() and c:IsRace(RACE_MONSTER) and (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsAttribute(ATTRIBUTE_DARK))
+		return c:IsFaceup() and (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsAttribute(ATTRIBUTE_DARK)) and c:IsMonster()
 	end,tp,LOCATION_REMOVED,LOCATION_REMOVED,nil)
 	if #g>0 then
 		Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
