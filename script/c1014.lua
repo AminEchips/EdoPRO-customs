@@ -20,6 +20,7 @@ function s.initial_effect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_DESTROY)
 	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1,id)
 	e2:SetTarget(s.destg)
@@ -61,7 +62,7 @@ function s.actcon(e)
 	return Duel.GetAttacker()==c
 end
 
--- Effect 2: destroy 1 S/T on each field
+-- Effect 2: destroy 1 S/T on each field (targeting version)
 function s.desfilter(c)
 	return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsDestructable()
 end
