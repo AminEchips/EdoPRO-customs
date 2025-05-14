@@ -2,8 +2,16 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	-- Fusion Summon procedure: Fallen of Albaz + 2 Level 6 Bystial monsters
-	Fusion.AddProcMixN(c,true,true,68468459,2,s.matfilter)
+	-- Fusion Summon: "Fallen of Albaz" + 2 Level 6 "Bystial" monsters
+	Fusion.AddProcMix(c,true,true,
+		68468459, -- Fallen of Albaz
+		function(c,scard,sumtype,tp)
+			return c:IsSetCard(0x185,scard,sumtype,tp) and c:IsLevel(6)
+		end,
+		function(c,scard,sumtype,tp)
+			return c:IsSetCard(0x185,scard,sumtype,tp) and c:IsLevel(6)
+		end
+	)
 
 	-- (Quick Effect): Tribute 1 Level 8 Fusion Monster; destroy opponent's monsters
 	local e1=Effect.CreateEffect(c)
@@ -41,13 +49,9 @@ function s.initial_effect(c)
 	e3:SetOperation(s.retop)
 	c:RegisterEffect(e3)
 end
-s.listed_names={68468459} -- Fallen of Albaz
-s.listed_series={0x185} -- Bystial
 
--- Material filter for Fusion
-function s.matfilter(c,scard,sumtype,tp)
-	return c:IsLevel(6) and c:IsSetCard(0x185,scard,sumtype,tp)
-end
+s.listed_names={68468459}
+s.listed_series={0x185} -- Bystial
 
 -- Destroy effect
 function s.cfilter(c)
