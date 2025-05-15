@@ -5,7 +5,7 @@ function s.initial_effect(c)
 	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
 
-	--If Synchro Summoned: Target 1 Dogmatika S/T or one that mentions "Fallen of Albaz" in GY, add to hand
+	--Effect on Synchro Summon: Add 1 Dogmatika Spell/Trap or mentions Fallen of Albaz
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND)
@@ -17,41 +17,50 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	--Send 1 monster from Extra Deck to GY when battling
+	--Battle trigger: Send 1 monster from Extra Deck to GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOGRAVE)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
 	e2:SetRange(LOCATION_MZONE)
+	e2:SetCountLimit(1,id)
 	e2:SetCondition(s.gycon)
 	e2:SetTarget(s.gytg)
 	e2:SetOperation(s.gyop)
 	c:RegisterEffect(e2)
 
-	--During End Phase, if sent to GY: Add 1 LIGHT Ritual Monster and 1 Ritual Spell from Deck to hand
+	--Track if sent to GY from field this turn
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_PHASE+PHASE_END)
-	e3:SetRange(LOCATION_GRAVE)
-	e3:SetCountLimit(1,id)
-	e3:SetCondition(function(e,tp) return e:GetHandler():IsReason(REASON_EFFECT+REASON_BATTLE) and e:GetHandler():IsPreviousLocation(LOCATION_ONFIELD) end)
-	e3:SetTarget(s.rittg)
-	e3:SetOperation(s.ritop)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_TO_GRAVE)
+	e3:SetCondition(function(e,tp,eg,ep,ev,re,r,rp) return e:GetHandler():IsPreviousLocation(LOCATION_ONFIELD) end)
+	e3:SetOperation(function(e,tp,eg,ep,ev,re,r,rp) 
+		e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
+	end)
 	c:RegisterEffect(e3)
-end
-s.listed_series={0x146} -- Dogmatika
-s.listed_names={68468459} -- Fallen of Albaz
 
--- e1: Spell/Trap only, Dogmatika or mentions Fallen of Albaz
+	--End Phase: Add 1 LIGHT Ritual Monster and 1 Ritual Spell
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,2))
+	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
+	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e4:SetCode(EVENT_PHASE+PHASE_END)
+	e4:SetRange(LOCATION_GRAVE)
+	e4:SetCountLimit(1,{id,1})
+	e4:SetCondition(function(e,tp) return e:GetHandler():GetFlagEffect(id)>0 end)
+	e4:SetTarget(s.eptg)
+	e4:SetOperation(s.epop)
+	c:RegisterEffect(e4)
+end
+
+-- Dogmatika or mentions Albaz
 function s.thfilter(c)
 	return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToHand()
 		and (c:IsSetCard(0x146) or c:ListsCode(68468459))
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.thfilter(chkc) end
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.thfilter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
@@ -65,47 +74,46 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e2: Send monster from Extra Deck to GY during battle
+-- Battle condition: you control the battling monster
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	local d=Duel.GetAttackTarget()
+	if not d then return false end
 	return (a and a:IsControler(tp) and a:IsRelateToBattle()) or (d and d:IsControler(tp) and d:IsRelateToBattle())
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsAbleToGrave,tp,LOCATION_EXTRA,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_EXTRA)
+	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsMonster,tp,LOCATION_EXTRA,0,1,nil) end
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	local g=Duel.SelectMatchingCard(tp,Card.IsAbleToGrave,tp,LOCATION_EXTRA,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,Card.IsMonster,tp,LOCATION_EXTRA,0,1,1,nil)
 	if #g>0 then
 		Duel.SendtoGrave(g,REASON_EFFECT)
 	end
 end
 
--- e3: Add 1 LIGHT Ritual Monster and 1 Ritual Spell
-function s.ritfilter1(c)
-	return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsType(TYPE_RITUAL) and c:IsAbleToHand()
+-- End Phase: Add 1 LIGHT Ritual Monster and 1 Ritual Spell
+function s.ritfilter(c)
+	return c:IsRitualSpell() and c:IsAbleToHand()
 end
-function s.ritfilter2(c)
-	return c:IsType(TYPE_RITUAL+TYPE_SPELL) and c:IsAbleToHand()
+function s.monfilter(c)
+	return c:IsType(TYPE_RITUAL) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsAbleToHand()
 end
-function s.rittg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		return Duel.IsExistingMatchingCard(s.ritfilter1,tp,LOCATION_DECK,0,1,nil)
-			and Duel.IsExistingMatchingCard(s.ritfilter2,tp,LOCATION_DECK,0,1,nil)
+function s.eptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then 
+		return Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_DECK,0,1,nil)
+			and Duel.IsExistingMatchingCard(s.monfilter,tp,LOCATION_DECK,0,1,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,2,tp,LOCATION_DECK)
 end
-function s.ritop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g1=Duel.SelectMatchingCard(tp,s.ritfilter1,tp,LOCATION_DECK,0,1,1,nil)
-	if #g1==0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g2=Duel.SelectMatchingCard(tp,s.ritfilter2,tp,LOCATION_DECK,0,1,1,nil)
-	if #g2==0 then return end
-	g1:Merge(g2)
-	Duel.SendtoHand(g1,nil,REASON_EFFECT)
-	Duel.ConfirmCards(1-tp,g1)
+function s.epop(e,tp,eg,ep,ev,re,r,rp)
+	local g1=Duel.SelectMatchingCard(tp,s.monfilter,tp,LOCATION_DECK,0,1,1,nil)
+	local g2=Duel.SelectMatchingCard(tp,s.ritfilter,tp,LOCATION_DECK,0,1,1,nil)
+	local g=Group.CreateGroup()
+	g:Merge(g1)
+	g:Merge(g2)
+	if #g>0 then
+		Duel.SendtoHand(g,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,g)
+	end
 end
