@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    --Xyz summon
+    --Xyz Summon procedure
     Xyz.AddProcedure(c,s.mfilter,4,2)
     
     --Search Gold Golgonda or card that mentions it
@@ -18,13 +18,13 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    --Banish Xyz, become 3000 ATK, destroy 1 card
+    --Quick Effect: Banish another Xyz you control, gain 3000 ATK, destroy 1 face-up card
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_REMOVE+CATEGORY_DESTROY)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_FREE_CHAIN)
-    e2:SetHintTiming(TIMINGS_CHECK_MONSTER_E+TIMING_BATTLE_PHASE)
+    e2:SetHintTiming(TIMING_MAIN_END+TIMINGS_CHECK_MONSTER_E+TIMING_BATTLE_PHASE)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,1})
     e2:SetCondition(s.atkcon)
@@ -32,16 +32,17 @@ function s.initial_effect(c)
     e2:SetOperation(s.atkop)
     c:RegisterEffect(e2)
 end
-s.listed_names={68468459,11110587} -- Fallen of Albaz, Gold Golgonda
-s.listed_series={SET_SPRINGANS}
+s.listed_names={68468459,60884672} -- Fallen of Albaz, Great Sand Sea - Gold Golgonda
+s.listed_series={0x257} -- Springans
 
+-- Xyz filter
 function s.mfilter(c,lc,sumtype,tp)
-    return c:IsRace(RACE_PYRO,lc,sumtype,tp) and c:IsAttribute(ATTRIBUTE_FIRE,lc,sumtype,tp) or c:IsCode(68468459)
+    return (c:IsAttribute(ATTRIBUTE_FIRE) and c:IsLevel(4)) and (c:IsSetCard(0x257) or c:IsCode(68468459))
 end
 
---Search effect
+-- Search Gold Golgonda or card that mentions it
 function s.thfilter(c)
-    return c:IsAbleToHand() and (c:IsCode(11110587) or c:ListsCode(11110587))
+    return c:IsAbleToHand() and (c:IsCode(60884672) or c:ListsCode(60884672))
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
@@ -56,7 +57,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
---Quick effect
+-- Quick Effect: Boost ATK and destroy
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.IsMainPhase() or Duel.IsBattlePhase()
 end
@@ -66,7 +67,7 @@ end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.IsExistingMatchingCard(s.xyzbanfilter,tp,LOCATION_MZONE,0,1,e:GetHandler())
-            and Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
+            and Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
     end
     Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_MZONE)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,0,LOCATION_ONFIELD)
@@ -84,7 +85,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
             e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
             c:RegisterEffect(e1)
             Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-            local dg=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
+            local dg=Duel.SelectMatchingCard(tp,Card.IsFaceup,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
             if #dg>0 then
                 Duel.HintSelection(dg)
                 Duel.Destroy(dg,REASON_EFFECT)
