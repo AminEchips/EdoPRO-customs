@@ -5,7 +5,7 @@ function s.initial_effect(c)
 	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
 
-	--Effect on Synchro Summon: Add 1 Dogmatika Spell/Trap or mentions Fallen of Albaz
+	--Effect on Synchro Summon: Add 1 Dogmatika S/T or mentions Fallen of Albaz
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND)
@@ -30,12 +30,11 @@ function s.initial_effect(c)
 	e2:SetOperation(s.gyop)
 	c:RegisterEffect(e2)
 
-	--Track if sent to GY from field this turn
+	--Track if this card was sent to GY this turn
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_TO_GRAVE)
-	e3:SetCondition(function(e,tp,eg,ep,ev,re,r,rp) return e:GetHandler():IsPreviousLocation(LOCATION_ONFIELD) end)
-	e3:SetOperation(function(e,tp,eg,ep,ev,re,r,rp) 
+	e3:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
 		e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
 	end)
 	c:RegisterEffect(e3)
@@ -54,10 +53,12 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
--- Dogmatika or mentions Albaz
+s.listed_series={0x146} -- Dogmatika
+s.listed_names={68468459} -- Fallen of Albaz
+
+-- e1: Search Dogmatika Spell/Trap or mentions Albaz
 function s.thfilter(c)
-	return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToHand()
-		and (c:IsSetCard(0x146) or c:ListsCode(68468459))
+	return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToHand() and (c:IsSetCard(0x146) or c:ListsCode(68468459))
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.thfilter(chkc) end
@@ -74,12 +75,12 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Battle condition: you control the battling monster
+-- e2: Battle trigger condition
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	local d=Duel.GetAttackTarget()
 	if not d then return false end
-	return (a and a:IsControler(tp) and a:IsRelateToBattle()) or (d and d:IsControler(tp) and d:IsRelateToBattle())
+	return (a:IsControler(tp) and a:IsRelateToBattle()) or (d:IsControler(tp) and d:IsRelateToBattle())
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsMonster,tp,LOCATION_EXTRA,0,1,nil) end
@@ -92,7 +93,7 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- End Phase: Add 1 LIGHT Ritual Monster and 1 Ritual Spell
+-- e4: End Phase effect to add Rituals
 function s.ritfilter(c)
 	return c:IsRitualSpell() and c:IsAbleToHand()
 end
@@ -100,9 +101,9 @@ function s.monfilter(c)
 	return c:IsType(TYPE_RITUAL) and c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsAbleToHand()
 end
 function s.eptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then 
-		return Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_DECK,0,1,nil)
-			and Duel.IsExistingMatchingCard(s.monfilter,tp,LOCATION_DECK,0,1,nil)
+	if chk==0 then
+		return Duel.IsExistingMatchingCard(s.monfilter,tp,LOCATION_DECK,0,1,nil)
+			and Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_DECK,0,1,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,2,tp,LOCATION_DECK)
 end
