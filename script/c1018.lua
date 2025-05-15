@@ -47,7 +47,7 @@ end
 
 function s.indcon(e)
 	return Duel.IsExistingMatchingCard(function(c)
-		return c:IsType(TYPE_FUSION) and c:ListsCode(68468459) and c~=e:GetHandler()
+		return (c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO) or c:IsType(TYPE_XYZ) or c:ISTYPE(TYPE_LINK)) and c:ListsCode(68468459) and c~=e:GetHandler()
 	end,e:GetHandlerPlayer(),LOCATION_MZONE,0,1,nil)
 end
 function s.indval(e,re,tp)
