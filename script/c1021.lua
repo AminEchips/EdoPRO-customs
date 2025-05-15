@@ -52,8 +52,8 @@ s.listed_names={68468459} -- Fallen of Albaz
 
 function s.atkval(e,c)
 	local g=Duel.GetMatchingGroup(function(tc)
-		return tc:IsFaceup() and tc:IsControler(1-c:GetControler()) and tc:GetOwner()~=c:GetControler()
-	end,c:GetControler(),LOCATION_MZONE,LOCATION_MZONE,nil)
+		return tc:IsFaceup() and tc:GetOwner()~=c:GetControler() and tc:IsControler(c:GetControler())
+	end,c:GetControler(),LOCATION_MZONE,0,nil)
 	return g:GetCount()*500
 end
 
@@ -93,7 +93,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.spfilter(c,e,tp)
-	return (c:IsCode(68468459) or (c:IsType(TYPE_FUSION) and c:ListsCode(68468459))) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return (c:IsCode(68468459) or (c:IsType(TYPE_FUSION) and c:ListsCode(68468459))) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_ATTACK)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
@@ -104,6 +104,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_GRAVE,0,1,1,nil,e,tp)
 	if #g>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP_ATTACK)
 	end
 end
