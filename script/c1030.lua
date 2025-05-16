@@ -4,7 +4,7 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,72272462,s.matfilter)
 
-	-- Monsters you control cannot be destroyed by battle, except by Level 8+ Fusion Monsters
+	-- Battle Protection
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	e1:SetValue(s.indval)
 	c:RegisterEffect(e1)
 
-	-- Quick Effect during Main Phase: Target 1 other L8+ Fusion; banish opponent monsters with less ATK
+	-- Main Phase: Banish opp monsters with less ATK than a targeted L8+ Fusion
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_REMOVE)
@@ -28,14 +28,14 @@ function s.initial_effect(c)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
 
-	-- Quick Effect during Battle Phase: One monster loses ATK equal to total ATK on field
+	-- Battle Phase: Reduce 1 monster's ATK by total ATK on field (non-targeting)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_ATKCHANGE)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_BATTLE_START+TIMING_BATTLE_END)
+	e3:SetHintTiming(TIMING_BATTLE_START+TIMING_BATTLE_END)
 	e3:SetCountLimit(1,{id,1})
 	e3:SetCondition(s.battlephasecon)
 	e3:SetTarget(s.atktg)
@@ -50,12 +50,12 @@ function s.matfilter(c,scard,sumtype,tp)
 	return c:IsType(TYPE_FUSION) and (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsAttribute(ATTRIBUTE_DARK))
 end
 
--- e1: Battle protection
+-- e1: Battle protection condition
 function s.indval(e,c)
 	return not (c:IsType(TYPE_FUSION) and c:IsLevelAbove(8))
 end
 
--- Effect 2: Quick banish (Main Phase only)
+-- e2: Quick Effect during Main Phase
 function s.mainphasecon(e,tp,eg,ep,ev,re,r,rp)
 	local ph=Duel.GetCurrentPhase()
 	return ph==PHASE_MAIN1 or ph==PHASE_MAIN2
@@ -80,12 +80,11 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 3: Quick ATK drop (Battle Phase only)
+-- e3: Quick Effect during Battle Phase, non-targeting ATK drop
 function s.battlephasecon(e,tp,eg,ep,ev,re,r,rp)
-	local phase=Duel.GetCurrentPhase()
-	return phase>=PHASE_BATTLE_START and phase<=PHASE_BATTLE
+	local ph=Duel.GetCurrentPhase()
+	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
 end
-
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
@@ -93,16 +92,13 @@ function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,nil,1,0,0)
 end
-
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
 	local totatk=g:GetSum(Card.GetAttack)
-	if totatk==0 then return end
-
-	local candidates=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
-	if #candidates==0 then return end
+	if totatk==0 or #g==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local tc=candidates:Select(tp,1,1,nil):GetFirst()
+	local sg=g:Select(tp,1,1,nil)
+	local tc=sg:GetFirst()
 	if tc and tc:IsFaceup() then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
@@ -112,4 +108,3 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 		tc:RegisterEffect(e1)
 	end
 end
-
