@@ -28,7 +28,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
 
-	-- Quick Effect: Set 1 face-up monster's ATK to 0 (non-targeting)
+	-- Quick Effect (non-targeting): Set 1 face-up monster's ATK to 0
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_ATKCHANGE)
@@ -37,14 +37,14 @@ function s.initial_effect(c)
 	e3:SetRange(LOCATION_MZONE)
 	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END+TIMING_BATTLE_START+TIMING_END_PHASE)
 	e3:SetCountLimit(1,{id,1})
-	e3:SetTarget(s.setzerotg)
-	e3:SetOperation(s.setzeroop)
+	e3:SetTarget(s.zerotg)
+	e3:SetOperation(s.zeroop)
 	c:RegisterEffect(e3)
 end
 
-s.listed_names={72272462} -- Despian Quaeritis
+s.listed_names={72272462}
 
--- Fusion Material: LIGHT or DARK Fusion Monster
+-- Fusion Material
 function s.matfilter(c,scard,sumtype,tp)
 	return c:IsType(TYPE_FUSION) and (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsAttribute(ATTRIBUTE_DARK))
 end
@@ -54,7 +54,7 @@ function s.indval(e,c)
 	return not (c:IsType(TYPE_FUSION) and c:IsLevelAbove(8))
 end
 
--- e2: Main Phase Quick Effect (banish opp monsters)
+-- e2: Main Phase ATK-based banish
 function s.mainphasecon(e,tp,eg,ep,ev,re,r,rp)
 	local ph=Duel.GetCurrentPhase()
 	return ph==PHASE_MAIN1 or ph==PHASE_MAIN2
@@ -79,19 +79,20 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e3: Quick Effect - Set ATK to 0 (non-targeting)
-function s.setzerotg(e,tp,eg,ep,ev,re,r,rp,chk)
+-- e3: Quick, non-targeting, set ATK to 0
+function s.zerotg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,1,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,nil,1,0,0)
 end
-function s.setzeroop(e,tp,eg,ep,ev,re,r,rp)
+function s.zeroop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
 	if #g==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local tc=g:Select(tp,1,1,nil):GetFirst()
-	if tc then
+	local sg=g:Select(tp,1,1,nil)
+	local tc=sg:GetFirst()
+	if tc and tc:IsFaceup() then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_SET_ATTACK_FINAL)
