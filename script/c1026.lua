@@ -8,7 +8,7 @@ function s.initial_effect(c)
 	-- Effect 1: When a monster is Special Summoned to a zone this card points to
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_REMOVE+CATEGORY_TOHAND)
+	e1:SetCategory(CATEGORY_TOHAND)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e1:SetRange(LOCATION_MZONE)
@@ -32,10 +32,10 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
--- List "Tri-Brigade"
+-- Tri-Brigade archetype
 s.listed_series={0x14f}
 
--- Effect 1
+-- Effect 1: Trigger condition (linked monster summon)
 function s.cfilter(c,tp,zone)
 	return c:IsControler(tp) and c:GetPreviousControler()==tp and c:IsLocation(LOCATION_MZONE) and c:IsFaceup() and zone&(1<<c:GetSequence())~=0
 end
@@ -43,47 +43,39 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local zone=e:GetHandler():GetLinkedZone(tp)
 	return eg:IsExists(s.cfilter,1,nil,tp,zone)
 end
+
+-- Effect 1: Add 1 "Tri-Brigade" Spell/Trap from GY
 function s.thfilter(c)
 	return c:IsSetCard(0x14f) and c:IsSpellTrap() and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		return eg:IsExists(function(c) return c:IsAbleToRemove() end,1,nil)
-			and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE,0,1,nil)
-	end
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,eg,1,0,0)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	local g=eg:Filter(Card.IsAbleToRemove,nil)
-	if #g==0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local rg=g:Select(tp,1,1,nil)
-	if #rg>0 and Duel.Remove(rg,POS_FACEUP,REASON_EFFECT)>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-		local tg=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-		if #tg>0 then
-			Duel.SendtoHand(tg,nil,REASON_EFFECT)
-			Duel.ConfirmCards(1-tp,tg)
-		end
-	end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+	if #g>0 then
+		Duel.SendtoHand(g,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,g)
 
-	-- Apply lock: cannot Special Summon from Extra Deck except Tri-Brigade Links and Fusion Monsters
-	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e1:SetTargetRange(1,0)
-	e1:SetTarget(s.splimit)
-	e1:SetReset(RESET_PHASE+PHASE_END)
-	Duel.RegisterEffect(e1,tp)
+		-- Lock: Cannot Special Summon from Extra Deck this turn except Tri-Brigade Links and Fusion Monsters
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_FIELD)
+		e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
+		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+		e1:SetTargetRange(1,0)
+		e1:SetTarget(s.splimit)
+		e1:SetReset(RESET_PHASE+PHASE_END)
+		Duel.RegisterEffect(e1,tp)
+	end
 end
 function s.splimit(e,c)
 	return c:IsLocation(LOCATION_EXTRA)
 		and not (c:IsType(TYPE_FUSION) or (c:IsSetCard(0x14f) and c:IsType(TYPE_LINK)))
 end
 
--- Effect 2: GY revive
+-- Effect 2: GY Special Summon
 function s.spfilter(c,e,tp)
 	return (c:IsRace(RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST))
 		and (c:IsType(TYPE_FUSION) or (c:IsType(TYPE_LINK) and c:GetLink()==4))
