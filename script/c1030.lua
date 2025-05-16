@@ -4,7 +4,7 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,72272462,s.matfilter)
 
-	-- Monsters you control cannot be destroyed by battle, except by Level 8 or higher Fusion Monsters
+	-- Monsters you control cannot be destroyed by battle, except by Level 8+ Fusion Monsters
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
@@ -13,28 +13,31 @@ function s.initial_effect(c)
 	e1:SetValue(s.indval)
 	c:RegisterEffect(e1)
 
-	-- Quick Effect: During Main Phase, target 1 other Level 8+ Fusion, banish opponent's monsters with less ATK
+	-- Quick Effect during Main Phase: Target 1 other L8+ Fusion; banish opponent monsters with less ATK
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_REMOVE)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
-	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
 	e2:SetRange(LOCATION_MZONE)
+	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetCountLimit(1,id)
+	e2:SetCondition(s.mainphasecon)
 	e2:SetTarget(s.rmtg)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
 
-	-- At start of either Battle Phase: make 1 monster lose ATK equal to total ATK on field (non-targeting)
+	-- Quick Effect during Battle Phase: One monster loses ATK equal to total ATK on field
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_ATKCHANGE)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_PHASE|PHASE_BATTLE_START)
+	e3:SetType(EFFECT_TYPE_QUICK_O)
+	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(LOCATION_MZONE)
+	e3:SetHintTiming(TIMING_BATTLE_START+TIMING_BATTLE_END)
 	e3:SetCountLimit(1,{id,1})
+	e3:SetCondition(s.battlephasecon)
 	e3:SetTarget(s.atktg)
 	e3:SetOperation(s.atkop)
 	c:RegisterEffect(e3)
@@ -42,17 +45,21 @@ end
 
 s.listed_names={72272462} -- Despian Quaeritis
 
--- Fusion Material: 1 LIGHT or DARK Fusion Monster
+-- Fusion Material: LIGHT or DARK Fusion Monster
 function s.matfilter(c,scard,sumtype,tp)
 	return c:IsType(TYPE_FUSION) and (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsAttribute(ATTRIBUTE_DARK))
 end
 
--- Battle protection value
+-- e1: Battle protection
 function s.indval(e,c)
 	return not (c:IsType(TYPE_FUSION) and c:IsLevelAbove(8))
 end
 
--- Effect 2: Quick banish targeting another L8+ Fusion
+-- Effect 2: Quick banish (Main Phase only)
+function s.mainphasecon(e,tp,eg,ep,ev,re,r,rp)
+	local ph=Duel.GetCurrentPhase()
+	return ph==PHASE_MAIN1 or ph==PHASE_MAIN2
+end
 function s.rmfilter(c,e,tp,handler)
 	return c:IsFaceup() and c:IsType(TYPE_FUSION) and c:IsLevelAbove(8) and c~=handler
 end
@@ -73,9 +80,13 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 3: Battle Phase debuff
+-- Effect 3: Quick ATK drop (Battle Phase only)
+function s.battlephasecon(e,tp,eg,ep,ev,re,r,rp)
+	local ph=Duel.GetCurrentPhase()
+	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
+end
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,1,nil) end
+	return true -- Non-targeting
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
