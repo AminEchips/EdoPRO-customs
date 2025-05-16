@@ -21,14 +21,14 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- If sent to GY: inflict 800 damage
+	-- GY effect: inflict 800 damage (no condition on how it was sent)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DAMAGE)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_TO_GRAVE)
 	e2:SetProperty(EFFECT_FLAG_DELAY)
-	e2:SetCountLimit(1,id+100)
+	e2:SetCountLimit(1,{id,1})
 	e2:SetTarget(s.damtg)
 	e2:SetOperation(s.damop)
 	c:RegisterEffect(e2)
@@ -50,7 +50,7 @@ end
 
 -- Special Summon filter: Tri-Brigade, Fallen of Albaz, or mentions Albaz
 function s.spfilter(c,e,tp)
-	return (c:IsSetCard(0x114) or c:IsCode(68468459) or c:ListsCode(68468459))
+	return (c:IsSetCard(0x14f) or c:IsCode(68468459) or c:ListsCode(68468459))
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -82,7 +82,7 @@ function s.matlimit(e,c)
 	return not c:IsRace(RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST)
 end
 
--- Burn 800
+-- GY effect: Inflict 800
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
 	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,800)
