@@ -42,7 +42,7 @@ end
 -- e1: Special Summon when appropriate Link is summoned
 function s.cfilter(c,tp)
 	return c:IsFaceup() and c:IsType(TYPE_LINK)
-		and (c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINDBEAST))
+		and (c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINGEDBEAST))
 		and c:IsControler(tp)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
