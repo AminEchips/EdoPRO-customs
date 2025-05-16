@@ -17,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.banop)
 	c:RegisterEffect(e1)
 
-	--Recycle 3 monsters with different Types if sent to GY
+	--Recycle 3 monsters with different Races if sent to GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TODECK)
@@ -33,10 +33,10 @@ end
 s.listed_names={68468459} -- Fallen of Albaz
 s.listed_series={0x114} -- Tri-Brigade
 
--- EFFECT 1
+-- Effect 1: Banish and boost
 function s.banfilter(c)
-	return c:IsMonster() and c:IsAbleToRemove() and
-		(c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINDBEAST) or c:IsCode(68468459))
+	return c:IsMonster() and c:IsAbleToRemove() and 
+		(c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINGBEAST) or c:IsCode(68468459))
 end
 function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
@@ -53,7 +53,7 @@ function s.banop(e,tp,eg,ep,ev,re,r,rp)
 			e1:SetValue(atk)
 			e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
 			c:RegisterEffect(e1)
-			--Protection for Tri-Brigade
+			--Tri-Brigade protection
 			local e2=Effect.CreateEffect(c)
 			e2:SetType(EFFECT_TYPE_FIELD)
 			e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
@@ -66,16 +66,16 @@ function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- EFFECT 2
+-- Effect 2: Recycle 3 with different Races
 function s.tdfilter(c)
-	return c:IsFaceup() and c:IsMonster() and c:IsAbleToDeck()
+	return c:IsMonster() and c:IsFaceup() and c:IsAbleToDeck()
 end
 function s.tdcheck(g)
-	local types={}
+	local races={}
 	for tc in aux.Next(g) do
 		local r=tc:GetRace()
-		if types[r] then return false end
-		types[r]=true
+		if races[r] then return false end
+		races[r]=true
 	end
 	return true
 end
@@ -90,7 +90,6 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_REMOVED,0,nil)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
 	local sg=g:SelectSubGroup(tp,s.tdcheck,false,3,3)
-	if sg and #sg==3 then
-		Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
-	end
+	if not sg then return end
+	Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
 end
