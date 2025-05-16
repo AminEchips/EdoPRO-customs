@@ -22,7 +22,7 @@ function s.initial_effect(c)
 	e1:SetValue(500)
 	c:RegisterEffect(e1)
 
-	-- Change opponent effect + optional Special Summon
+	-- Change opponent's effect + Special Summon
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetType(EFFECT_TYPE_QUICK_O)
@@ -48,23 +48,23 @@ function s.atktg(e,c)
 	return c:IsType(TYPE_FUSION) and c~=e:GetHandler()
 end
 
--- Change opponent effect
+-- Only when opponent activates a monster effect
 function s.chcon(e,tp,eg,ep,ev,re,r,rp)
 	return rp==1-tp and re:IsMonsterEffect()
 end
-function s.chtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.lv8filter,tp,0,LOCATION_MZONE,1,nil) end
-end
 function s.lv8filter(c)
-	return c:IsLevel(8) and c:IsMonster() and c:IsAbleToGrave()
+	return c:IsFaceup() and c:IsLevel(8) and c:IsAbleToGrave()
 end
 function s.spfilter(c,e,tp,code)
 	return (c:IsRace(RACE_FAIRY) or c:IsRace(RACE_FIEND)) and not c:IsCode(code)
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
+function s.chtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.lv8filter,tp,LOCATION_MZONE,0,1,nil) end
+end
 function s.chop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local g=Duel.GetMatchingGroup(s.lv8filter,tp,0,LOCATION_MZONE,nil)
+	local g=Duel.GetMatchingGroup(s.lv8filter,tp,LOCATION_MZONE,0,nil)
 	if #g==0 then return end
 
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
@@ -72,7 +72,7 @@ function s.chop(e,tp,eg,ep,ev,re,r,rp)
 	if not tc then return end
 	local code=tc:GetOriginalCode()
 
-	-- Replace opponent effect
+	-- Replace the opponent's effect
 	Duel.ChangeTargetCard(ev,Group.CreateGroup())
 	Duel.ChangeChainOperation(ev,function()
 		Duel.SendtoGrave(tc,REASON_EFFECT)
