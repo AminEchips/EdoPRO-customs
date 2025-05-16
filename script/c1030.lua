@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	e1:SetValue(s.indval)
 	c:RegisterEffect(e1)
 
-	-- Main Phase: Banish opp monsters with less ATK than a targeted L8+ Fusion
+	-- Main Phase Quick Effect: Banish opponent's monsters with less ATK than a targeted L8+ Fusion
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_REMOVE)
@@ -28,16 +28,15 @@ function s.initial_effect(c)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
 
-	-- Battle Phase: Quick Effect to set 1 monster's ATK to 0 (non-targeting)
+	-- Quick Effect: Set 1 face-up monster's ATK to 0 (non-targeting)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_ATKCHANGE)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetHintTiming(TIMING_BATTLE_START+TIMING_BATTLE_END, TIMINGS_CHECK_MONSTER+TIMING_BATTLE_START+TIMING_BATTLE_END)
+	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END+TIMING_BATTLE_START+TIMING_END_PHASE)
 	e3:SetCountLimit(1,{id,1})
-	e3:SetCondition(s.battlephasecon)
 	e3:SetTarget(s.setzerotg)
 	e3:SetOperation(s.setzeroop)
 	c:RegisterEffect(e3)
@@ -55,7 +54,7 @@ function s.indval(e,c)
 	return not (c:IsType(TYPE_FUSION) and c:IsLevelAbove(8))
 end
 
--- e2: Main Phase Quick Effect
+-- e2: Main Phase Quick Effect (banish opp monsters)
 function s.mainphasecon(e,tp,eg,ep,ev,re,r,rp)
 	local ph=Duel.GetCurrentPhase()
 	return ph==PHASE_MAIN1 or ph==PHASE_MAIN2
@@ -80,11 +79,7 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e3: Battle Phase Quick Effect (Set ATK to 0)
-function s.battlephasecon(e,tp,eg,ep,ev,re,r,rp)
-	local ph=Duel.GetCurrentPhase()
-	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
-end
+-- e3: Quick Effect - Set ATK to 0 (non-targeting)
 function s.setzerotg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,1,nil)
