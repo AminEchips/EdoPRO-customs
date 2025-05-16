@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	e1b:SetValue(LOCATION_REMOVED)
 	c:RegisterEffect(e1b)
 
-	-- If sent to GY: Special Summon 1 "Tri-Brigade" from GY (except self)
+	-- GY effect: Special Summon 1 "Tri-Brigade" monster from GY (not itself)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -50,7 +50,6 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c) return s.cfilter(c,tp) end,1,nil)
 		and not (Duel.GetCurrentPhase() == PHASE_DAMAGE and not Duel.IsDamageCalculated())
 end
-
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then 
 		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
@@ -65,7 +64,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e2: If sent to GY, revive a "Tri-Brigade" from GY (not itself)
+-- e2: GY trigger like Bearbrumm (no condition)
 function s.gyfilter(c,e,tp)
 	return c:IsSetCard(0x14f) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 		and not c:IsCode(id)
