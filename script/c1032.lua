@@ -101,7 +101,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 			local tg=Duel.SelectMatchingCard(tp,Card.IsMonster,tp,0,LOCATION_MZONE,1,1,nil)
 			local tc=tg:GetFirst()
-			if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 and tc:IsPreviousSummonLocation(LOCATION_EXTRA) then
+			if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 and tc:IsSummonLocation(LOCATION_EXTRA) then
 				Duel.Damage(1-tp,1200,REASON_EFFECT)
 			end
 		end
