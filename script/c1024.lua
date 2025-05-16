@@ -31,6 +31,8 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+s.listed_names={68468459}
+
 -- e1 Target: Find valid banishable monster in Deck
 function s.rmfilter(c)
 	return (c:IsRace(RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST) or c:IsCode(68468459))
