@@ -47,7 +47,7 @@ end
 
 -- Fusion materials
 s.listed_names={62962630} -- Aluber the Jester of Despia
-s.listed_series={0x166, 0x1ba} -- Despia, Branded
+s.listed_series={0x166, 0x160} -- Despia, Branded
 
 -- Requires 1 monster Special Summoned from the Extra Deck
 function s.matfilter(c,scard,sumtype,tp)
@@ -102,7 +102,7 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return (c:IsReason(REASON_EFFECT) or c:IsReason(REASON_BATTLE)) and c:IsPreviousLocation(LOCATION_ONFIELD)
 end
 function s.thfilter(c)
-	return c:IsSetCard(0x1ba) and c:IsSpellTrap() and c:IsAbleToHand()
+	return c:IsSetCard(0x160) and c:IsSpellTrap() and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) end
