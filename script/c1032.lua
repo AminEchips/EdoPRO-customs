@@ -100,4 +100,13 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if not sc or Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)==0 then return end
 
 	if sc:IsLevelAbove(8) and Duel.IsExistingMatchingCard(Card.IsMonster,tp,0,LOCATION_MZONE,1,nil) then
-		if Duel.SelectYesNo(tp,aux.Stringid(id,
+		if Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+			local tg=Duel.SelectMatchingCard(tp,Card.IsMonster,tp,0,LOCATION_MZONE,1,1,nil)
+			local tc=tg:GetFirst()
+			if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 and tc:IsSummonLocation(LOCATION_EXTRA) then
+				Duel.Damage(1-tp,1200,REASON_EFFECT)
+			end
+		end
+	end
+end
