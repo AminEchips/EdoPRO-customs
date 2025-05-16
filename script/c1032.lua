@@ -36,7 +36,7 @@ function s.matfilter(c,fc,sub,mg,sg,chkf)
 	return c:IsSetCard(0x146) and c:IsType(TYPE_RITUAL)
 end
 
--- Effect 1 - Negate + Stat Change
+-- Effect 1 - Negate + Stat Gain
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	return rp==1-tp and re:IsMonsterEffect() and Duel.IsChainDisablable(ev)
 end
@@ -55,7 +55,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=sg:GetFirst()
 	if not tc then return end
 
-	-- Negate your own monster
+	-- Negate your monster's effects
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_DISABLE)
@@ -68,11 +68,12 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 	tc:RegisterEffect(e2)
 
+	-- Gain ATK
 	if val > 0 then
 		Duel.BreakEffect()
 		local e3=Effect.CreateEffect(e:GetHandler())
 		e3:SetType(EFFECT_TYPE_SINGLE)
-		e3:SetCode(EFFECT_SET_ATTACK_FINAL)
+		e3:SetCode(EFFECT_UPDATE_ATTACK)
 		e3:SetValue(val)
 		e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 		tc:RegisterEffect(e3)
@@ -99,13 +100,4 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if not sc or Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)==0 then return end
 
 	if sc:IsLevelAbove(8) and Duel.IsExistingMatchingCard(Card.IsMonster,tp,0,LOCATION_MZONE,1,nil) then
-		if Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-			local tg=Duel.SelectMatchingCard(tp,Card.IsMonster,tp,0,LOCATION_MZONE,1,1,nil)
-			local tc=tg:GetFirst()
-			if tc and Duel.SendtoGrave(tc,REASON_EFFECT)>0 and tc:IsSummonLocation(LOCATION_EXTRA) then
-				Duel.Damage(1-tp,1200,REASON_EFFECT)
-			end
-		end
-	end
-end
+		if Duel.SelectYesNo(tp,aux.Stringid(id,
