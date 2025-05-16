@@ -1,5 +1,4 @@
 --Despian Longinus
---Despian Longinus
 local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
@@ -32,7 +31,7 @@ end
 
 -- e1: Only if Fusion Summoned
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
+	return e:GetHandler():IsSummonType(SUMMON_TYPE_SPECIAL) and e:GetHandler():IsSummonLocation(LOCATION_EXTRA)
 end
 function s.spfilter(c,e,tp)
 	return c:IsRace(RACE_SPELLCASTER) and c:IsAttribute(ATTRIBUTE_LIGHT)
