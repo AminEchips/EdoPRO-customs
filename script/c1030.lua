@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	e1:SetValue(s.indval)
 	c:RegisterEffect(e1)
 
-	-- Quick Effect: During Main Phase, target 1 Level 8+ Fusion on field, banish all opponent monsters with less ATK
+	-- Quick Effect: During Main Phase, target 1 other Level 8+ Fusion, banish opponent's monsters with less ATK
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_REMOVE)
@@ -27,12 +27,12 @@ function s.initial_effect(c)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
 
-	-- At start of either player's Battle Phase: Make 1 monster lose ATK equal to total ATK of monsters on the field
+	-- At start of either Battle Phase: make 1 monster lose ATK equal to total ATK on field (non-targeting)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_ATKCHANGE)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_PHASE+PHASE_BATTLE_START)
+	e3:SetCode(EVENT_PHASE|PHASE_BATTLE_START)
 	e3:SetRange(LOCATION_MZONE)
 	e3:SetCountLimit(1,{id,1})
 	e3:SetTarget(s.atktg)
@@ -47,38 +47,38 @@ function s.matfilter(c,scard,sumtype,tp)
 	return c:IsType(TYPE_FUSION) and (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsAttribute(ATTRIBUTE_DARK))
 end
 
--- e1: Battle protection - not destroyed except by Level 8+ Fusion
+-- Battle protection value
 function s.indval(e,c)
 	return not (c:IsType(TYPE_FUSION) and c:IsLevelAbove(8))
 end
 
--- e2: Quick banish setup
-function s.rmfilter(c)
-	return c:IsFaceup() and c:IsType(TYPE_FUSION) and c:IsLevelAbove(8)
+-- Effect 2: Quick banish targeting another L8+ Fusion
+function s.rmfilter(c,e,tp,handler)
+	return c:IsFaceup() and c:IsType(TYPE_FUSION) and c:IsLevelAbove(8) and c~=handler
 end
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsOnField() and s.rmfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.rmfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.rmfilter(chkc,e,tp,e:GetHandler()) end
+	if chk==0 then return Duel.IsExistingTarget(s.rmfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,e:GetHandler()) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,s.rmfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
+	local g=Duel.SelectTarget(tp,s.rmfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,e:GetHandler())
 	e:SetLabel(g:GetFirst():GetAttack())
 end
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local atk=e:GetLabel()
 	local g=Duel.GetMatchingGroup(function(c,atk)
-		return c:IsFaceup() and c:IsControler(1-tp) and c:IsAttackBelow(atk) and c:IsAbleToRemove()
+		return c:IsFaceup() and c:IsControler(1-tp) and c:GetAttack()<atk and c:IsAbleToRemove()
 	end,tp,0,LOCATION_MZONE,nil,atk)
 	if #g>0 then
 		Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
 	end
 end
 
--- e3: Reduce ATK at start of either Battle Phase
+-- Effect 3: Battle Phase debuff
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,1,nil) end
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
 	local totatk=g:GetSum(Card.GetAttack)
 	if totatk==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
