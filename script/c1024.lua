@@ -17,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.banop)
 	c:RegisterEffect(e1)
 
-	--Recycle 3 monsters with different Races if sent to GY
+	--Recycle 3 monsters with different Types if sent to GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TODECK)
@@ -33,10 +33,12 @@ end
 s.listed_names={68468459} -- Fallen of Albaz
 s.listed_series={0x114} -- Tri-Brigade
 
--- Effect 1: Banish and boost
+-- Constants for multi-race check
+RACES_BEAST_BWARRIOR_WINGB = RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINDBEAST
+
 function s.banfilter(c)
 	return c:IsMonster() and c:IsAbleToRemove() and 
-		(c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINGBEAST) or c:IsCode(68468459))
+		(bit.band(c:GetRace(), RACES_BEAST_BWARRIOR_WINGB)~=0 or c:IsCode(68468459))
 end
 function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
@@ -66,16 +68,20 @@ function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 2: Recycle 3 with different Races
 function s.tdfilter(c)
 	return c:IsMonster() and c:IsFaceup() and c:IsAbleToDeck()
 end
 function s.tdcheck(g)
-	local races={}
+	local seen = {}
 	for tc in aux.Next(g) do
-		local r=tc:GetRace()
-		if races[r] then return false end
-		races[r]=true
+		local race = tc:GetRace()
+		for _,r in ipairs({RACE_BEAST,RACE_BEASTWARRIOR,RACE_WINDBEAST}) do
+			if bit.band(race, r)~=0 then
+				if seen[r] then return false end
+				seen[r] = true
+				break
+			end
+		end
 	end
 	return true
 end
