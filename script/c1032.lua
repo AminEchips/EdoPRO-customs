@@ -45,7 +45,10 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_CARD,0,id)
 	Duel.NegateEffect(ev)
 	local rc=re:GetHandler()
-	local val=math.max(rc:GetAttack(),rc:GetDefense())
+	if not rc then return end
+
+	-- Get higher of base ATK/DEF
+	local val=math.max(rc:GetBaseAttack(), rc:GetBaseDefense())
 
 	-- Choose one of your Extra Deck monsters
 	local g=Duel.GetMatchingGroup(s.monfilter,tp,LOCATION_MZONE,0,nil)
