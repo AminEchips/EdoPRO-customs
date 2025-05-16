@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	-- Link Summon using 2 "Tri-Brigade" monsters
-	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x114),2,2)
+	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x14f),2,2)
 
 	-- Quick Effect: Banish 1 Beast/Beast-Warrior/Winged Beast or Albaz from Deck; gain ATK + protect
 	local e1=Effect.CreateEffect(c)
@@ -63,7 +63,7 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 			e2:SetType(EFFECT_TYPE_FIELD)
 			e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
 			e2:SetTargetRange(LOCATION_MZONE,0)
-			e2:SetTarget(function(_,c) return c:IsSetCard(0x114) end)
+			e2:SetTarget(function(_,c) return c:IsSetCard(0x14f) end)
 			e2:SetValue(1)
 			e2:SetReset(RESET_PHASE+PHASE_END)
 			Duel.RegisterEffect(e2,tp)
