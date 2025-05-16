@@ -2,9 +2,8 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	--Xyz Summon
-	aux.AddXyzProcedure(c,nil,11,2)
-	
+	Xyz.AddProcedure(c,nil,11,2)
+
 	--ATK/DEF Reduction on opponent activation
 	local e1a=Effect.CreateEffect(c)
 	e1a:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
