@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	-- Link Summon procedure: 3 Beast, Beast-Warrior, or Winged Beast monsters
-	Link.AddProcedure(c,aux.FilterBoolFunction(Card.IsRace,RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST),3,3)
+	Link.AddProcedure(c,aux.FilterBoolFunction(Card.IsRace,RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST),2,nil)
 
 	-- Effect 1: When a monster is Special Summoned to a zone this card points to
 	local e1=Effect.CreateEffect(c)
