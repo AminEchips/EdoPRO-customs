@@ -1,8 +1,9 @@
 --Despian Longinus
+--Despian Longinus
 local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	Fusion.AddProcMix(c,true,true,aux.FilterBoolFunction(Card.IsSetCard,0x166),2) -- 0x166 = Despia
+	Fusion.AddProcFunRep(c,aux.FilterBoolFunction(Card.IsSetCard,0x166),2,true)
 
 	-- On Special Summon from Extra Deck: Special Summon LIGHT Spellcaster Tuner from GY
 	local e1=Effect.CreateEffect(c)
