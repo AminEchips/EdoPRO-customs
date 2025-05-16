@@ -29,7 +29,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={18666161}
-s.listed_series={0x146}
+s.listed_series={0x146} -- Dogmatika
 
 -- Fusion requirement: 1 Dogmatika Ritual
 function s.matfilter(c,fc,sub,mg,sg,chkf)
@@ -68,13 +68,15 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 	tc:RegisterEffect(e2)
 
-	-- Set ATK to base stat
-	local e3=Effect.CreateEffect(e:GetHandler())
-	e3:SetType(EFFECT_TYPE_SINGLE)
-	e3:SetCode(EFFECT_SET_ATTACK_FINAL)
-	e3:SetValue(val)
-	e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-	tc:RegisterEffect(e3)
+	if val > 0 then
+		Duel.BreakEffect()
+		local e3=Effect.CreateEffect(e:GetHandler())
+		e3:SetType(EFFECT_TYPE_SINGLE)
+		e3:SetCode(EFFECT_SET_ATTACK_FINAL)
+		e3:SetValue(val)
+		e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+		tc:RegisterEffect(e3)
+	end
 end
 function s.monfilter(c)
 	return c:IsFaceup() and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO)
