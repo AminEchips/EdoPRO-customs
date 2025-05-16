@@ -28,7 +28,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
 
-	-- Battle Phase: Quick Effect to reduce ATK of 1 monster by total ATK on field (non-targeting)
+	-- Battle Phase: Quick Effect to set 1 monster's ATK to 0 (non-targeting)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_ATKCHANGE)
@@ -38,8 +38,8 @@ function s.initial_effect(c)
 	e3:SetHintTiming(TIMING_BATTLE_START+TIMING_BATTLE_END, TIMINGS_CHECK_MONSTER+TIMING_BATTLE_START+TIMING_BATTLE_END)
 	e3:SetCountLimit(1,{id,1})
 	e3:SetCondition(s.battlephasecon)
-	e3:SetTarget(s.atktg)
-	e3:SetOperation(s.atkop)
+	e3:SetTarget(s.setzerotg)
+	e3:SetOperation(s.setzeroop)
 	c:RegisterEffect(e3)
 end
 
@@ -80,30 +80,27 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e3: Battle Phase Quick Effect (non-targeting)
+-- e3: Battle Phase Quick Effect (Set ATK to 0)
 function s.battlephasecon(e,tp,eg,ep,ev,re,r,rp)
 	local ph=Duel.GetCurrentPhase()
 	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
 end
-function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.setzerotg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
-		return #g>0 and g:GetSum(Card.GetAttack)>0
+		return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,1,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,nil,1,0,0)
 end
-function s.atkop(e,tp,eg,ep,ev,re,r,rp)
+function s.setzeroop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
-	local totatk=g:GetSum(Card.GetAttack)
-	if totatk==0 or #g==0 then return end
+	if #g==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local sg=g:Select(tp,1,1,nil)
-	local tc=sg:GetFirst()
-	if tc and tc:IsFaceup() then
+	local tc=g:Select(tp,1,1,nil):GetFirst()
+	if tc then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_ATTACK)
-		e1:SetValue(-totatk)
+		e1:SetCode(EFFECT_SET_ATTACK_FINAL)
+		e1:SetValue(0)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 		tc:RegisterEffect(e1)
 	end
