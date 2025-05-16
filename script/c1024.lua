@@ -69,23 +69,22 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e2 Target: Return 3 banished monsters with different Types
+-- GY effect: Shuffle 3 banished monsters into the Deck
 function s.tdfilter(c)
 	return c:IsFaceup() and c:IsType(TYPE_MONSTER) and c:IsAbleToDeck()
 end
-function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return false end
 	if chk==0 then
-		local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_REMOVED,0,nil)
-		return #g>=3 and g:CheckSubGroup(aux.NOT(Card.IsTypeRepeat),3,3)
+		return Duel.IsExistingTarget(s.tdfilter,tp,LOCATION_REMOVED,0,3,nil)
 	end
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,3,tp,LOCATION_REMOVED)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+	local g=Duel.SelectTarget(tp,s.tdfilter,tp,LOCATION_REMOVED,0,3,3,nil)
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,3,0,0)
 end
 function s.tdop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_REMOVED,0,nil)
-	if #g<3 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-	local sg=g:SelectSubGroup(tp,aux.NOT(Card.IsTypeRepeat),false,3,3)
-	if sg and #sg==3 then
-		Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+	local tg=Duel.GetTargetCards(e)
+	if #tg==3 then
+		Duel.SendtoDeck(tg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
 	end
 end
