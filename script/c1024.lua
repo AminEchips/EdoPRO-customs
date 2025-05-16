@@ -1,61 +1,91 @@
 --Tri-Brigade Bardawulf the Guiding Glasser
 local s,id=GetID()
 function s.initial_effect(c)
-	--Link Summon procedure
 	c:EnableReviveLimit()
-	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsRace,RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST),2,2)
+	-- Link Summon using 2 "Tri-Brigade" monsters
+	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsSetCard,0x114),2,2)
 
-	--Quick Effect: Banish and Special Summon
+	-- Quick Effect: Banish 1 Beast/Beast-Warrior/Winged Beast or Albaz from Deck; gain ATK + protect
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e1:SetCategory(CATEGORY_REMOVE)
 	e1:SetType(EFFECT_TYPE_QUICK_O)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
 	e1:SetCountLimit(1,id)
-	e1:SetCost(s.spcost)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
+	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
+	e1:SetTarget(s.rmtg)
+	e1:SetOperation(s.rmop)
 	c:RegisterEffect(e1)
+
+	-- GY effect: Shuffle 3 banished monsters with different Types into Deck
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_TODECK)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e2:SetCode(EVENT_TO_GRAVE)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetCountLimit(1,id+100)
+	e2:SetTarget(s.tdtg)
+	e2:SetOperation(s.tdop)
+	c:RegisterEffect(e2)
 end
 
--- Cost: Banish 1 Beast, Beast-Warrior, Winged Beast, or "Fallen of Albaz" from hand or field
-function s.cfilter(c)
-	return (c:IsRace(RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST) or c:IsCode(68468459)) and c:IsAbleToRemoveAsCost()
+-- e1 Target: Find valid banishable monster in Deck
+function s.rmfilter(c)
+	return (c:IsRace(RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST) or c:IsCode(68468459))
+		and c:IsAbleToRemove()
 end
-function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND+LOCATION_ONFIELD,0,1,nil) end
+function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.rmfilter,tp,LOCATION_DECK,0,1,nil) end
+end
+
+-- e1 Operation: Banish and gain ATK, apply protection
+function s.rmop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND+LOCATION_ONFIELD,0,1,1,nil)
-	e:SetLabel(g:GetFirst():GetOriginalType())
-	Duel.Remove(g,POS_FACEUP,REASON_COST)
-end
+	local g=Duel.SelectMatchingCard(tp,s.rmfilter,tp,LOCATION_DECK,0,1,1,nil)
+	if #g>0 and Duel.Remove(g,POS_FACEUP,REASON_EFFECT)>0 then
+		local lv=g:GetFirst():GetLevel()
+		if lv > 0 and c:IsRelateToEffect(e) and c:IsFaceup() then
+			-- Gain ATK
+			local e1=Effect.CreateEffect(c)
+			e1:SetType(EFFECT_TYPE_SINGLE)
+			e1:SetCode(EFFECT_UPDATE_ATTACK)
+			e1:SetValue(lv*100)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
+			c:RegisterEffect(e1)
 
--- Target for Special Summon from banished zone
-function s.spfilter(c,e,tp,typ)
-	return c:IsFaceup() and c:IsRace(RACE_BEAST+RACE_BEASTWARRIOR+RACE_WINGEDBEAST)
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and not c:IsType(typ)
-end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		local typ=e:GetLabel()
-		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-			and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp,typ)
+			-- Protection for Tri-Brigade monsters
+			local e2=Effect.CreateEffect(c)
+			e2:SetType(EFFECT_TYPE_FIELD)
+			e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+			e2:SetTargetRange(LOCATION_MZONE,0)
+			e2:SetTarget(function(_,c) return c:IsSetCard(0x114) end)
+			e2:SetValue(1)
+			e2:SetReset(RESET_PHASE+PHASE_END)
+			Duel.RegisterEffect(e2,tp)
+		end
 	end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_REMOVED)
 end
 
--- Operation: Special Summon 1 banished monster with different Type than the banished cost
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local typ=e:GetLabel()
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_REMOVED,0,nil,e,tp,typ)
-	if #g==0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local sg=g:Select(tp,1,1,nil)
-	if #sg>0 then
-		Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
+-- e2 Target: Return 3 banished monsters with different Types
+function s.tdfilter(c)
+	return c:IsFaceup() and c:IsType(TYPE_MONSTER) and c:IsAbleToDeck()
+end
+function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then
+		local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_REMOVED,0,nil)
+		return #g>=3 and g:CheckSubGroup(aux.NOT(Card.IsTypeRepeat),3,3)
+	end
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,3,tp,LOCATION_REMOVED)
+end
+function s.tdop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_REMOVED,0,nil)
+	if #g<3 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+	local sg=g:SelectSubGroup(tp,aux.NOT(Card.IsTypeRepeat),false,3,3)
+	if sg and #sg==3 then
+		Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
 	end
 end
