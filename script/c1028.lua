@@ -47,7 +47,7 @@ s.listed_series={0x146, 0x153} -- Dogmatika and Despia
 
 -- Custom Ritual Summon Target
 function s.matfilter(c)
-	return c:IsFaceup() and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO) or c:IsSetCard(0x146) or c:IsSetCard(0x153)) and c:IsReleasable()
+	return c:IsFaceup() and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO) or c:IsSetCard(0x146) or c:IsSetCard(0x166)) and c:IsReleasable()
 end
 function s.ritualtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
