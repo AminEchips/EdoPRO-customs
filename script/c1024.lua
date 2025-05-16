@@ -22,7 +22,7 @@ function s.initial_effect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TODECK)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
 	e2:SetCode(EVENT_TO_GRAVE)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetTarget(s.tdtg)
@@ -33,13 +33,12 @@ end
 s.listed_names={68468459} -- Fallen of Albaz
 s.listed_series={0x114} -- Tri-Brigade
 
-function s.banfilter(c)
-	return c:IsMonster() and (c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINDBEAST) or c:IsCode(68468459)) and c:IsAbleToRemove()
-end
 function s.banop(e,tp,eg,ep,ev,re,r,rp)
-	if not Duel.IsExistingMatchingCard(s.banfilter,tp,LOCATION_DECK,0,1,nil) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.banfilter,tp,LOCATION_DECK,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,function(c)
+		return c:IsMonster() and c:IsAbleToRemove() and
+			(c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINDBEAST) or c:IsCode(68468459))
+	end,tp,LOCATION_DECK,0,1,1,nil)
 	local tc=g:GetFirst()
 	if tc and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)>0 then
 		local c=e:GetHandler()
@@ -65,19 +64,8 @@ function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
-function s.tdfilter(c,types)
-	return c:IsMonster() and c:IsFaceup() and not types[c:GetRace()] and c:IsAbleToDeck()
-end
-function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_REMOVED,0,nil)
-	if chkc then return g:IsContains(chkc) end
-	if chk==0 then return g:CheckSubGroup(s.tdcheck,3,3) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-	local sg=g:SelectSubGroup(tp,s.tdcheck,false,3,3)
-	if not sg then return false end
-	Duel.SetTargetCard(sg)
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,sg,#sg,0,0)
-	return true
+function s.tdfilter(c)
+	return c:IsMonster() and c:IsFaceup() and c:IsAbleToDeck()
 end
 function s.tdcheck(g)
 	local types={}
@@ -88,9 +76,17 @@ function s.tdcheck(g)
 	end
 	return true
 end
-function s.tdop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS):Filter(Card.IsRelateToEffect,e:GetHandler())
-	if #g>0 then
-		Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then
+		local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_REMOVED,0,nil)
+		return g:CheckSubGroup(s.tdcheck,3,3)
 	end
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,3,tp,LOCATION_REMOVED)
+end
+function s.tdop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_REMOVED,0,nil)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+	local sg=g:SelectSubGroup(tp,s.tdcheck,false,3,3)
+	if not sg then return end
+	Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
 end
