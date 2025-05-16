@@ -28,24 +28,24 @@ function s.initial_effect(c)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
 
-	-- Quick Effect (non-targeting): Set 1 face-up monster's ATK to 0
+	-- Quick Effect: Choose 1 monster, set its ATK to 0 (non-targeting)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_ATKCHANGE)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_MAIN_END+TIMING_BATTLE_START+TIMING_END_PHASE)
+	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E+TIMING_BATTLE_START+TIMING_BATTLE+TIMING_END_PHASE)
 	e3:SetCountLimit(1,{id,1})
-	e3:SetTarget(s.zerotg)
-	e3:SetOperation(s.zeroop)
+	e3:SetTarget(s.zeroatktg)
+	e3:SetOperation(s.zeroatkop)
 	c:RegisterEffect(e3)
 end
 
-s.listed_names={72272462}
+s.listed_names={72272462} -- Despian Quaeritis
 
--- Fusion Material
-function s.matfilter(c,scard,sumtype,tp)
+-- Fusion Material: LIGHT or DARK Fusion Monster
+function s.matfilter(c,fc,st,tp)
 	return c:IsType(TYPE_FUSION) and (c:IsAttribute(ATTRIBUTE_LIGHT) or c:IsAttribute(ATTRIBUTE_DARK))
 end
 
@@ -54,7 +54,7 @@ function s.indval(e,c)
 	return not (c:IsType(TYPE_FUSION) and c:IsLevelAbove(8))
 end
 
--- e2: Main Phase ATK-based banish
+-- e2: Banish if opponent's monster has less ATK than targeted L8+ Fusion
 function s.mainphasecon(e,tp,eg,ep,ev,re,r,rp)
 	local ph=Duel.GetCurrentPhase()
 	return ph==PHASE_MAIN1 or ph==PHASE_MAIN2
@@ -79,25 +79,28 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- e3: Quick, non-targeting, set ATK to 0
-function s.zerotg(e,tp,eg,ep,ev,re,r,rp,chk)
+-- e3: Quick non-targeting ATK to 0 for 1 monster
+function s.atk0filter(c)
+	return c:IsFaceup() and c:GetAttack()>0 and not (c:IsType(TYPE_FUSION) and c:IsLevelAbove(8))
+end
+function s.zeroatktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,1,nil)
+		return Duel.IsExistingMatchingCard(s.atk0filter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,nil,1,0,0)
 end
-function s.zeroop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
+function s.zeroatkop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local g=Duel.GetMatchingGroup(s.atk0filter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
 	if #g==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	local sg=g:Select(tp,1,1,nil)
 	local tc=sg:GetFirst()
-	if tc and tc:IsFaceup() then
-		local e1=Effect.CreateEffect(e:GetHandler())
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_SET_ATTACK_FINAL)
-		e1:SetValue(0)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-		tc:RegisterEffect(e1)
-	end
+	if not tc then return end
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_SET_ATTACK_FINAL)
+	e1:SetValue(0)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+	tc:RegisterEffect(e1)
 end
