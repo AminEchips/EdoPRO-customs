@@ -82,12 +82,15 @@ end
 
 -- Effect 3: Quick ATK drop (Battle Phase only)
 function s.battlephasecon(e,tp,eg,ep,ev,re,r,rp)
-	local ph=Duel.GetCurrentPhase()
-	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
+	local phase=Duel.GetCurrentPhase()
+	return phase>=PHASE_BATTLE_START and phase<=PHASE_BATTLE
 end
 
 function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,1,nil) end
+	if chk==0 then
+		local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE+LOCATION_MZONE,LOCATION_MZONE+LOCATION_MZONE,nil)
+		return #g>0 and g:GetSum(Card.GetAttack)>0
+	end
 	Duel.SetOperationInfo(0,CATEGORY_ATKCHANGE,nil,1,0,0)
 end
 
@@ -100,7 +103,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	if #candidates==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	local tc=candidates:Select(tp,1,1,nil):GetFirst()
-	if tc then
+	if tc and tc:IsFaceup() then
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_UPDATE_ATTACK)
