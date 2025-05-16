@@ -33,12 +33,14 @@ end
 s.listed_names={68468459} -- Fallen of Albaz
 s.listed_series={0x114} -- Tri-Brigade
 
+-- EFFECT 1
+function s.banfilter(c)
+	return c:IsMonster() and c:IsAbleToRemove() and
+		(c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINDBEAST) or c:IsCode(68468459))
+end
 function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,function(c)
-		return c:IsMonster() and c:IsAbleToRemove() and
-			(c:IsRace(RACE_BEAST) or c:IsRace(RACE_BEASTWARRIOR) or c:IsRace(RACE_WINDBEAST) or c:IsCode(68468459))
-	end,tp,LOCATION_DECK,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,s.banfilter,tp,LOCATION_DECK,0,1,1,nil)
 	local tc=g:GetFirst()
 	if tc and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)>0 then
 		local c=e:GetHandler()
@@ -51,7 +53,7 @@ function s.banop(e,tp,eg,ep,ev,re,r,rp)
 			e1:SetValue(atk)
 			e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE+RESET_PHASE+PHASE_END)
 			c:RegisterEffect(e1)
-			--Tri-Brigade protection
+			--Protection for Tri-Brigade
 			local e2=Effect.CreateEffect(c)
 			e2:SetType(EFFECT_TYPE_FIELD)
 			e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
@@ -64,8 +66,9 @@ function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+-- EFFECT 2
 function s.tdfilter(c)
-	return c:IsMonster() and c:IsFaceup() and c:IsAbleToDeck()
+	return c:IsFaceup() and c:IsMonster() and c:IsAbleToDeck()
 end
 function s.tdcheck(g)
 	local types={}
@@ -87,6 +90,7 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.tdfilter,tp,LOCATION_REMOVED,0,nil)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
 	local sg=g:SelectSubGroup(tp,s.tdcheck,false,3,3)
-	if not sg then return end
-	Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+	if sg and #sg==3 then
+		Duel.SendtoDeck(sg,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)
+	end
 end
