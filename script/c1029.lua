@@ -4,7 +4,7 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,62962630,s.matfilter)
 
-	-- Effect 1: If a card is banished face-up during the Main Phase, target 1 of them and return it to the GY
+	-- Effect 1: If a card is banished face-up during the Main Phase, target 1 and return it to the GY
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOGRAVE)
@@ -18,7 +18,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.retop)
 	c:RegisterEffect(e1)
 
-	-- Effect 2: During the Battle Phase (Quick Effect), ATK/DEF become equal to highest on field
+	-- Effect 2: During Battle Phase (Quick Effect), set ATK/DEF to highest values on field
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_QUICK_O)
@@ -31,13 +31,13 @@ function s.initial_effect(c)
 	e2:SetOperation(s.adop)
 	c:RegisterEffect(e2)
 
-	-- Effect 3: If sent to GY from field by battle or effect, add 1 "Branded" Spell/Trap from GY or banished
+	-- Effect 3: If this card leaves the field, add 1 "Branded" S/T from GY or banished
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_TO_GRAVE)
-	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCode(EVENT_LEAVE_FIELD)
+	e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP)
 	e3:SetCountLimit(1,{id,2})
 	e3:SetCondition(s.thcon)
 	e3:SetTarget(s.thtg)
@@ -45,16 +45,16 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Fusion materials
+-- Card data
 s.listed_names={62962630} -- Aluber the Jester of Despia
 s.listed_series={0x166, 0x160} -- Despia, Branded
 
--- Requires 1 monster Special Summoned from the Extra Deck
+-- Fusion material: 1 monster Special Summoned from the Extra Deck
 function s.matfilter(c,scard,sumtype,tp)
 	return c:IsSummonLocation(LOCATION_EXTRA)
 end
 
--- Effect 1: Trigger during Main Phase if face-up card is banished
+-- Effect 1: Return face-up banished card to GY
 function s.retcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetCurrentPhase()>=PHASE_MAIN1 and Duel.GetCurrentPhase()<=PHASE_MAIN2
 		and eg:IsExists(Card.IsFaceup,1,nil)
@@ -73,7 +73,7 @@ function s.retop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 2: During Battle Phase (including Damage Step), match highest ATK/DEF
+-- Effect 2: Match highest ATK/DEF on the field
 function s.adcon(e,tp,eg,ep,ev,re,r,rp)
 	local ph=Duel.GetCurrentPhase()
 	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
@@ -87,8 +87,8 @@ function s.adop(e,tp,eg,ep,ev,re,r,rp)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_SET_ATTACK_FINAL)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 	e1:SetValue(atk)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 	c:RegisterEffect(e1)
 	local e2=e1:Clone()
 	e2:SetCode(EFFECT_SET_DEFENSE_FINAL)
@@ -96,16 +96,18 @@ function s.adop(e,tp,eg,ep,ev,re,r,rp)
 	c:RegisterEffect(e2)
 end
 
--- Effect 3: Float if destroyed or sent by effect (from field)
+-- Effect 3: Trigger when leaving the field
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return (c:IsReason(REASON_EFFECT) or c:IsReason(REASON_BATTLE)) and c:IsPreviousLocation(LOCATION_ONFIELD)
+	return c:IsPreviousPosition(POS_FACEUP) and c:IsPreviousLocation(LOCATION_ONFIELD)
 end
 function s.thfilter(c)
 	return c:IsSetCard(0x160) and c:IsSpellTrap() and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) end
+	if chk==0 then
+		return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil)
+	end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
