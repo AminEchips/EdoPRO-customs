@@ -9,6 +9,7 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetTarget(s.target)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
@@ -24,17 +25,15 @@ end
 
 s.listed_names={68468459} -- Fallen of Albaz
 
--- Fusion Materials filter
+-- Fusion filters
 function s.matfilter(c,e)
 	return c:IsCanBeFusionMaterial() and c:IsAbleToGrave() and not c:IsImmuneToEffect(e)
 end
-
 function s.fusfilter(c,e,tp,mat)
 	return c:IsType(TYPE_FUSION) and c:IsLevelBelow(8)
 		and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
-		and c:CheckFusionMaterial(mat,nil,tp)
+		and c:CheckFusionMaterial(mat)
 end
-
 function s.costfilter(c)
 	return c:IsType(TYPE_FUSION) and c:IsReleasable()
 end
@@ -62,8 +61,8 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 		Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,fus,1,tp,LOCATION_EXTRA)
 	else
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-		Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,2,2,nil)
-		Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,2,0,LOCATION_ONFIELD)
+		local tg=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,2,2,nil)
+		Duel.SetOperationInfo(0,CATEGORY_DESTROY,tg,2,0,0)
 	end
 end
 
@@ -89,9 +88,10 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
 		local cost=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_MZONE,0,1,1,nil)
 		if #cost==0 or Duel.Release(cost,REASON_COST)==0 then return end
-		local tg=Duel.GetTargetsRelateToChain()
-		if #tg<2 then return end
-		Duel.Destroy(tg,REASON_EFFECT)
+		local tg=Duel.GetTargetCards(e)
+		if #tg>=2 then
+			Duel.Destroy(tg,REASON_EFFECT)
+		end
 	end
 end
 
@@ -117,7 +117,6 @@ function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():IsSSetable() end
 	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,e:GetHandler(),1,0,0)
 end
-
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsRelateToEffect(e) and c:IsSSetable() then
