@@ -17,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.syop)
 	c:RegisterEffect(e1)
 
-	--Negate effects if only LIGHT and DARK were used
+	--Negate all non-pointed face-up monsters + gain 500 ATK (permanently)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,2))
 	e2:SetType(EFFECT_TYPE_IGNITION)
@@ -33,12 +33,11 @@ function s.matfilter(g,lc,sumtype,tp)
 	return g:IsExists(Card.IsType,1,nil,TYPE_FUSION)
 end
 
--- Link Summoned check
 function s.lkcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
 
--- Synchro Summon from GY/banished
+-- Synchro Summon effect setup
 function s.synfilter(c)
 	return c:IsSetCard(0x166) and c:IsMonster() and c:IsAbleToRemoveAsCost()
 end
@@ -83,19 +82,22 @@ function s.syop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Negate effect
+-- Check if only LIGHT and DARK were used
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local mg=c:GetMaterial()
 	return mg:FilterCount(function(tc) return tc:IsAttribute(ATTRIBUTE_LIGHT+ATTRIBUTE_DARK) end,nil)==#mg
 end
+
+-- Negate others' effects and gain permanent 500 ATK
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
+	local linked = c:GetLinkedGroup()
 	local g=Duel.GetMatchingGroup(function(tc)
-		return tc:IsFaceup() and not c:IsHasCardTarget(tc)
+		return tc:IsFaceup() and tc~=c and not linked:IsContains(tc)
 	end,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
 	for tc in g:Iter() do
-		-- Negate effect
+		-- Negate
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_DISABLE)
@@ -105,11 +107,11 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 		e2:SetCode(EFFECT_DISABLE_EFFECT)
 		tc:RegisterEffect(e2)
 	end
-	-- Gain 500 ATK
+	-- Gain 500 ATK permanently
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE)
 	e3:SetCode(EFFECT_UPDATE_ATTACK)
 	e3:SetValue(500)
-	e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+	e3:SetReset(RESET_EVENT+RESETS_STANDARD)
 	c:RegisterEffect(e3)
 end
