@@ -22,7 +22,7 @@ function s.initial_effect(c)
 end
 
 s.listed_names={06855503} -- Fallen of Albaz, Masquerade
-ds.listed_series={0x166} -- Despia
+s.listed_series={0x166} -- Despia
 
 -- Activation effect
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
