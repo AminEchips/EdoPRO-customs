@@ -10,7 +10,6 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
-	e1:SetTarget(s.target)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
@@ -22,41 +21,26 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
-s.listed_names={06855503} -- Masquerade
-s.listed_series={0x166} -- Despia
+s.listed_names={06855503} -- Fallen of Albaz, Masquerade
+ds.listed_series={0x166} -- Despia
 
-function s.costfilter(c,tp)
-	return c:IsAttribute(ATTRIBUTE_LIGHT+ATTRIBUTE_DARK) and c:IsReleasable()
-end
-function s.despiafilter(c)
-	return c:IsSetCard(0x166) and c:IsReleasable()
-end
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_MZONE,0,nil)
-		return #g>=2 and g:IsExists(Card.IsSetCard,1,nil,0x166)
-			and Duel.GetLocationCountFromEx(tp,tp,g)>0
-	end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_MZONE,0,2,2,nil)
-	if #g==2 and g:IsExists(Card.IsSetCard,1,nil,0x166) then
-		Duel.SetTargetCard(g)
-		Duel.SetOperationInfo(0,CATEGORY_RELEASE,g,2,0,0)
-		Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
-	end
-end
-
+-- Activation effect
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
-	if #g~=2 then return end
-	Duel.Release(g,REASON_EFFECT)
-	if Duel.GetLocationCountFromEx(tp)<=0 then return end
-	local tc=Duel.GetFirstMatchingCard(function(c,e,tp)
-		return c:IsCode(06855503) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
-	end,tp,LOCATION_EXTRA,0,nil,e,tp)
-	if tc then
-		Duel.SpecialSummon(tc,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
-		tc:CompleteProcedure()
+	local g=Duel.GetMatchingGroup(function(c)
+		return c:IsAttribute(ATTRIBUTE_LIGHT+ATTRIBUTE_DARK) and c:IsReleasable() and c:IsFaceup()
+	end,tp,LOCATION_MZONE,0,nil)
+	if #g<2 or not g:IsExists(Card.IsSetCard,1,nil,0x166) then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
+	local rg=g:Select(tp,2,2,nil)
+	if #rg<2 or not rg:IsExists(Card.IsSetCard,1,nil,0x166) then return end
+	if Duel.Release(rg,REASON_EFFECT)==2 and Duel.GetLocationCountFromEx(tp)>0 then
+		local tc=Duel.GetFirstMatchingCard(function(c,e,tp)
+			return c:IsCode(06855503) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
+		end,tp,LOCATION_EXTRA,0,nil,e,tp)
+		if tc then
+			Duel.SpecialSummon(tc,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
+			tc:CompleteProcedure()
+		end
 	end
 end
 
