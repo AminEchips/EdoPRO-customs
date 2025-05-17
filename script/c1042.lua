@@ -6,7 +6,7 @@ function s.initial_effect(c)
 	--Activate: Tribute 2 LIGHT/DARK monsters including a "Despia" to Summon "Masquerade the Blazing Dragon"
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e1:SetCategory(CATEGORY_RELEASE+CATEGORY_SPECIAL_SUMMON)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	--GY effect: Banish to send 1 "Despia" monster from Deck/Extra to GY if Fusion destroyed
+	--GY effect: Banish to send 1 "Despia" monster from Deck/Extra to GY if Fusion leaves field
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e2:SetCode(EVENT_TO_GRAVE)
@@ -22,7 +22,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
-s.listed_names={68584890,06855503} -- Fallen of Albaz, Masquerade
+s.listed_names={06855503} -- Masquerade
 s.listed_series={0x166} -- Despia
 
 function s.costfilter(c,tp)
@@ -33,21 +33,24 @@ function s.despiafilter(c)
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_MZONE,0,2,nil,tp)
-			and Duel.IsExistingMatchingCard(s.despiafilter,tp,LOCATION_MZONE,0,1,nil)
-			and Duel.GetLocationCountFromEx(tp)>0
+		local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_MZONE,0,nil)
+		return #g>=2 and g:IsExists(Card.IsSetCard,1,nil,0x166)
+			and Duel.GetLocationCountFromEx(tp,tp,g)>0
 	end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_MZONE,0,2,2,nil,tp)
-	if #g<2 or not g:IsExists(Card.IsSetCard,1,nil,0x166) then return false end
-	Duel.Release(g,REASON_COST)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_MZONE,0,2,2,nil)
+	if #g==2 and g:IsExists(Card.IsSetCard,1,nil,0x166) then
+		Duel.SetTargetCard(g)
+		Duel.SetOperationInfo(0,CATEGORY_RELEASE,g,2,0,0)
+		Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
+	end
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+	if #g~=2 then return end
+	Duel.Release(g,REASON_EFFECT)
 	if Duel.GetLocationCountFromEx(tp)<=0 then return end
-	if not Duel.IsPlayerCanSpecialSummon(tp) then return end
-	local c=e:GetHandler()
 	local tc=Duel.GetFirstMatchingCard(function(c,e,tp)
 		return c:IsCode(06855503) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
 	end,tp,LOCATION_EXTRA,0,nil,e,tp)
@@ -63,7 +66,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,1))
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e1:SetCode(EVENT_TO_GRAVE)
+	e1:SetCode(EVENT_LEAVE_FIELD)
 	e1:SetRange(LOCATION_GRAVE)
 	e1:SetProperty(EFFECT_FLAG_DELAY)
 	e1:SetCountLimit(1,{id,1})
@@ -75,7 +78,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.cfilter(c,tp)
-	return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE) and c:IsReason(REASON_BATTLE+REASON_EFFECT) and c:IsType(TYPE_FUSION)
+	return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE) and c:IsType(TYPE_FUSION)
 end
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.cfilter,1,nil,tp)
