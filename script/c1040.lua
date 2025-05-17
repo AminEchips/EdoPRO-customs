@@ -33,6 +33,7 @@ function s.initial_effect(c)
 	e2:SetProperty(EFFECT_FLAG_DELAY)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCondition(s.spcon)
+	e2:SetCost(s.spcost)
 	e2:SetTarget(s.sptg)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
@@ -41,7 +42,7 @@ end
 s.listed_names={68468459} -- Fallen of Albaz
 s.listed_series={0x158} -- Springans
 
--- Cost: discard 1 Fallen of Albaz, a monster that mentions it, or a Springans monster
+-- Cost for draw effect
 function s.cfilter(c)
 	return c:IsMonster() and c:IsDiscardable(REASON_COST)
 		and (c:IsCode(68468459) or c:ListsCode(68468459) or c:IsSetCard(0x158))
@@ -63,7 +64,7 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Draw(p,d,REASON_EFFECT)
 end
 
--- GY effect: if a Springans Xyz you controlled left the field by effect (not during Damage Step)
+-- GY trigger if Springans Xyz left field by effect
 function s.spfilter(c,tp)
 	return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
 		and c:IsSetCard(0x158) and c:IsType(TYPE_XYZ)
@@ -74,7 +75,13 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.spfilter,1,nil,tp)
 end
 
--- Target banished Xyz to summon
+-- Cost for GY effect: banish this card
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
+	Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
+end
+
+-- Target banished Xyz
 function s.xyzfilter(c,e,tp)
 	return c:IsType(TYPE_XYZ) and c:IsFaceup() and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
@@ -85,7 +92,6 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local g=Duel.SelectMatchingCard(tp,s.xyzfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
 	if #g>0 then
 		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
