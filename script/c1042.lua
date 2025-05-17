@@ -1,8 +1,9 @@
 --Branded Evolution
---Scripted by Meuh + fixed by ChatGPT
+--Scripted by Meuh, patched by ChatGPT to match Aluber
 local s,id=GetID()
+
 function s.initial_effect(c)
-	--Activate: Tribute 2 LIGHT/DARK monsters including a "Despia" to Summon "Masquerade the Blazing Dragon"
+	--Activate: Tribute 2 LIGHT/DARK monsters including a "Despia" to Summon "Masquerade"
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_RELEASE+CATEGORY_SPECIAL_SUMMON)
@@ -12,13 +13,13 @@ function s.initial_effect(c)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 
-	--GY effect: When a Fusion Monster you controlled leaves the field, banish this card to send a "Despia" monster from Deck or Extra Deck to GY
+	--Trigger from GY when a Fusion you controlled leaves the field
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOGRAVE)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_LEAVE_FIELD)
 	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetCode(EVENT_LEAVE_FIELD)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCondition(s.gycon)
@@ -26,26 +27,33 @@ function s.initial_effect(c)
 	e2:SetTarget(s.gytg)
 	e2:SetOperation(s.gyop)
 	c:RegisterEffect(e2)
+
+	-- Global check for Fusion leaving field (for battle, banish, return etc.)
+	if not s.global_check then
+		s.global_check=true
+		local ge=Effect.CreateEffect(c)
+		ge:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ge:SetCode(EVENT_LEAVE_FIELD)
+		ge:SetOperation(s.checkop)
+		Duel.RegisterEffect(ge,0)
+	end
 end
 
-s.listed_names={06855503} -- Masquerade the Blazing Dragon
-s.listed_series={0x166} -- Despia
+s.listed_names={06855503}
+s.listed_series={0x166}
 
------------------------------------
--- EFFECT 1: Tribute and summon
------------------------------------
+----------------------------------
+-- Effect 1: Tribute to Summon
+----------------------------------
 function s.tribute_filter(c)
-	return c:IsAttribute(ATTRIBUTE_LIGHT+ATTRIBUTE_DARK) and c:IsReleasable() and c:IsFaceup()
-end
-function s.has_despia(g)
-	return g:IsExists(Card.IsSetCard,1,nil,0x166)
+	return c:IsAttribute(ATTRIBUTE_LIGHT+ATTRIBUTE_DARK) and c:IsFaceup() and c:IsReleasable()
 end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.tribute_filter,tp,LOCATION_MZONE,0,nil)
-	if #g<2 or not s.has_despia(g) then return end
+	if #g<2 or not g:IsExists(Card.IsSetCard,1,nil,0x166) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
 	local rg=g:Select(tp,2,2,nil)
-	if #rg<2 or not s.has_despia(rg) then return end
+	if not rg:IsExists(Card.IsSetCard,1,nil,0x166) then return end
 	if Duel.Release(rg,REASON_EFFECT)==2 and Duel.GetLocationCountFromEx(tp)>0 then
 		local tc=Duel.GetFirstMatchingCard(function(c,e,tp)
 			return c:IsCode(06855503) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
@@ -57,12 +65,12 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
------------------------------------
--- EFFECT 2: GY trigger on Fusion leaving field
------------------------------------
+----------------------------------
+-- Effect 2: Fusion left field → send Despia
+----------------------------------
 function s.cfilter(c,tp)
-	return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE) and c:IsType(TYPE_FUSION)
-		and c:IsPreviousPosition(POS_FACEUP)
+	return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
+		and c:IsType(TYPE_FUSION) and c:IsPreviousPosition(POS_FACEUP)
 end
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
@@ -81,7 +89,12 @@ function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.SelectMatchingCard(tp,s.gyfilter,tp,LOCATION_DECK+LOCATION_EXTRA,0,1,1,nil)
-	if #g>0 then
-		Duel.SendtoGrave(g,REASON_EFFECT)
-	end
+	if #g>0 then Duel.SendtoGrave(g,REASON_EFFECT) end
+end
+
+----------------------------------
+-- Global Tracker (to behave like Aluber)
+----------------------------------
+function s.checkop(e,tp,eg,ep,ev,re,r,rp)
+	-- Dummy to ensure EVENT_LEAVE_FIELD always fires for the GY trigger
 end
