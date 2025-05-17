@@ -1,5 +1,5 @@
 --Reflection of the Branded
---Scripted by Meuh (updated)
+--Scripted by Meuh (fully fixed)
 local s,id=GetID()
 function s.initial_effect(c)
 	--Activate 1 of 2 effects
@@ -26,6 +26,7 @@ end
 
 s.listed_names={68468459} -- Fallen of Albaz
 
+-- Filters
 function s.matfilter(c,e)
 	return c:IsCanBeFusionMaterial() and c:IsAbleToGrave() and not c:IsImmuneToEffect(e)
 end
@@ -38,14 +39,16 @@ function s.costfilter(c)
 	return c:IsType(TYPE_FUSION) and c:IsReleasable()
 end
 
+-- Cost: store mode selection, tribute fusion if mode 1
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
-	local chk1=Duel.IsExistingMatchingCard(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil,e)
+	local mat=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil,e)
+	local chk1=Duel.IsExistingMatchingCard(s.fusfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,mat)
 	local chk2=Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_MZONE,0,1,nil)
 		and Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,2,nil)
 
 	if chk==0 then return chk1 or chk2 end
 
-	local opt
+	local opt=0
 	if chk1 and chk2 then
 		opt=Duel.SelectOption(tp,aux.Stringid(id,0),aux.Stringid(id,1))
 	elseif chk1 then
@@ -58,16 +61,15 @@ function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	e:SetLabel(opt)
 
 	if opt==1 then
-		-- Tribute 1 Fusion as cost
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
 		local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_MZONE,0,1,1,nil)
 		if #g>0 then
 			Duel.Release(g,REASON_COST)
-			e:SetLabelObject(g:GetFirst())
 		end
 	end
 end
 
+-- Targeting
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if e:GetLabel()==0 then
 		local mat=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil,e)
@@ -82,8 +84,10 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	end
 end
 
+-- Activation
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
-	if e:GetLabel()==0 then
+	local opt=e:GetLabel()
+	if opt==0 then
 		local mat=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil,e)
 		local fus=Duel.GetMatchingGroup(s.fusfilter,tp,LOCATION_EXTRA,0,nil,e,tp,mat)
 		if #mat==0 or #fus==0 then return end
@@ -106,24 +110,23 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- GY float effect
+-- GY effect
 function s.regop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsReason(REASON_COST) and re and re:IsActivated() and re:IsMonsterEffect()
 		and re:GetHandler():IsCode(68468459) then
-		local e1=Effect.CreateEffect(c)
-		e1:SetDescription(aux.Stringid(id,2))
-		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-		e1:SetCode(EVENT_PHASE+PHASE_END)
-		e1:SetRange(LOCATION_GRAVE)
-		e1:SetCountLimit(1,{id,1})
-		e1:SetTarget(s.settg)
-		e1:SetOperation(s.setop)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-		c:RegisterEffect(e1)
+			local e1=Effect.CreateEffect(c)
+			e1:SetDescription(aux.Stringid(id,2))
+			e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+			e1:SetCode(EVENT_PHASE+PHASE_END)
+			e1:SetRange(LOCATION_GRAVE)
+			e1:SetCountLimit(1,{id,1})
+			e1:SetTarget(s.settg)
+			e1:SetOperation(s.setop)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+			c:RegisterEffect(e1)
 	end
 end
-
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():IsSSetable() end
 	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,e:GetHandler(),1,0,0)
