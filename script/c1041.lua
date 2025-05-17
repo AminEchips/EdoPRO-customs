@@ -37,10 +37,12 @@ function s.costfilter(c)
 	return c:IsType(TYPE_FUSION) and c:IsReleasable()
 end
 
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return false end
 	local chk1=Duel.IsExistingMatchingCard(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,1,nil,e)
 	local chk2=Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_MZONE,0,1,nil)
-	if chk==0 then return chk1 or (chk2 and Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,2,nil)) end
+		and Duel.IsExistingTarget(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,2,nil)
+	if chk==0 then return chk1 or chk2 end
 	local opt=0
 	if chk1 and chk2 then
 		opt=Duel.SelectOption(tp,aux.Stringid(id,0),aux.Stringid(id,1))
@@ -80,7 +82,6 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
 		local cost=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_MZONE,0,1,1,nil)
 		if #cost==0 or Duel.Release(cost,REASON_COST)==0 then return end
-
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 		local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,2,2,nil)
 		if #g==2 then
@@ -94,16 +95,16 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsReason(REASON_COST) and re and re:IsActivated() and re:IsMonsterEffect()
 		and re:GetHandler():IsCode(68468459) then
-		local e1=Effect.CreateEffect(c)
-		e1:SetDescription(aux.Stringid(id,2))
-		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-		e1:SetCode(EVENT_PHASE+PHASE_END)
-		e1:SetRange(LOCATION_GRAVE)
-		e1:SetCountLimit(1,{id,1})
-		e1:SetTarget(s.settg)
-		e1:SetOperation(s.setop)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-		c:RegisterEffect(e1)
+			local e1=Effect.CreateEffect(c)
+			e1:SetDescription(aux.Stringid(id,2))
+			e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+			e1:SetCode(EVENT_PHASE+PHASE_END)
+			e1:SetRange(LOCATION_GRAVE)
+			e1:SetCountLimit(1,{id,1})
+			e1:SetTarget(s.settg)
+			e1:SetOperation(s.setop)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+			c:RegisterEffect(e1)
 	end
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
