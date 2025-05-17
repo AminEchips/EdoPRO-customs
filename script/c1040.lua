@@ -41,13 +41,17 @@ end
 s.listed_names={68468459} -- Fallen of Albaz
 s.listed_series={0x158} -- Springans
 
+-- Cost: discard 1 Fallen of Albaz, a monster that mentions it, or a Springans monster
 function s.cfilter(c)
-	return c:IsDiscardable(REASON_COST) and (c:IsCode(68468459) or c:ListsCode(68468459) or c:IsSetCard(0x158))
+	return c:IsMonster() and c:IsDiscardable(REASON_COST)
+		and (c:IsCode(68468459) or c:ListsCode(68468459) or c:IsSetCard(0x158))
 end
 function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,nil) end
 	Duel.DiscardHand(tp,s.cfilter,1,1,REASON_COST+REASON_DISCARD)
 end
+
+-- Draw 2
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsPlayerCanDraw(tp,2) end
 	Duel.SetTargetPlayer(tp)
@@ -59,13 +63,18 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Draw(p,d,REASON_EFFECT)
 end
 
+-- GY effect: if a Springans Xyz you controlled left the field by effect (not during Damage Step)
 function s.spfilter(c,tp)
-	return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE) and c:IsSetCard(0x158)
-		and c:IsType(TYPE_XYZ) and c:IsReason(REASON_EFFECT) and not Duel.IsDamageStep()
+	return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
+		and c:IsSetCard(0x158) and c:IsType(TYPE_XYZ)
+		and c:IsReason(REASON_EFFECT)
+		and not (Duel.GetCurrentPhase()==PHASE_DAMAGE and not Duel.IsDamageCalculated())
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.spfilter,1,nil,tp)
 end
+
+-- Target banished Xyz to summon
 function s.xyzfilter(c,e,tp)
 	return c:IsType(TYPE_XYZ) and c:IsFaceup() and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
