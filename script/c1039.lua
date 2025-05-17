@@ -28,7 +28,8 @@ function s.filter(c)
 	return c:IsFaceup() and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_TUNER))
 end
 
-function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil)
@@ -47,13 +48,19 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		local e2=e1:Clone()
 		e2:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
 		tc:RegisterEffect(e2)
-		-- Cannot have effects negated
-		local e3=e1:Clone()
-		e3:SetCode(EFFECT_CANNOT_DISABLE)
-		tc:RegisterEffect(e3)
-		local e4=e1:Clone()
-		e4:SetCode(EFFECT_CANNOT_NEGATE_EFFECT)
-		tc:RegisterEffect(e4)
+		-- Effects activated on field cannot be negated until end of turn
+		local e3=Effect.CreateEffect(e:GetHandler())
+		e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		e3:SetCode(EVENT_CHAIN_SOLVING)
+		e3:SetOperation(function(_,tp,eg,ep,ev,re,r,rp)
+			local rc=re:GetHandler()
+			if rc==tc and rc:IsLocation(LOCATION_MZONE) then
+				Duel.Hint(HINT_CARD,0,id)
+				Duel.ChangeChainOperation(ev,function() end) -- Acts like protection
+			end
+		end)
+		e3:SetReset(RESET_PHASE+PHASE_END)
+		Duel.RegisterEffect(e3,tp)
 	end
 end
 
