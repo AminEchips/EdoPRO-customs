@@ -10,6 +10,7 @@ function s.initial_effect(c)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetHintTiming(0,TIMING_END_PHASE)
 	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetTarget(s.target)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
@@ -32,7 +33,8 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.filter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.filter,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil)
+	local g=Duel.SelectTarget(tp,s.filter,tp,LOCATION_MZONE,0,1,1,nil)
+	Duel.SetTargetCard(g)
 end
 
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
@@ -49,17 +51,17 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		e2:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
 		tc:RegisterEffect(e2)
 		-- Effects activated on field cannot be negated until end of turn
+		tc:RegisterFlagEffect(id,RESET_EVENT|RESET_TURN_SET|RESET_TOFIELD|RESET_PHASE|PHASE_END,0,1)
 		local e3=Effect.CreateEffect(e:GetHandler())
-		e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		e3:SetCode(EVENT_CHAIN_SOLVING)
-		e3:SetOperation(function(_,tp,eg,ep,ev,re,r,rp)
-			local rc=re:GetHandler()
-			if rc==tc and rc:IsLocation(LOCATION_MZONE) then
-				Duel.Hint(HINT_CARD,0,id)
-				Duel.ChangeChainOperation(ev,function() end) -- Acts like protection
-			end
+		e3:SetType(EFFECT_TYPE_FIELD)
+		e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+		e3:SetCode(EFFECT_CANNOT_DISEFFECT)
+		e3:SetTargetRange(1,1)
+		e3:SetValue(function(_,ct)
+			local te,loc=Duel.GetChainInfo(ct,CHAININFO_TRIGGERING_EFFECT,CHAININFO_TRIGGERING_LOCATION)
+			return te:GetHandler():HasFlagEffect(id) and (loc&LOCATION_ONFIELD)>0
 		end)
-		e3:SetReset(RESET_PHASE+PHASE_END)
+		e3:SetReset(RESET_PHASE|PHASE_END)
 		Duel.RegisterEffect(e3,tp)
 	end
 end
