@@ -30,7 +30,7 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e2:SetCode(EVENT_ADJUST)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetCondition(function() return not Duel.IsDamageStep() end)
+	e2:SetCondition(function() return not Duel.IsPhase(PHASE_DAMAGE) or not Duel.IsDamageCalculated() end)
 	e2:SetOperation(s.banop)
 	c:RegisterEffect(e2)
 
@@ -40,9 +40,8 @@ function s.initial_effect(c)
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_TO_GRAVE)
-	e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+	e3:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DAMAGE_STEP)
 	e3:SetCountLimit(1,{id,1})
-	e3:SetCondition(s.spcon)
 	e3:SetTarget(s.sptg)
 	e3:SetOperation(s.spop)
 	c:RegisterEffect(e3)
@@ -78,12 +77,6 @@ function s.banop(e,tp,eg,ep,ev,re,r,rp)
 	if #g>0 then
 		Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
 	end
-end
-
--- GY Trigger Condition
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsPreviousPosition(POS_FACEUP)
 end
 
 -- GY Trigger Target
