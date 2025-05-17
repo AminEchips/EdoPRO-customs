@@ -61,6 +61,8 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 		local fus=Duel.GetMatchingGroup(s.fusfilter,tp,LOCATION_EXTRA,0,nil,e,tp,mat)
 		Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,fus,1,tp,LOCATION_EXTRA)
 	else
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+		Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,2,2,nil)
 		Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,2,0,LOCATION_ONFIELD)
 	end
 end
@@ -87,11 +89,9 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
 		local cost=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_MZONE,0,1,1,nil)
 		if #cost==0 or Duel.Release(cost,REASON_COST)==0 then return end
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-		local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,2,2,nil)
-		if #g==2 then
-			Duel.Destroy(g,REASON_EFFECT)
-		end
+		local tg=Duel.GetTargetsRelateToChain()
+		if #tg<2 then return end
+		Duel.Destroy(tg,REASON_EFFECT)
 	end
 end
 
@@ -100,16 +100,16 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsReason(REASON_COST) and re and re:IsActivated() and re:IsMonsterEffect()
 		and re:GetHandler():IsCode(68468459) then
-		local e1=Effect.CreateEffect(c)
-		e1:SetDescription(aux.Stringid(id,2))
-		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-		e1:SetCode(EVENT_PHASE+PHASE_END)
-		e1:SetRange(LOCATION_GRAVE)
-		e1:SetCountLimit(1,{id,1})
-		e1:SetTarget(s.settg)
-		e1:SetOperation(s.setop)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-		c:RegisterEffect(e1)
+			local e1=Effect.CreateEffect(c)
+			e1:SetDescription(aux.Stringid(id,2))
+			e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+			e1:SetCode(EVENT_PHASE+PHASE_END)
+			e1:SetRange(LOCATION_GRAVE)
+			e1:SetCountLimit(1,{id,1})
+			e1:SetTarget(s.settg)
+			e1:SetOperation(s.setop)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+			c:RegisterEffect(e1)
 	end
 end
 
