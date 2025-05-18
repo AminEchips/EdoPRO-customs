@@ -3,19 +3,24 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-	--Custom Xyz Summon procedure: 3 monsters, allow Albaz/Link-2 substitution
+	--Enable Revive Limit
 	c:EnableReviveLimit()
+
+	--Xyz Summon: 3 Level 2 monsters
+	Xyz.AddProcedure(c,nil,2,3)
+	
+	--Also treat Link-2 and Albaz as Level 2
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_FIELD)
-	e0:SetCode(EFFECT_SPSUMMON_PROC)
-	e0:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_CANNOT_DISABLE)
+	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_IGNORE_IMMUNE)
+	e0:SetCode(EFFECT_XYZ_LEVEL)
 	e0:SetRange(LOCATION_EXTRA)
-	e0:SetCondition(s.xyzcon)
-	e0:SetOperation(s.xyzop)
-	e0:SetValue(SUMMON_TYPE_XYZ)
+	e0:SetTargetRange(LOCATION_MZONE,LOCATION_MZONE)
+	e0:SetTarget(s.xyztg)
+	e0:SetValue(function(e,_,rc) return rc==e:GetHandler() and 2 or 0 end)
 	c:RegisterEffect(e0)
 
-	--ATK/DEF boost + immunity if "Fallen of Albaz" is material
+	--ATK/DEF boost + monster effect immunity if Albaz is attached
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_UPDATE_ATTACK)
@@ -32,7 +37,7 @@ function s.initial_effect(c)
 	e1c:SetValue(s.efilter)
 	c:RegisterEffect(e1c)
 
-	--Destroy up to 2 cards
+	--Destroy up to 2 cards (Quick Effect)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
@@ -46,7 +51,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.desop)
 	c:RegisterEffect(e2)
 
-	--Floating search
+	--Search 2 when leaves field
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_HANDES)
@@ -62,32 +67,12 @@ end
 s.listed_series={0x160,0x181,0x17b} -- Branded, Spright, Therion
 s.listed_names={68468459} -- Fallen of Albaz
 
--- Custom Summon Logic
-function s.matfilter(c)
-	return c:IsFaceup() and (c:IsLevel(2) or c:IsCode(68468459) or (c:IsType(TYPE_LINK) and c:GetLink()==2))
-end
-function s.xyzcon(e,c)
-	if c==nil then return true end
-	local tp=c:GetControler()
-	local g=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_MZONE,0,nil)
-	return g:CheckSubGroup(s.xyzcheck,3,3)
-end
-function s.xyzcheck(g)
-	local albaz=g:FilterCount(Card.IsCode,nil,68468459)
-	local link2=g:FilterCount(function(c) return c:IsType(TYPE_LINK) and c:GetLink()==2 end,nil)
-	local level2=g:FilterCount(function(c) return c:IsLevel(2) and not c:IsType(TYPE_LINK) and not c:IsCode(68468459) end,nil)
-	return albaz<=1 and link2<=1 and (albaz + link2 + level2)==3
-end
-function s.xyzop(e,tp,eg,ep,ev,re,r,rp,c)
-	local g=Duel.SelectMatchingGroup(tp,s.matfilter,tp,LOCATION_MZONE,0,nil)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
-	local sg=g:SelectSubGroup(tp,s.xyzcheck,false,3,3)
-	if not sg then return end
-	c:SetMaterial(sg)
-	Duel.Overlay(c,sg)
+--Allow Link-2 and Albaz to count as Level 2
+function s.xyztg(e,c)
+	return c:IsCode(68468459) or (c:IsType(TYPE_LINK) and c:GetLink()==2)
 end
 
--- Albaz-based effects
+-- Albaz-based bonus effects
 function s.statcon(e)
 	return e:GetHandler():GetOverlayGroup():IsExists(Card.IsCode,1,nil,68468459)
 end
@@ -98,7 +83,7 @@ function s.efilter(e,te)
 	return te:IsActiveType(TYPE_MONSTER)
 end
 
--- Destroy 2 on monster activation
+--Destroy 2
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
 	return rp==1-tp and re:IsActiveType(TYPE_MONSTER) and Duel.IsMainPhase()
 end
@@ -118,7 +103,7 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Float
+--Float into search
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsSummonType(SUMMON_TYPE_XYZ) and c:IsPreviousLocation(LOCATION_ONFIELD)
