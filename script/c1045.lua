@@ -24,7 +24,6 @@ function s.initial_effect(c)
     e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
     e2:SetCountLimit(1,{id,1})
     e2:SetCondition(s.gycon)
-    e2:SetCost(s.gycost)
     e2:SetTarget(s.gytg)
     e2:SetOperation(s.gyop)
     c:RegisterEffect(e2)
@@ -66,16 +65,12 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2 (Fixed)
+-- Effect 2 (no longer banishes itself unless opting to Special Summon)
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(Card.IsType,1,nil,TYPE_LINK)
 end
-function s.gycost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
-    Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
-end
 function s.gyfilter(c,e,tp)
-    return c:IsFaceup() and c:IsType(TYPE_LINK) and c:IsAbleToDeck()
+    return c:IsFaceup() and c:IsType(TYPE_LINK)
         and (c:IsCanBeSpecialSummoned(e,0,tp,false,false) or c:IsAbleToDeck())
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
@@ -86,13 +81,13 @@ function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
     local tc=Duel.GetFirstTarget()
     if not tc or not tc:IsRelateToEffect(e) then return end
 
     local b1 = tc:IsAbleToDeck()
     local b2 = tc:IsCanBeSpecialSummoned(e,0,tp,false,false)
 
+    local op
     if b1 and b2 then
         op=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3))
     elseif b1 then
@@ -107,6 +102,8 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
             Duel.SendtoHand(c,tp,REASON_EFFECT)
         end
     else
-        Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+        if Duel.Remove(c,POS_FACEUP,REASON_EFFECT)>0 then
+            Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+        end
     end
 end
