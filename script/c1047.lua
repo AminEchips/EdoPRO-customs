@@ -3,8 +3,8 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-	--Xyz Summon procedure
-	Xyz.AddProcedure(c,nil,2,3,s.ovfilter,aux.Stringid(id,0))
+	--Xyz Summon procedure (3 Level 2, Albaz or Link-2 count as 1)
+	Xyz.AddProcedure(c,s.mfilter,2,3)
 	c:EnableReviveLimit()
 
 	--ATK/DEF boost + immunity if "Fallen of Albaz" is material
@@ -54,9 +54,9 @@ end
 s.listed_series={0x160,0x181,0x17b} -- Branded, Spright, Therion
 s.listed_names={68468459} -- Fallen of Albaz
 
--- Allow substituting a Level 2 material with a Link-2 or Fallen of Albaz
-function s.ovfilter(c,tp,xyzc)
-	return c:IsFaceup() and (c:IsCode(68468459) or (c:IsType(TYPE_LINK) and c:GetLink()==2))
+-- XYZ Summon material filter
+function s.mfilter(c,sc,tp)
+	return c:IsLevel(2) or c:IsCode(68468459) or (c:IsType(TYPE_LINK) and c:GetLink()==2)
 end
 
 function s.statcon(e)
@@ -69,7 +69,6 @@ function s.efilter(e,te)
 	return te:IsActiveType(TYPE_MONSTER)
 end
 
--- Quick effect to destroy 1 or 2 cards during the Main Phase if opponent activates a monster effect
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
 	return rp==1-tp and re:IsActiveType(TYPE_MONSTER) and Duel.IsMainPhase()
 end
@@ -90,39 +89,27 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Floating: search 2 different Spell/Traps if Xyz Summoned and leaves field
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsSummonType(SUMMON_TYPE_XYZ) and c:IsPreviousLocation(LOCATION_ONFIELD) and c:GetReasonPlayer()~=tp
 end
 function s.thfilter(c)
-	return c:IsSpellTrap() and c:IsAbleToHand() and (c:IsSetCard(0x160) or c:IsSetCard(0x181) or c:IsSetCard(0x17b))
+	return (c:IsSetCard(0x160) or c:IsSetCard(0x181) or c:IsSetCard(0x17b)) and c:IsSpellTrap() and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		local g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_DECK,0,nil)
-		return #g>=2 and Duel.IsPlayerCanDiscardDeck(tp,1)
-	end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,2,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,2,tp,LOCATION_DECK)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_DECK,0,nil)
-	if #g<2 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local sg=Duel.SelectSubGroup(tp,s.distinctarchetypes,false,2,2,g)
-	if sg then
-		Duel.SendtoHand(sg,nil,REASON_EFFECT)
-		Duel.ConfirmCards(1-tp,sg)
-		Duel.BreakEffect()
-		Duel.DiscardHand(tp,aux.TRUE,1,1,REASON_EFFECT+REASON_DISCARD)
+	if #g>=2 then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+		local sg=g:Select(tp,2,2,nil)
+		if #sg==2 then
+			Duel.SendtoHand(sg,nil,REASON_EFFECT)
+			Duel.ConfirmCards(1-tp,sg)
+			Duel.BreakEffect()
+			Duel.DiscardHand(tp,aux.TRUE,1,1,REASON_EFFECT+REASON_DISCARD)
+		end
 	end
-end
-function s.distinctarchetypes(g)
-	local set_codes={}
-	for tc in aux.Next(g) do
-		if tc:IsSetCard(0x160) then set_codes[0x160]=true end
-		if tc:IsSetCard(0x181) then set_codes[0x181]=true end
-		if tc:IsSetCard(0x17b) then set_codes[0x17b]=true end
-	end
-	return (set_codes[0x160] and set_codes[0x181]) or (set_codes[0x160] and set_codes[0x17b]) or (set_codes[0x181] and set_codes[0x17b])
 end
