@@ -17,10 +17,10 @@ function s.initial_effect(c)
 	e1:SetOperation(s.sumop)
 	c:RegisterEffect(e1)
 
-	--Negate in response to Albaz-related effect
+	-- Effect 2: Quick negate when opponent responds to Albaz or card that mentions it
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_NEGATE+CATEGORY_REMOVE)
+	e2:SetCategory(CATEGORY_NEGATE)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_CHAINING)
 	e2:SetRange(LOCATION_MZONE)
@@ -30,6 +30,7 @@ function s.initial_effect(c)
 	e2:SetTarget(s.negtg)
 	e2:SetOperation(s.negop)
 	c:RegisterEffect(e2)
+
 end
 
 s.listed_names={68468459} -- Fallen of Albaz
@@ -63,27 +64,18 @@ function s.sumop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Effect 2: Response negate to Albaz or mentions-Albaz
-function s.albaz_related(re)
-	local rc=re:GetHandler()
-	return rc:IsCode(68468459) or rc:ListsCode(68468459)
-end
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-	if rp~=1-tp or not Duel.IsChainDisablable(ev) then return false end
-	local ce,cp,cv,cod=Duel.GetChainInfo(ev,CHAININFO_TRIGGERING_EFFECT,CHAININFO_TRIGGERING_PLAYER,CHAININFO_CHAINING_PLAYER,CHAININFO_CHAINING_TRIGGERING_EFFECT)
-	if not ce then return false end
-	local prev_chain=ev-1
-	if prev_chain<1 then return false end
-	local prev_re=Duel.GetChainInfo(prev_chain,CHAININFO_TRIGGERING_EFFECT)
-	return prev_re and s.albaz_related(prev_re)
+	local prev=ev-1
+	if prev<=0 or ep~=1-tp or not Duel.IsChainDisablable(ev) then return false end
+	local ch_eff,ch_tp=Duel.GetChainInfo(prev,CHAININFO_TRIGGERING_EFFECT,CHAININFO_TRIGGERING_PLAYER)
+	local ch_card=ch_eff:GetHandler()
+	return ch_tp==tp and (ch_card:IsCode(68468459) or ch_card:ListsCode(68468459))
 end
 
-function s.cfilter(c)
-	return c:IsMonster() and c:IsAbleToRemoveAsCost()
-end
 function s.negcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,1,nil) end
+	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsAbleToRemoveAsCost,tp,LOCATION_GRAVE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,Card.IsAbleToRemoveAsCost,tp,LOCATION_GRAVE,0,1,1,nil)
 	e:SetLabelObject(g:GetFirst())
 	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
@@ -94,22 +86,20 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
-	local rc=re:GetHandler()
 	local c=e:GetHandler()
-	if Duel.NegateActivation(ev) and rc:IsRelateToEffect(re) then
-		local bc=e:GetLabelObject()
-		if bc then
-			local is2=bc:GetLevel()==2 or bc:GetRank()==2 or (bc:IsType(TYPE_LINK) and bc:GetLink()==2)
-			if is2 and rc:IsFaceup() and rc:IsRelateToEffect(re) then
-				local e1=Effect.CreateEffect(c)
-				e1:SetType(EFFECT_TYPE_SINGLE)
-				e1:SetCode(EFFECT_DISABLE)
-				e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-				rc:RegisterEffect(e1)
-				local e2=e1:Clone()
-				e2:SetCode(EFFECT_DISABLE_EFFECT)
-				rc:RegisterEffect(e2)
-			end
+	local bc=e:GetLabelObject()
+	local rc=re:GetHandler()
+	if Duel.NegateActivation(ev) and bc then
+		local is2 = bc:IsLevel(2) or bc:IsRank(2) or (bc:IsLink(2) and bc:IsType(TYPE_LINK))
+		if is2 and rc:IsRelateToEffect(re) and rc:IsFaceup() then
+			local e1=Effect.CreateEffect(c)
+			e1:SetType(EFFECT_TYPE_SINGLE)
+			e1:SetCode(EFFECT_DISABLE)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+			rc:RegisterEffect(e1)
+			local e2=e1:Clone()
+			e2:SetCode(EFFECT_DISABLE_EFFECT)
+			rc:RegisterEffect(e2)
 		end
 	end
 end
