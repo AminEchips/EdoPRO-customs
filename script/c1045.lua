@@ -66,7 +66,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2
+-- Effect 2 (Fixed)
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(Card.IsType,1,nil,TYPE_LINK)
 end
@@ -74,17 +74,19 @@ function s.gycost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
     Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
 end
-function s.gyfilter(c)
+function s.gyfilter(c,e,tp)
     return c:IsFaceup() and c:IsType(TYPE_LINK) and c:IsAbleToDeck()
-        and (c:IsCanBeSpecialSummoned(nil,0,tp,false,false) or c:IsAbleToDeck())
+        and (c:IsCanBeSpecialSummoned(e,0,tp,false,false) or c:IsAbleToDeck())
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_REMOVED) and s.gyfilter(chkc) end
-    if chk==0 then return Duel.IsExistingTarget(s.gyfilter,tp,LOCATION_REMOVED,0,1,nil) end
+    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_REMOVED) and s.gyfilter(chkc,e,tp) end
+    if chk==0 then return Duel.IsExistingTarget(s.gyfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-    Duel.SelectTarget(tp,s.gyfilter,tp,LOCATION_REMOVED,0,1,1,nil)
+    Duel.SelectTarget(tp,s.gyfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
 end
 function s.gyop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
     local tc=Duel.GetFirstTarget()
     if not tc or not tc:IsRelateToEffect(e) then return end
 
@@ -102,7 +104,7 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
     if op==0 then
         if Duel.SendtoDeck(tc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 then
             Duel.BreakEffect()
-            Duel.SendtoHand(e:GetHandler(),tp,REASON_EFFECT)
+            Duel.SendtoHand(c,tp,REASON_EFFECT)
         end
     else
         Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
