@@ -54,8 +54,9 @@ end
 s.listed_series={0x160,0x181,0x17b} -- Branded, Spright, Therion
 s.listed_names={68468459} -- Fallen of Albaz
 
+-- Allow substituting a Level 2 material with a Link-2 or Fallen of Albaz
 function s.ovfilter(c,tp,xyzc)
-	return c:IsFaceup() and (c:IsCode(68468459) or c:IsType(TYPE_LINK) and c:GetLink()==2)
+	return c:IsFaceup() and (c:IsCode(68468459) or (c:IsType(TYPE_LINK) and c:GetLink()==2))
 end
 
 function s.statcon(e)
@@ -68,6 +69,7 @@ function s.efilter(e,te)
 	return te:IsActiveType(TYPE_MONSTER)
 end
 
+-- Quick effect to destroy 1 or 2 cards during the Main Phase if opponent activates a monster effect
 function s.descon(e,tp,eg,ep,ev,re,r,rp)
 	return rp==1-tp and re:IsActiveType(TYPE_MONSTER) and Duel.IsMainPhase()
 end
@@ -88,32 +90,39 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+-- Floating: search 2 different Spell/Traps if Xyz Summoned and leaves field
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsSummonType(SUMMON_TYPE_XYZ) and c:IsPreviousLocation(LOCATION_ONFIELD) and c:GetReasonPlayer()~=tp
 end
 function s.thfilter(c)
-	return (c:IsSetCard(0x160) or c:IsSetCard(0x181) or c:IsSetCard(0x17b)) and c:IsAbleToHand() and c:IsSpellTrap()
+	return c:IsSpellTrap() and c:IsAbleToHand() and (c:IsSetCard(0x160) or c:IsSetCard(0x181) or c:IsSetCard(0x17b))
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,2,nil) and Duel.IsPlayerCanDiscardDeck(tp,1) end
+	if chk==0 then
+		local g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_DECK,0,nil)
+		return #g>=2 and Duel.IsPlayerCanDiscardDeck(tp,1)
+	end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,2,tp,LOCATION_DECK)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.thfilter,tp,LOCATION_DECK,0,nil)
-	if #g>=2 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-		local sg=g:SelectSubGroup(tp,function(sg)
-			local branded=sg:IsExists(Card.IsSetCard,1,nil,0x160)
-			local spright=sg:IsExists(Card.IsSetCard,1,nil,0x181)
-			local therion=sg:IsExists(Card.IsSetCard,1,nil,0x17b)
-			return branded and spright and therion
-		end,false,2,2)
-		if sg then
-			Duel.SendtoHand(sg,nil,REASON_EFFECT)
-			Duel.ConfirmCards(1-tp,sg)
-			Duel.BreakEffect()
-			Duel.DiscardHand(tp,aux.TRUE,1,1,REASON_EFFECT+REASON_DISCARD)
-		end
+	if #g<2 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+	local sg=Duel.SelectSubGroup(tp,s.distinctarchetypes,false,2,2,g)
+	if sg then
+		Duel.SendtoHand(sg,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,sg)
+		Duel.BreakEffect()
+		Duel.DiscardHand(tp,aux.TRUE,1,1,REASON_EFFECT+REASON_DISCARD)
 	end
+end
+function s.distinctarchetypes(g)
+	local set_codes={}
+	for tc in aux.Next(g) do
+		if tc:IsSetCard(0x160) then set_codes[0x160]=true end
+		if tc:IsSetCard(0x181) then set_codes[0x181]=true end
+		if tc:IsSetCard(0x17b) then set_codes[0x17b]=true end
+	end
+	return (set_codes[0x160] and set_codes[0x181]) or (set_codes[0x160] and set_codes[0x17b]) or (set_codes[0x181] and set_codes[0x17b])
 end
