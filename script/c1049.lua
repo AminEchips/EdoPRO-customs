@@ -52,15 +52,17 @@ function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.eqfilter(chkc) end
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
 		and Duel.IsExistingTarget(s.eqfilter,tp,LOCATION_GRAVE,0,1,nil) end
+	local ft=math.min(Duel.GetLocationCount(tp,LOCATION_SZONE),99)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
-	local g=Duel.SelectTarget(tp,s.eqfilter,tp,LOCATION_GRAVE,0,1,99,nil)
+	local g=Duel.SelectTarget(tp,s.eqfilter,tp,LOCATION_GRAVE,0,1,ft,nil)
 	Duel.SetOperationInfo(0,CATEGORY_EQUIP,g,#g,0,0)
 end
 function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) or not c:IsFaceup() then return end
-	local tg=Duel.GetTargetsRelateToChain()
-	for tc in aux.Next(tg) do
+	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS):Filter(Card.IsRelateToEffect,nil,e)
+	if Duel.GetLocationCount(tp,LOCATION_SZONE)<#g then return end
+	for tc in aux.Next(g) do
 		if Duel.Equip(tp,tc,c,true) then
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_SINGLE)
@@ -71,6 +73,7 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 			tc:RegisterEffect(e1)
 		end
 	end
+	Duel.EquipComplete()
 end
 
 function s.bounceop(e,tp,eg,ep,ev,re,r,rp)
