@@ -26,9 +26,9 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
-s.listed_series={0x27a} -- Swordsoul
+s.listed_series={0x16d} -- Swordsoul
 
--- Extra Normal Summon + Restriction on Wyrm Special Summons
+-- Extra Normal Summon + Restriction on Wyrm Special Summons from the Extra Deck
 function s.nsumop(e,tp,eg,ep,ev,re,r,rp)
 	-- Extra Normal Summon
 	local e1=Effect.CreateEffect(e:GetHandler())
@@ -40,7 +40,7 @@ function s.nsumop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e1,tp)
 
-	-- Restrict Wyrm Special Summons except Synchro
+	-- Restrict Wyrm Special Summons from Extra Deck except Synchro
 	local e2=Effect.CreateEffect(e:GetHandler())
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
@@ -51,7 +51,7 @@ function s.nsumop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterEffect(e2,tp)
 end
 function s.splimit(e,c,sump,sumtype,sumpos,targetp,se)
-	return c:IsRace(RACE_WYRM) and not c:IsType(TYPE_SYNCHRO)
+	return c:IsLocation(LOCATION_EXTRA) and c:IsRace(RACE_WYRM) and not c:IsType(TYPE_SYNCHRO)
 end
 
 -- Recover Swordsoul Spell/Trap
@@ -59,7 +59,7 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return r==REASON_SYNCHRO
 end
 function s.thfilter(c)
-	return c:IsSetCard(0x27a) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToHand()
+	return c:IsSetCard(0x16d) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE+LOCATION_REMOVED) and s.thfilter(chkc) and chkc:IsControler(tp) end
