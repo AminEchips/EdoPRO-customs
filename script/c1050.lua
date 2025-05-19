@@ -84,33 +84,27 @@ function s.eqfilter(c)
 	return c:IsSetCard(0x17b) and c:IsLevelBelow(8) and not c:IsForbidden()
 end
 function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.eqfilter(chkc) end
-	local c=e:GetHandler()
-	local ft=Duel.GetLocationCount(tp,LOCATION_SZONE)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and ft>0
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.eqfilter(chkc) end
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_SZONE)>0
 		and Duel.IsExistingTarget(s.eqfilter,tp,LOCATION_GRAVE,0,1,nil) end
-	ft=math.min(ft,3)
+	local ft=math.min(Duel.GetLocationCount(tp,LOCATION_SZONE),99)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
 	local g=Duel.SelectTarget(tp,s.eqfilter,tp,LOCATION_GRAVE,0,1,ft,nil)
 	Duel.SetOperationInfo(0,CATEGORY_EQUIP,g,#g,0,0)
 end
 function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) then return end
-	local g=Duel.GetTargetCards(e):Filter(aux.NOT(Card.IsForbidden),nil)
-	local ft=Duel.GetLocationCount(tp,LOCATION_SZONE)
-	if #g>ft then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
-		g=g:Select(tp,ft,ft,nil)
-	end
-	for tc in g:Iter() do
-		if Duel.Equip(tp,tc,c,true,true) then
+	if not c:IsRelateToEffect(e) or not c:IsFaceup() then return end
+	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS):Filter(Card.IsRelateToEffect,nil,e)
+	if Duel.GetLocationCount(tp,LOCATION_SZONE)<#g then return end
+	for tc in aux.Next(g) do
+		if Duel.Equip(tp,tc,c,true) then
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetProperty(EFFECT_FLAG_OWNER_RELATE)
 			e1:SetCode(EFFECT_EQUIP_LIMIT)
-			e1:SetValue(function(e,cc) return e:GetOwner()==cc end)
 			e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+			e1:SetValue(function(e,c) return e:GetOwner()==c end)
+			e1:SetOwnerPlayer(tp)
 			tc:RegisterEffect(e1)
 		end
 	end
@@ -148,11 +142,12 @@ function s.eqspop(e,tp,eg,ep,ev,re,r,rp)
 	if not ec:IsRelateToEffect(e) then return end
 	Duel.BreakEffect()
 	if Duel.Equip(tp,ec,c) then
+		--Equip limit
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
 		e1:SetCode(EFFECT_EQUIP_LIMIT)
-		e1:SetValue(function(e,cc) return cc==c end)
+		e1:SetValue(function(e,_c) return _c==c end)
 		e1:SetReset(RESET_EVENT|RESETS_STANDARD)
 		ec:RegisterEffect(e1)
 	end
