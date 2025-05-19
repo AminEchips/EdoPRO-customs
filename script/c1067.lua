@@ -1,11 +1,9 @@
---Icejade Actinola
-local s,id=GetID()
 function s.initial_effect(c)
 	s.listed_series={0x16e}
 	s.listed_names={07142724} -- Icejade Cenote Enion Cradle
 
-	-- Synchro Summon procedure
-	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_WATER),1,1,Synchro.NonTuner(Card.IsAttribute,ATTRIBUTE_WATER),1,99)
+	-- Proper Synchro Summon procedure: 1 Tuner + 1+ non-Tuner WATER
+	aux.AddSynchroProcedure(c,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_WATER),aux.NonTuner(Card.IsAttribute,ATTRIBUTE_WATER),1)
 	c:EnableReviveLimit()
 
 	-- Effect 1: On Synchro Summon - add Cradle or card that mentions it
