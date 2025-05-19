@@ -49,7 +49,7 @@ end
 -- Token creation + restriction + optional search
 function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	local token=Duel.CreateToken(tp,id+1)
+	local token=Duel.CreateToken(tp,TOKEN_SWORDSOUL)
 	if Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)>0 then
 		-- Restrict Extra Deck Special Summon except Synchro
 	local e1=Effect.CreateEffect(e:GetHandler())
