@@ -3,11 +3,11 @@ local s,id=GetID()
 function s.initial_effect(c)
 	s.listed_names={32731036} -- The Bystial Lubellion
 
-	-- Must be properly Fusion Summoned
+	-- Must be Fusion Summoned
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,32731036,aux.FilterBoolFunction(Card.IsRace,RACE_DRAGON))
 
-	-- 1. On Special Summon: Make a monster unaffected by other monster effects
+	-- 1. On Special Summon: Target monster becomes unaffected by other monsters' effects
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DISABLE)
@@ -33,19 +33,20 @@ function s.initial_effect(c)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
 
-	-- 3. GY effect: Banish LIGHT + DARK from either GY, Special Summon this card
+	-- 3. GY effect: Banish LIGHT + DARK from either GY to Special Summon this card (Ignition)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_REMOVE+CATEGORY_SPECIAL_SUMMON)
 	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetRange(LOCATION_GRAVE)
+	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e3:SetCountLimit(1,{id,2})
 	e3:SetCondition(aux.NOT(s.qcon))
 	e3:SetTarget(s.sptg)
 	e3:SetOperation(s.spop)
 	c:RegisterEffect(e3)
 
-	-- Quick variant of effect 3 if opponent controls monster
+	-- Quick variant of GY effect if opponent controls a monster
 	local e4=e3:Clone()
 	e4:SetType(EFFECT_TYPE_QUICK_O)
 	e4:SetCode(EVENT_FREE_CHAIN)
@@ -54,17 +55,17 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
--- Quick Effect condition: opponent controls monster
+-- Quick if opponent controls a monster
 function s.qcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsControler,1-tp),tp,0,LOCATION_MZONE,1,nil)
 end
 
--- 1. On Special Summon → Target monster you control → Unaffected by other monster effects
+-- Effect 1: Target monster on your field
 function s.unftg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) end
 	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_MZONE,0,1,1,nil)
+	Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_MZONE,0,1,1,nil)
 end
 function s.unfop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
@@ -81,10 +82,10 @@ function s.efilter(e,te)
 	return te:GetOwner()~=e:GetOwner() and te:IsActiveType(TYPE_MONSTER)
 end
 
--- 2. Any Dragon declares an attack → Banish 1 card on the field
+-- Effect 2: When any Dragon attacks
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
 	local at=Duel.GetAttacker()
-	return at:IsRace(RACE_DRAGON)
+	return at and at:IsRace(RACE_DRAGON)
 end
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsAbleToRemove,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
@@ -98,14 +99,15 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- 3. GY Revival → Target 1 LIGHT + 1 DARK in either GY, banish → revive this card
+-- Effect 3: Target 1 LIGHT + 1 DARK in either GY
 function s.spfilter1(c)
 	return c:IsAttribute(ATTRIBUTE_LIGHT) and c:IsAbleToRemove()
 end
 function s.spfilter2(c)
 	return c:IsAttribute(ATTRIBUTE_DARK) and c:IsAbleToRemove()
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return false end -- prevent misclick on either
 	local c=e:GetHandler()
 	if chk==0 then
 		return Duel.IsExistingTarget(s.spfilter1,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,nil)
@@ -121,11 +123,10 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
-	local lg=g:Filter(Card.IsAttribute,nil,ATTRIBUTE_LIGHT)
-	local dg=g:Filter(Card.IsAttribute,nil,ATTRIBUTE_DARK)
-	if #lg>0 and #dg>0 and Duel.Remove(g,POS_FACEUP,REASON_EFFECT)==2 then
-		if c:IsRelateToEffect(e) then
+	local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+	local g=tg:Filter(Card.IsRelateToEffect,nil,e)
+	if g:GetClassCount(Card.GetAttribute)==2 and g:IsExists(Card.IsAttribute,1,nil,ATTRIBUTE_LIGHT) and g:IsExists(Card.IsAttribute,1,nil,ATTRIBUTE_DARK) then
+		if Duel.Remove(g,POS_FACEUP,REASON_EFFECT)==2 and c:IsRelateToEffect(e) then
 			Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
 		end
 	end
