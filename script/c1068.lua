@@ -73,19 +73,23 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- GY Effect: Detach 1 from an Xyz, then Set this card
-function s.xyzfilter(c)
-	return c:IsFaceup() and c:IsType(TYPE_XYZ) and c:GetOverlayCount()>0
+function s.setfilter(c,tp)
+	return c:IsFaceup() and c:IsType(TYPE_XYZ) and c:CheckRemoveOverlayCard(tp,1,REASON_EFFECT)
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.xyzfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.xyzfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DETACHFROM)
-	local g=Duel.SelectTarget(tp,s.xyzfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.setfilter(chkc,tp) end
+	local c=e:GetHandler()
+	if chk==0 then return Duel.IsExistingTarget(s.setfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,nil,tp)
+		and c:IsSSetable() end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DEATTACHFROM)
+	Duel.SelectTarget(tp,s.setfilter,tp,LOCATION_MZONE,LOCATION_MZONE,1,1,nil,tp)
+	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,c,1,0,0)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) and tc:RemoveOverlayCard(tp,1,1,REASON_EFFECT)~=0 then
+	local c=e:GetHandler()
+	if tc and tc:IsRelateToEffect(e) and tc:RemoveOverlayCard(tp,1,1,REASON_EFFECT)~=0 and c:IsRelateToEffect(e) then
 		Duel.SSet(tp,c)
 	end
 end
+
