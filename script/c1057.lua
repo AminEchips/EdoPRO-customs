@@ -3,6 +3,7 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
+	-- Synchro Summon procedure
 	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(Card.IsAttribute,ATTRIBUTE_WATER),1,99)
 	c:EnableReviveLimit()
 
@@ -14,6 +15,7 @@ function s.initial_effect(c)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e1:SetProperty(EFFECT_FLAG_DELAY)
 	e1:SetCountLimit(1,id)
+	e1:SetTarget(s.eqtg)
 	e1:SetOperation(s.eqop)
 	c:RegisterEffect(e1)
 
@@ -27,6 +29,7 @@ function s.initial_effect(c)
 	e2:SetProperty(EFFECT_FLAG_DELAY)
 	e2:SetCountLimit(1,{id,1})
 	e2:SetCondition(s.eqcon2)
+	e2:SetTarget(s.eqtg)
 	e2:SetOperation(s.eqop)
 	c:RegisterEffect(e2)
 
@@ -44,7 +47,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
-s.listed_series={0x27e} -- Icejade
+s.listed_series={0x16e} -- Icejade
 
 function s.eqcon2(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(Card.IsControler,1,nil,tp)
@@ -52,33 +55,40 @@ function s.eqcon2(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.eqfilter(c)
-	return c:IsSetCard(0x27e) and c:IsMonster() and not c:IsForbidden()
+	return c:IsSetCard(0x16e) and c:IsMonster() and not c:IsForbidden()
+end
+
+function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) and Duel.IsExistingMatchingCard(s.eqfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+	Duel.SetOperationInfo(0,CATEGORY_EQUIP,nil,1,tp,LOCATION_HAND+LOCATION_GRAVE)
 end
 
 function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_SZONE)<=0 then return end
 	local c=e:GetHandler()
-	if Duel.Draw(tp,1,REASON_EFFECT)~=1 then return end
-	Duel.BreakEffect()
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
-	local g=Duel.SelectMatchingCard(tp,s.eqfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil)
-	local ec=g:GetFirst()
-	if ec and Duel.Equip(tp,ec,c,true) then
-		-- Equip limit
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetProperty(EFFECT_FLAG_COPY_INHERIT+EFFECT_FLAG_OWNER_RELATE)
-		e1:SetCode(EFFECT_EQUIP_LIMIT)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		e1:SetValue(function(e,c) return e:GetOwner()==c end)
-		ec:RegisterEffect(e1)
-		-- DEF boost
-		local e2=Effect.CreateEffect(c)
-		e2:SetType(EFFECT_TYPE_EQUIP)
-		e2:SetCode(EFFECT_UPDATE_DEFENSE)
-		e2:SetValue(1000)
-		e2:SetReset(RESET_EVENT+RESETS_STANDARD)
-		ec:RegisterEffect(e2)
+	if Duel.Draw(tp,1,REASON_EFFECT)==1 then
+		Duel.BreakEffect()
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
+		local g=Duel.SelectMatchingCard(tp,s.eqfilter,tp,LOCATION_HAND+LOCATION_GRAVE,0,1,1,nil)
+		local ec=g:GetFirst()
+		if ec and Duel.Equip(tp,ec,c,true) then
+			-- Equip limit
+			local e1=Effect.CreateEffect(c)
+			e1:SetType(EFFECT_TYPE_SINGLE)
+			e1:SetProperty(EFFECT_FLAG_COPY_INHERIT+EFFECT_FLAG_OWNER_RELATED)
+			e1:SetCode(EFFECT_EQUIP_LIMIT)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+			e1:SetValue(function(e,c) return e:GetOwner()==c end)
+			ec:RegisterEffect(e1)
+			-- DEF boost
+			local e2=Effect.CreateEffect(c)
+			e2:SetType(EFFECT_TYPE_EQUIP)
+			e2:SetCode(EFFECT_UPDATE_DEFENSE)
+			e2:SetValue(1000)
+			e2:SetReset(RESET_EVENT+RESETS_STANDARD)
+			ec:RegisterEffect(e2)
+		end
 	end
 end
 
@@ -87,7 +97,7 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.spfilter(c,e,tp)
-	return c:IsSetCard(0x27e) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsSetCard(0x16e) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
