@@ -57,7 +57,7 @@ end
 
 -- Effect 2 Helpers
 function s.stzfilter(c,e,tp)
-	return c:IsFaceup() and c:IsType(TYPE_MONSTER) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsFaceup() and c:IsOriginalType(TYPE_MONSTER) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.gyfilter(c)
 	return c:IsSetCard(0x16e) and c:IsMonster() and c:IsAbleToGrave()
