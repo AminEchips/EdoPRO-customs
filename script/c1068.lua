@@ -1,7 +1,7 @@
 --Roll-Out! Springans
 local s,id=GetID()
 function s.initial_effect(c)
-	s.listed_series={0x270} -- Springans
+	s.listed_series={0x158} -- Springans
 
 	-- Effect 1: Trigger when Springans Xyz leaves field to GY/Banished
 	local e1=Effect.CreateEffect(c)
@@ -31,7 +31,7 @@ end
 
 -- Store leaving Springans Xyz that went to GY or banished
 function s.cfilter(c,tp)
-	return c:IsPreviousControler(tp) and c:IsSetCard(0x270) and c:IsType(TYPE_XYZ)
+	return c:IsPreviousControler(tp) and c:IsSetCard(0x158) and c:IsType(TYPE_XYZ)
 		and c:IsReason(REASON_DESTROY+REASON_BATTLE+REASON_EFFECT)
 		and (c:IsLocation(LOCATION_GRAVE) or c:IsLocation(LOCATION_REMOVED)) and c:IsFaceup()
 end
