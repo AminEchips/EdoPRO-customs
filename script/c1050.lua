@@ -4,8 +4,8 @@ local s,id=GetID()
 
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	-- Link Summon procedure
-	Link.AddProcedure(c,s.mfilter,3,3)
+	-- Link Summon procedure (3 Level 7+ monsters with different Types and Attributes)
+	Link.AddProcedure(c,s.matfilter,3,3,s.matcheck)
 
 	-- Destroy battle target before damage calc
 	local e0=Effect.CreateEffect(c)
@@ -50,13 +50,19 @@ function s.initial_effect(c)
 	e3:SetOperation(s.eqspop)
 	c:RegisterEffect(e3)
 end
+
 s.listed_series={0x17b}
 s.listed_names={21887075} -- Endless Engine Argyro System
 
-function s.mfilter(c,lc,sumtype,tp)
-	return c:IsLevelAbove(7) and c:IsAttributeDifferent(nil,lc,sumtype,tp) and c:IsRaceDifferent(nil,lc,sumtype,tp)
+-- Link Summon Conditions
+function s.matfilter(c,lc,sumtype,tp)
+	return c:IsLevelAbove(7)
+end
+function s.matcheck(g,lc,sumtype,tp)
+	return #g==#g:Filter(Card.IsAttribute,nil) and #g==#g:Filter(Card.IsRace,nil)
 end
 
+-- Battle Removal
 function s.battlecon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
@@ -72,6 +78,7 @@ function s.battleop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
+-- Equip Therion
 function s.eqfilter(c)
 	return c:IsSetCard(0x17b) and c:IsLevelBelow(8) and not c:IsForbidden()
 end
@@ -109,19 +116,21 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.EquipComplete()
 end
 
+-- Argyro Send + Draw
 function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil,21887075) and Duel.IsPlayerCanDraw(tp,2) end
+	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil,21887075)
+		and Duel.IsPlayerCanDraw(tp,2) end
 	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_HAND+LOCATION_DECK)
 	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,2)
 end
 function s.drop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
 	local g=Duel.SelectMatchingCard(tp,Card.IsCode,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil,21887075)
 	if #g>0 and Duel.SendtoGrave(g,REASON_EFFECT)>0 then
 		Duel.Draw(tp,2,REASON_EFFECT)
 	end
 end
 
+-- Self Special Summon
 function s.eqsptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
