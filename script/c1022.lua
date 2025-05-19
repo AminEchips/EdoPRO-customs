@@ -35,7 +35,7 @@ end
 
 --Search "Great Sand Sea - Gold Golgonda", or any card that mentions it or Fallen of Albaz
 function s.thfilter(c)
-	return c:IsAbleToHand() and (c:IsCode(60884672) or c:ListsCode(60884672) or c:ListsCode(68468459))
+	return c:IsAbleToHand() and (c:IsCode(60884672) or c:ListsCode(60884672))
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
