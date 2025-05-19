@@ -4,7 +4,7 @@ local s,id=GetID()
 
 function s.initial_effect(c)
 	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(Card.IsAttribute,ATTRIBUTE_WIND),1,99)
-	c:EnableReviveLimit
+	c:EnableReviveLimit()
 	
 	--ATK change effect
 	local e1=Effect.CreateEffect(c)
