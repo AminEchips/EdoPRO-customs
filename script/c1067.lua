@@ -1,12 +1,14 @@
+--Icejade Actinola
+local s,id=GetID()
 function s.initial_effect(c)
 	s.listed_series={0x16e}
 	s.listed_names={07142724} -- Icejade Cenote Enion Cradle
 
-	-- Proper Synchro Summon procedure: 1 Tuner + 1+ non-Tuner WATER
+	-- Synchro Summon procedure: 1 WATER Tuner + 1+ WATER non-Tuner(s)
 	aux.AddSynchroProcedure(c,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_WATER),aux.NonTuner(Card.IsAttribute,ATTRIBUTE_WATER),1)
 	c:EnableReviveLimit()
 
-	-- Effect 1: On Synchro Summon - add Cradle or card that mentions it
+	-- Effect 1: On Synchro Summon - add "Cenote Enion Cradle" or a card that lists it
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -19,7 +21,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- Effect 2: Destroy 1 monster you control, all opponent's monsters lose 1000 ATK
+	-- Effect 2: Destroy your monster, reduce opponent's monsters' ATK by 1000
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
@@ -36,10 +38,9 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
 
--- Add 1 "Icejade Cenote Enion Cradle" or a card that lists it from Deck or GY
+-- Search filter: Cradle or card that lists it
 function s.thfilter(c)
-	return (c:IsCode(07142724) or aux.HasListedCode(c,07142724))
-		and c:IsAbleToHand()
+	return (c:IsCode(07142724) or aux.HasListedCode(c,07142724)) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
@@ -53,7 +54,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 2: Destroy 1 monster you control, all opponent's monsters lose 1000 ATK
+-- Effect 2: Target 1 monster you control to destroy
 function s.desfilter(c)
 	return c:IsFaceup() and c:IsDestructable()
 end
