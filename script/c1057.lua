@@ -3,13 +3,8 @@
 local s,id=GetID()
 
 function s.initial_effect(c)
-	-- Always treated as Icejade
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetCode(EFFECT_ADD_SETCODE)
-	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
-	e0:SetValue(0x27e) -- Icejade setcode
-	c:RegisterEffect(e0)
+	Synchro.AddProcedure(c,nil,1,1,Synchro.NonTuner(Card.IsAttribute,ATTRIBUTE_WATER),1,99)
+	c:EnableReviveLimit()
 
 	-- Draw, Equip from hand/GY
 	local e1=Effect.CreateEffect(c)
