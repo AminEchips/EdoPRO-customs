@@ -3,11 +3,11 @@ local s,id=GetID()
 function s.initial_effect(c)
 	s.listed_series={0x189}
 
-	-- Xyz Summon
-	Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsRace,RACE_DRAGON),6,2,nil,nil,99)
+	-- Xyz Summon procedure (2+ Level 6 Dragons)
+	Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsRace,RACE_DRAGON),6,2,nil,nil,Xyz.InfiniteMats)
 	c:EnableReviveLimit()
 
-	-- Effect 1: Target LIGHT/DARK in GY, banish or attach as material (Ignition)
+	-- Effect 1: Target LIGHT/DARK in GY; banish it or attach it as material (Ignition)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_REMOVE)
@@ -20,7 +20,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.attachop)
 	c:RegisterEffect(e1)
 
-	-- Effect 1: Quick variant
+	-- Effect 1: Quick Effect variant
 	local e2=e1:Clone()
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
@@ -42,7 +42,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.spop)
 	c:RegisterEffect(e3)
 
-	-- Effect 2: Quick variant
+	-- Effect 2: Quick Effect variant
 	local e4=e3:Clone()
 	e4:SetType(EFFECT_TYPE_QUICK_O)
 	e4:SetCode(EVENT_FREE_CHAIN)
@@ -51,52 +51,65 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
--- Condition for Quick Effect variant
+-- Condition for Quick Effects: Opponent controls a monster
 function s.qcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsControler,1-tp),tp,0,LOCATION_MZONE,1,nil)
 end
 
--- Attach or Banish effect
+-- GY target filter
 function s.gyfilter(c)
 	return c:IsAttribute(ATTRIBUTE_LIGHT+ATTRIBUTE_DARK) and c:IsAbleToRemove() and aux.SpElimFilter(c)
 end
+
+-- Effect 1: Targeting
 function s.attachtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and s.gyfilter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.gyfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g=Duel.SelectTarget(tp,s.gyfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,1,1,nil)
 end
+
+-- Effect 1: Operation
 function s.attachop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	local c=e:GetHandler()
 	if not tc or not tc:IsRelateToEffect(e) then return end
 	if c:IsRelateToEffect(e) and not c:IsImmuneToEffect(e) and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-		-- Attach as material
+		-- Attach as Xyz Material
 		Duel.Overlay(c,Group.FromCards(tc))
 	else
+		-- Otherwise, banish it
 		Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
 	end
 end
 
--- Detach + shuffle + optional revive
+-- Effect 2: Cost
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
 	e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
+
+-- Effect 2: Target filter for banished monster
 function s.tdfilter(c)
 	return c:IsAttribute(ATTRIBUTE_LIGHT+ATTRIBUTE_DARK) and c:IsFaceup() and c:IsAbleToDeck()
 end
+
+-- Effect 2: Filter for Bystial in GY
 function s.bysfilter(c,e,tp)
 	return c:IsSetCard(0x189) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
+
+-- Effect 2: Targeting
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_REMOVED) and s.tdfilter(chkc) end
+	if chkc then return chkc:IsLocation(LOCATION_REMOVED) and chkc:IsControler(tp) and s.tdfilter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.tdfilter,tp,LOCATION_REMOVED,LOCATION_REMOVED,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
 	local g=Duel.SelectTarget(tp,s.tdfilter,tp,LOCATION_REMOVED,LOCATION_REMOVED,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
+
+-- Effect 2: Operation
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if tc and tc:IsRelateToEffect(e) and Duel.SendtoDeck(tc,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 then
