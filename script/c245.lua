@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Fusion.AddProcMix(c,true,true,236,22160245) -- Evil HERO Cosmos + Evil HERO Inferno Wing
+    Fusion.AddProcMix(c,true,true,236,59893882) -- Evil HERO Cosmos + Evil HERO Inferno Wing
 
     -- Must be Special Summoned with "Dark Fusion"
     local e0=Effect.CreateEffect(c)
