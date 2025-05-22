@@ -9,13 +9,13 @@ Includes:
 - Altergeist
 - Blackwing
 - Noble/Infernoble Knight/Noble Arms
--Branded
--Albaz
--Dogmatika
--Despia
--Swordsoul
--Icejade
--Springans
--Therion
--Spright
--Bystial
+- Branded
+- Albaz
+- Dogmatika
+- Despia
+- Swordsoul
+- Icejade
+- Springans
+- Therion
+- Spright
+- Bystial
