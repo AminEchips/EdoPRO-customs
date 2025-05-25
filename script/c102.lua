@@ -12,7 +12,7 @@ function s.initial_effect(c)
 	e0:SetValue(0x10f3) -- Predaplant
 	c:RegisterEffect(e0)
 
-	-- Pendulum Effect: Boost DARK Pendulum monster that declares attack
+	-- Pendulum Effect: Boost DARK Pendulum monster when it attacks
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
@@ -23,7 +23,7 @@ function s.initial_effect(c)
 	e1:SetCountLimit(1)
 	c:RegisterEffect(e1)
 
-	-- Monster Effect 1: Target DARK → Special Summon self, always become DARK, gain stats if Plant
+	-- Monster Effect 1: Special Summon self by targeting DARK, always becomes DARK
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -35,7 +35,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 
-	-- Monster Effect 2: While face-up in Extra Deck, recycle 1 Pendulum to add this card to hand
+	-- Monster Effect 2: Recover from face-up Extra Deck
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
@@ -43,7 +43,6 @@ function s.initial_effect(c)
 	e3:SetRange(LOCATION_EXTRA)
 	e3:SetCountLimit(1,{id,1})
 	e3:SetCondition(s.recon)
-	e3:SetTarget(s.retg)
 	e3:SetOperation(s.reop)
 	c:RegisterEffect(e3)
 end
@@ -95,7 +94,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
 
-		-- Stat boost if Plant
+		-- Stat gain if Plant
 		if tc:IsRace(RACE_PLANT) then
 			local atk=tc:GetAttack()
 			if atk>0 then
@@ -136,20 +135,13 @@ function s.recon(e,tp,eg,ep,ev,re,r,rp)
 	end,tp,LOCATION_EXTRA,0,1,nil)
 end
 
-function s.retg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsAbleToHand()
-		and Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_GRAVE,0,1,nil,TYPE_PENDULUM) end
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,c,1,0,LOCATION_EXTRA)
-end
-
 function s.reop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
 	local g=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_GRAVE,0,1,1,nil,TYPE_PENDULUM)
-	if #g>0 and Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 and c:IsRelateToEffect(e) then
+	if #g>0 and Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 then
+		Duel.BreakEffect()
 		Duel.SendtoHand(c,nil,REASON_EFFECT)
 	end
 end
