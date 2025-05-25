@@ -23,7 +23,7 @@ function s.initial_effect(c)
 	e1:SetCountLimit(1)
 	c:RegisterEffect(e1)
 
-	-- Monster Effect 1: Special Summon self by targeting DARK, always becomes DARK
+	-- Monster Effect 1: Special Summon self by targeting DARK, becomes DARK, gain stats if Plant
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -45,6 +45,9 @@ function s.initial_effect(c)
 	e3:SetCondition(s.recon)
 	e3:SetOperation(s.reop)
 	c:RegisterEffect(e3)
+
+	-- ✅ Enable Extra Deck Ignition (crucial for custom Pendulums)
+	aux.EnableExtraDeckIgnitionEffect(c,true)
 end
 
 -- PENDULUM EFFECT
@@ -84,7 +87,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
 
-	-- Special Summon
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
 		-- Always become DARK
 		local e1=Effect.CreateEffect(c)
@@ -94,7 +96,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
 
-		-- Stat gain if Plant
+		-- Gain stats if target is Plant
 		if tc:IsRace(RACE_PLANT) then
 			local atk=tc:GetAttack()
 			if atk>0 then
@@ -127,7 +129,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- MONSTER EFFECT 2 (Extra Deck recovery)
+-- MONSTER EFFECT 2 (Extra Deck)
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsFaceup() and Duel.IsExistingMatchingCard(function(tc)
