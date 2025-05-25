@@ -9,10 +9,6 @@ if not s.global_check then
 end
 
 function s.initial_effect(c)
-	--Pendulum Attribute--Performapal Joker Archer
-local s,id=GetID()
-
-function s.initial_effect(c)
 	--Pendulum Attribute
 	Pendulum.AddProcedure(c)
 
