@@ -23,7 +23,7 @@ function s.initial_effect(c)
 	e1:SetCountLimit(1)
 	c:RegisterEffect(e1)
 
-	-- Monster Effect 1: Target DARK → Special Summon self, always becomes DARK
+	-- Monster Effect 1: Target DARK → Special Summon self, always become DARK, gain stats if Plant
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -35,27 +35,25 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 
-	-- Monster Effect 2: If Dragon Fusion face-up, recycle & recover from face-up Extra Deck
+	-- Monster Effect 2: While face-up in Extra Deck, recycle 1 Pendulum to add this card to hand
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
 	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetRange(LOCATION_EXTRA)
-	e3:SetCountLimit(1,id+100)
+	e3:SetCountLimit(1,{id,1})
 	e3:SetCondition(s.recon)
 	e3:SetTarget(s.retg)
 	e3:SetOperation(s.reop)
 	c:RegisterEffect(e3)
-
 end
 
--- PENDULUM ATK BOOST
+-- PENDULUM EFFECT
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetAttacker()
-	return tc and tc:IsControler(tp)
-		and tc:IsType(TYPE_PENDULUM)
-		and tc:IsAttribute(ATTRIBUTE_DARK)
-		and Duel.GetFieldCard(tp,LOCATION_PZONE,1) ~= nil
+	local otherpz=Duel.GetFieldCard(tp,LOCATION_PZONE,1)
+	if not otherpz or not otherpz:IsAttribute(ATTRIBUTE_DARK) then return false end
+	return tc and tc:IsControler(tp) and tc:IsType(TYPE_PENDULUM) and tc:IsAttribute(ATTRIBUTE_DARK)
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetAttacker()
@@ -70,7 +68,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- MONSTER EFFECT 1: DARK target + always DARK + bonus if Plant
+-- MONSTER EFFECT 1
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsAttribute(ATTRIBUTE_DARK) end
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
@@ -80,14 +78,16 @@ function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local g=Duel.SelectTarget(tp,Card.IsAttribute,tp,LOCATION_MZONE,0,1,1,nil,ATTRIBUTE_DARK)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
+
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
 	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
 
+	-- Special Summon
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		-- ✅ Force it to become DARK after Summon
+		-- Always become DARK
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_ATTRIBUTE)
@@ -95,9 +95,9 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
 
-		-- Stat gain if the target is a Plant
+		-- Stat boost if Plant
 		if tc:IsRace(RACE_PLANT) then
-			local atk,def,lv=tc:GetAttack(),tc:GetDefense(),tc:GetLevel()
+			local atk=tc:GetAttack()
 			if atk>0 then
 				local e2=Effect.CreateEffect(c)
 				e2:SetType(EFFECT_TYPE_SINGLE)
@@ -106,6 +106,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 				e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 				c:RegisterEffect(e2)
 			end
+			local def=tc:GetDefense()
 			if def>0 then
 				local e3=Effect.CreateEffect(c)
 				e3:SetType(EFFECT_TYPE_SINGLE)
@@ -114,7 +115,8 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 				e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 				c:RegisterEffect(e3)
 			end
-			if lv>0 then
+			local lv=tc:GetLevel()
+			if type(lv)=="number" and lv>0 then
 				local e4=Effect.CreateEffect(c)
 				e4:SetType(EFFECT_TYPE_SINGLE)
 				e4:SetCode(EFFECT_CHANGE_LEVEL)
@@ -126,25 +128,20 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
-
--- MONSTER EFFECT 2: GY → Deck and recover (no targeting)
+-- MONSTER EFFECT 2 (Extra Deck recovery)
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	-- Must be face-up in Extra Deck and under your control
-	if not c:IsFaceup() then return false end
-	-- Check for a Dragon Fusion Monster face-up in Extra Deck
-	return Duel.IsExistingMatchingCard(function(tc)
+	return c:IsFaceup() and Duel.IsExistingMatchingCard(function(tc)
 		return tc:IsFaceup() and tc:IsType(TYPE_FUSION) and tc:IsRace(RACE_DRAGON)
 	end,tp,LOCATION_EXTRA,0,1,nil)
 end
 
 function s.retg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		return Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_GRAVE,0,1,nil,TYPE_PENDULUM)
-			and e:GetHandler():IsAbleToHand()
-	end
+	local c=e:GetHandler()
+	if chk==0 then return c:IsAbleToHand()
+		and Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_GRAVE,0,1,nil,TYPE_PENDULUM) end
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,LOCATION_EXTRA)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,c,1,0,LOCATION_EXTRA)
 end
 
 function s.reop(e,tp,eg,ep,ev,re,r,rp)
@@ -152,7 +149,7 @@ function s.reop(e,tp,eg,ep,ev,re,r,rp)
 	if not c:IsRelateToEffect(e) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
 	local g=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_GRAVE,0,1,1,nil,TYPE_PENDULUM)
-	if #g>0 and Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 then
+	if #g>0 and Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 and c:IsRelateToEffect(e) then
 		Duel.SendtoHand(c,nil,REASON_EFFECT)
 	end
 end
