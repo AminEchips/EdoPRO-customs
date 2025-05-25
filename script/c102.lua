@@ -35,7 +35,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 
-	-- Monster Effect 2: If Dragon Fusion face-up, recycle & recover (no targeting)
+	-- Monster Effect 2: If Dragon Fusion face-up, recycle & recover from face-up Extra Deck
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
@@ -43,8 +43,10 @@ function s.initial_effect(c)
 	e3:SetRange(LOCATION_EXTRA)
 	e3:SetCountLimit(1,id+100)
 	e3:SetCondition(s.recon)
+	e3:SetTarget(s.retg)
 	e3:SetOperation(s.reop)
 	c:RegisterEffect(e3)
+
 end
 
 -- PENDULUM ATK BOOST
@@ -127,10 +129,24 @@ end
 
 -- MONSTER EFFECT 2: GY → Deck and recover (no targeting)
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(function(c)
-		return c:IsFaceup() and c:IsType(TYPE_FUSION) and c:IsRace(RACE_DRAGON)
+	local c=e:GetHandler()
+	-- Must be face-up in Extra Deck and under your control
+	if not c:IsFaceup() then return false end
+	-- Check for a Dragon Fusion Monster face-up in Extra Deck
+	return Duel.IsExistingMatchingCard(function(tc)
+		return tc:IsFaceup() and tc:IsType(TYPE_FUSION) and tc:IsRace(RACE_DRAGON)
 	end,tp,LOCATION_EXTRA,0,1,nil)
 end
+
+function s.retg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then
+		return Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_GRAVE,0,1,nil,TYPE_PENDULUM)
+			and e:GetHandler():IsAbleToHand()
+	end
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,e:GetHandler(),1,0,LOCATION_EXTRA)
+end
+
 function s.reop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
