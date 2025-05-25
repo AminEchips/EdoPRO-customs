@@ -1,83 +1,96 @@
 --Performapal Joker Archer
 local s,id=GetID()
+
+-- Global once-per-duel prevention state
+if not s.global_check then
+	s.global_check=true
+	s.protect_player=nil
+	s.protect_cid=nil
+end
+
 function s.initial_effect(c)
 	--Pendulum Attribute
 	Pendulum.AddProcedure(c)
 
-	--Pendulum Effect: Choose a player. That player takes no effect damage (once per turn)
+	--Pendulum Effect 1: Ask to prevent effect damage for one player this chain
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetCode(EFFECT_CHANGE_DAMAGE)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e1:SetCode(EVENT_CHAINING)
 	e1:SetRange(LOCATION_PZONE)
-	e1:SetTargetRange(1,1)
-	e1:SetValue(s.damval)
+	e1:SetOperation(s.ask_prevention)
 	c:RegisterEffect(e1)
 
-	local e2=e1:Clone()
-	e2:SetCode(EFFECT_NO_EFFECT_DAMAGE)
+	--Pendulum Effect 2: Apply damage reduction if conditions match
+	local e2=Effect.CreateEffect(c)
+	e2:SetType(EFFECT_TYPE_FIELD)
+	e2:SetCode(EFFECT_CHANGE_DAMAGE)
+	e2:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+	e2:SetRange(LOCATION_PZONE)
+	e2:SetTargetRange(1,1)
+	e2:SetValue(s.reduce_damage)
 	c:RegisterEffect(e2)
 
-	--Monster Effect 1: On summon, summon Joker Mage and draw 1 if from hand
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DRAW)
-	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_SUMMON_SUCCESS)
-	e3:SetProperty(EFFECT_FLAG_DELAY)
-	e3:SetCountLimit(1,id)
-	e3:SetCondition(s.spcon)
-	e3:SetTarget(s.sptg)
-	e3:SetOperation(s.spop)
+	local e3=e2:Clone()
+	e3:SetCode(EFFECT_NO_EFFECT_DAMAGE)
 	c:RegisterEffect(e3)
-	local e4=e3:Clone()
-	e4:SetCode(EVENT_SPSUMMON_SUCCESS)
+
+	--Monster Effect 1: On summon, summon Joker Mage and draw 1 if from hand
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,1))
+	e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DRAW)
+	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e4:SetCode(EVENT_SUMMON_SUCCESS)
+	e4:SetProperty(EFFECT_FLAG_DELAY)
+	e4:SetCountLimit(1,id)
+	e4:SetCondition(s.spcon)
+	e4:SetTarget(s.sptg)
+	e4:SetOperation(s.spop)
 	c:RegisterEffect(e4)
+	local e5=e4:Clone()
+	e5:SetCode(EVENT_SPSUMMON_SUCCESS)
+	c:RegisterEffect(e5)
 
 	--Monster Effect 2: When sent to GY, Normal Summon 1 Pendulum Monster
-	local e5=Effect.CreateEffect(c)
-	e5:SetDescription(aux.Stringid(id,2))
-	e5:SetCategory(CATEGORY_SUMMON)
-	e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e5:SetCode(EVENT_TO_GRAVE)
-	e5:SetProperty(EFFECT_FLAG_DELAY)
-	e5:SetCountLimit(1,id+100)
-	e5:SetTarget(s.sumtg)
-	e5:SetOperation(s.sumop)
-	c:RegisterEffect(e5)
+	local e6=Effect.CreateEffect(c)
+	e6:SetDescription(aux.Stringid(id,2))
+	e6:SetCategory(CATEGORY_SUMMON)
+	e6:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e6:SetCode(EVENT_TO_GRAVE)
+	e6:SetProperty(EFFECT_FLAG_DELAY)
+	e6:SetCountLimit(1,id+100)
+	e6:SetTarget(s.sumtg)
+	e6:SetOperation(s.sumop)
+	c:RegisterEffect(e6)
 end
 
--- Pendulum Effect damage prevent (once per turn for 1 player)
-function s.damval(e,re,val,r,rp,rc)
-	local tp=e:GetHandlerPlayer()
-	local ph=Duel.GetCurrentPhase()
-	if r&REASON_EFFECT~=0 and (ph==PHASE_MAIN1 or ph==PHASE_BATTLE or ph==PHASE_MAIN2)
-		and Duel.GetFlagEffect(tp,id)==0 then
-		-- Ask once per turn who avoids the damage
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-		local sel=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4)) -- 0 = yourself, 1 = opponent
-		local chosen=(sel==0) and tp or 1-tp
-		-- Set damage to 0 only for chosen player
-		local e1=Effect.CreateEffect(e:GetHandler())
-		e1:SetType(EFFECT_TYPE_FIELD)
-		e1:SetCode(EFFECT_CHANGE_DAMAGE)
-		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-		e1:SetTargetRange(chosen==tp and 1 or 0, chosen==1-tp and 1 or 0)
-		e1:SetValue(0)
-		e1:SetReset(RESET_PHASE+PHASE_END)
-		Duel.RegisterEffect(e1,tp)
+-- Pendulum Chain Listener: Ask to prevent damage
+function s.ask_prevention(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.GetCurrentPhase()==PHASE_DAMAGE or Duel.GetCurrentPhase()==PHASE_DAMAGE_CAL then return end
+	if not re then return end
+	local ex,_,_,cp,val=Duel.GetOperationInfo(ev,CATEGORY_DAMAGE)
+	if not ex or val<=0 then return end
+	if Duel.GetFlagEffect(tp,id)>0 then return end
 
-		local e2=e1:Clone()
-		e2:SetCode(EFFECT_NO_EFFECT_DAMAGE)
-		Duel.RegisterEffect(e2,tp)
-
+	if Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
+		Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,3)) -- "Choose player to prevent damage"
+		local sel=Duel.SelectOption(tp,aux.Stringid(id,4),aux.Stringid(id,5)) -- 0 = you, 1 = opponent
+		s.protect_player = (sel==0) and tp or 1-tp
+		s.protect_cid = Duel.GetChainInfo(ev,CHAININFO_CHAIN_ID)
 		Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
+	end
+end
+
+-- Damage Reduction if player and chain match
+function s.reduce_damage(e,re,val,r,rp,rc)
+	if not s.protect_cid or not s.protect_player then return val end
+	local cid=Duel.GetChainInfo(0,CHAININFO_CHAIN_ID)
+	if cid==s.protect_cid and Duel.GetChainInfo(0,CHAININFO_TRIGGERING_PLAYER)==s.protect_player and (r&REASON_EFFECT)~=0 then
+		return 0
 	end
 	return val
 end
 
--- Monster Effect 1: Summon Joker Mage & draw if from hand
+-- MONSTER EFFECT 1: Summon Joker Mage + draw if from hand
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,0,nil)
 	return #g>0 and g:FilterCount(function(c) return not c:IsType(TYPE_PENDULUM) end,nil)==0
@@ -113,7 +126,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Monster Effect 2: Normal Summon 1 Pendulum monster
+-- MONSTER EFFECT 2: Normal Summon a Pendulum Monster from hand
 function s.sumfilter(c)
 	return c:IsType(TYPE_PENDULUM) and c:IsSummonable(true,nil)
 end
