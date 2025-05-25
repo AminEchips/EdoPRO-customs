@@ -23,7 +23,7 @@ function s.initial_effect(c)
 	e1:SetCountLimit(1)
 	c:RegisterEffect(e1)
 
-	-- Monster Effect 1: Target DARK → Special Summon self
+	-- Monster Effect 1: Target DARK → Special Summon self, always becomes DARK
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -35,7 +35,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 
-	-- Monster Effect 2: If Dragon Fusion face-up, recover self (no targeting)
+	-- Monster Effect 2: If Dragon Fusion face-up, recycle & recover (no targeting)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
@@ -68,7 +68,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- MONSTER EFFECT 1: DARK target + Plant boost
+-- MONSTER EFFECT 1: DARK target + always DARK + bonus if Plant
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsAttribute(ATTRIBUTE_DARK) end
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
@@ -84,7 +84,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
 
-	-- Change Attribute
+	-- Always becomes DARK
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CHANGE_ATTRIBUTE)
@@ -92,6 +92,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 	c:RegisterEffect(e1)
 
+	-- Summon
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 and tc:IsRace(RACE_PLANT) then
 		local atk,def,lv=tc:GetAttack(),tc:GetDefense(),tc:GetLevel()
 		if atk>0 then
