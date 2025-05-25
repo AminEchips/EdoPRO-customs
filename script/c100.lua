@@ -8,13 +8,13 @@ function s.initial_effect(c)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e1:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
+	e1:SetCode(EVENT_CHAIN_SOLVING)
 	e1:SetRange(LOCATION_PZONE)
 	e1:SetCondition(s.damcon)
 	e1:SetOperation(s.damop)
 	c:RegisterEffect(e1)
 
-	--Monster Effect 1: On summon, summon Joker Mage and draw 1
+	--Monster Effect 1: On summon, summon Joker Mage and draw 1 if from hand
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DRAW)
@@ -37,34 +37,43 @@ function s.initial_effect(c)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e4:SetCode(EVENT_TO_GRAVE)
 	e4:SetProperty(EFFECT_FLAG_DELAY)
-	e4:SetCountLimit(1,id+100) -- different count limit for second effect
+	e4:SetCountLimit(1,id+100)
 	e4:SetTarget(s.sumtg)
 	e4:SetOperation(s.sumop)
 	c:RegisterEffect(e4)
 end
 
---PENDULUM EFFECT
+--Pendulum Effect: Prevent 1 player from taking effect damage during a chain
 function s.damcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsPlayerCanDiscardDeck(tp,1) and Duel.GetFlagEffect(tp,id)==0 and re and re:IsActiveType(TYPE_MONSTER+TYPE_SPELL+TYPE_TRAP) and Duel.GetBattleDamage(tp)>0 or Duel.GetBattleDamage(1-tp)>0
+	if not re or Duel.GetCurrentPhase()==PHASE_DAMAGE or Duel.GetCurrentPhase()==PHASE_DAMAGE_CAL then return false end
+	local ex,_,_,_,_,val=Duel.GetOperationInfo(ev,CATEGORY_DAMAGE)
+	return ex and val>0 and Duel.GetFlagEffect(tp,id)==0
 end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
 	local sel=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4)) -- 0 = yourself, 1 = opponent
-	local p=tp
-	if sel==1 then p=1-tp end
+	local p=(sel==0) and tp or 1-tp
+
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_CHANGE_DAMAGE)
 	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e1:SetTargetRange(1,0)
-	e1:SetLabel(p)
-	e1:SetValue(function(e,re,dam,rp,r) if Duel.GetTurnPlayer()==e:GetLabel() then return 0 else return dam end end)
-	e1:SetReset(RESET_PHASE+PHASE_END)
+	e1:SetTargetRange(p==tp and 1 or 0, p==1-tp and 1 or 0)
+	e1:SetLabelObject(re)
+	e1:SetValue(s.damval)
+	e1:SetReset(RESET_CHAIN)
 	Duel.RegisterEffect(e1,tp)
+
 	Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
 end
+function s.damval(e,re,val,r,rp,rc)
+	if re==e:GetLabelObject() then
+		return 0
+	end
+	return val
+end
 
---MONSTER EFFECT 1
+--Monster Effect 1: Summon Joker Mage & draw if from hand
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,0,nil)
 	return #g>0 and g:FilterCount(function(c) return not c:IsType(TYPE_PENDULUM) end,nil)==0
@@ -85,7 +94,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil,e,tp)
 	local tc=g:GetFirst()
 	if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)>0 then
-		-- Negate its effects
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_DISABLE)
@@ -94,8 +102,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		local e2=e1:Clone()
 		e2:SetCode(EFFECT_DISABLE_EFFECT)
 		tc:RegisterEffect(e2)
-
-		-- Only draw if it was Summoned from the hand
 		if tc:IsPreviousLocation(LOCATION_HAND) then
 			Duel.BreakEffect()
 			Duel.Draw(tp,1,REASON_EFFECT)
@@ -103,8 +109,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
-
---MONSTER EFFECT 2
+--Monster Effect 2: Normal Summon 1 Pendulum monster
 function s.sumfilter(c)
 	return c:IsType(TYPE_PENDULUM) and c:IsSummonable(true,nil)
 end
