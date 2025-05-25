@@ -88,7 +88,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		-- ✅ Force it to become DARK after Summon
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_SET_ATTRIBUTE)
+		e1:SetCode(EFFECT_CHANGE_ATTRIBUTE)
 		e1:SetValue(ATTRIBUTE_DARK)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
