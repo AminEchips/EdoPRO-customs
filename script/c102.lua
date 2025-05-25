@@ -84,43 +84,46 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
 
-	-- Always becomes DARK
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_CHANGE_ATTRIBUTE)
-	e1:SetValue(ATTRIBUTE_DARK)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-	c:RegisterEffect(e1)
+	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
+		-- ✅ Force it to become DARK after Summon
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_SET_ATTRIBUTE)
+		e1:SetValue(ATTRIBUTE_DARK)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		c:RegisterEffect(e1)
 
-	-- Summon
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 and tc:IsRace(RACE_PLANT) then
-		local atk,def,lv=tc:GetAttack(),tc:GetDefense(),tc:GetLevel()
-		if atk>0 then
-			local e2=Effect.CreateEffect(c)
-			e2:SetType(EFFECT_TYPE_SINGLE)
-			e2:SetCode(EFFECT_UPDATE_ATTACK)
-			e2:SetValue(atk)
-			e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-			c:RegisterEffect(e2)
-		end
-		if def>0 then
-			local e3=Effect.CreateEffect(c)
-			e3:SetType(EFFECT_TYPE_SINGLE)
-			e3:SetCode(EFFECT_UPDATE_DEFENSE)
-			e3:SetValue(def)
-			e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-			c:RegisterEffect(e3)
-		end
-		if lv>0 then
-			local e4=Effect.CreateEffect(c)
-			e4:SetType(EFFECT_TYPE_SINGLE)
-			e4:SetCode(EFFECT_CHANGE_LEVEL)
-			e4:SetValue(lv)
-			e4:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-			c:RegisterEffect(e4)
+		-- Stat gain if the target is a Plant
+		if tc:IsRace(RACE_PLANT) then
+			local atk,def,lv=tc:GetAttack(),tc:GetDefense(),tc:GetLevel()
+			if atk>0 then
+				local e2=Effect.CreateEffect(c)
+				e2:SetType(EFFECT_TYPE_SINGLE)
+				e2:SetCode(EFFECT_UPDATE_ATTACK)
+				e2:SetValue(atk)
+				e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+				c:RegisterEffect(e2)
+			end
+			if def>0 then
+				local e3=Effect.CreateEffect(c)
+				e3:SetType(EFFECT_TYPE_SINGLE)
+				e3:SetCode(EFFECT_UPDATE_DEFENSE)
+				e3:SetValue(def)
+				e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+				c:RegisterEffect(e3)
+			end
+			if lv>0 then
+				local e4=Effect.CreateEffect(c)
+				e4:SetType(EFFECT_TYPE_SINGLE)
+				e4:SetCode(EFFECT_CHANGE_LEVEL)
+				e4:SetValue(lv)
+				e4:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+				c:RegisterEffect(e4)
+			end
 		end
 	end
 end
+
 
 -- MONSTER EFFECT 2: GY → Deck and recover (no targeting)
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
