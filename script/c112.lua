@@ -1,6 +1,7 @@
 --Supreme King Dragon Arc-Ray Odd-Eyes
 local s,id=GetID()
 s.listed_series={0x99} -- Odd-Eyes
+
 function s.initial_effect(c)
 	Pendulum.AddProcedure(c)
 
@@ -22,22 +23,21 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e2:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e2:SetValue(function(e,se,sp,st)
-		return st==SUMMON_TYPE_PENDULUM
-	end)
+	e2:SetValue(function(e,se,sp,st) return st==SUMMON_TYPE_PENDULUM end)
 	c:RegisterEffect(e2)
-	
-	-- Opponent cannot activate cards/effects
+
+	-- On Summon: Opponent cannot activate cards/effects this chain
 	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_FIELD)
-	e3:SetCode(EFFECT_CANNOT_ACTIVATE)
-	e3:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetTargetRange(0,1)
-	e3:SetValue(function(e,re,tp) return true end)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e3:SetOperation(function(e) 
+		Duel.SetChainLimitTillChainEnd(function(re,rp,tp)
+			return tp==e:GetHandlerPlayer()
+		end)
+	end)
 	c:RegisterEffect(e3)
 
-	-- Negate opponent’s monster effect targeting a Pendulum
+	-- Negate opponent’s monster effect that targets Pendulum
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
@@ -50,7 +50,7 @@ function s.initial_effect(c)
 	e4:SetOperation(s.negop)
 	c:RegisterEffect(e4)
 
-	-- Battle ATK drop
+	-- Battle ATK drop for opponent monster
 	local e5=Effect.CreateEffect(c)
 	e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e5:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
@@ -69,7 +69,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e6)
 end
 
--- Pendulum Effect
+-- Pendulum ATK boost
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0) < Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)
 end
@@ -94,7 +94,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Negate if opponent activates monster effect that targets Pendulum
+-- Negate monster effect targeting Pendulum
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	if not re:IsActiveType(TYPE_MONSTER) or not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return false end
 	local g=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
@@ -113,7 +113,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Battle ATK drop for opponent
+-- Battle ATK drop
 function s.dropcon(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	local d=Duel.GetAttackTarget()
@@ -123,7 +123,9 @@ function s.dropop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetAttackTarget()
 	if Duel.GetAttacker()==tc then tc=Duel.GetAttacker() end
 	if not tc then return end
-	local pendulum_count=Duel.GetMatchingGroupCount(function(c) return c:IsFaceup() and c:GetOriginalType()&TYPE_PENDULUM~=0 end,tp,LOCATION_ONFIELD,0,nil)
+	local pendulum_count=Duel.GetMatchingGroupCount(function(c)
+		return c:IsFaceup() and c:GetOriginalType()&TYPE_PENDULUM~=0
+	end,tp,LOCATION_ONFIELD,0,nil)
 	if pendulum_count==0 then return end
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_SINGLE)
@@ -133,7 +135,7 @@ function s.dropop(e,tp,eg,ep,ev,re,r,rp)
 	tc:RegisterEffect(e1)
 end
 
--- Place in Pendulum Zone
+-- Pendulum placement
 function s.placeop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) then
