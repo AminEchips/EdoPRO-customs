@@ -54,8 +54,7 @@ function s.initial_effect(c)
 	local e5=Effect.CreateEffect(c)
 	e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e5:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
-	e5:SetCondition(s.dropcon)
-	e5:SetOperation(s.dropop)
+	e5:SetOperation(s.globaldropop)
 	c:RegisterEffect(e5)
 
 	-- If destroyed, place in Pendulum Zone
@@ -116,39 +115,37 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Battle effect: reduce ATK if this was Pendulum Summoned
-function s.dropcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not c:IsRelateToBattle() or not c:IsSummonType(SUMMON_TYPE_PENDULUM) then return false end
-	local bc=Duel.GetAttackTarget()
-	if Duel.GetAttacker()==c then
-		bc=Duel.GetAttackTarget()
-	elseif Duel.GetAttackTarget()==c then
-		bc=Duel.GetAttacker()
+function s.globaldropop(e,tp,eg,ep,ev,re,r,rp)
+	local a=Duel.GetAttacker()
+	local d=Duel.GetAttackTarget()
+	if not a or not d then return end
+
+	local you, opp = nil, nil
+	if a:IsControler(tp) and a:IsSummonType(SUMMON_TYPE_PENDULUM) then
+		you = a
+		opp = d
+	elseif d:IsControler(tp) and d:IsSummonType(SUMMON_TYPE_PENDULUM) then
+		you = d
+		opp = a
 	end
-	return bc and bc:IsControler(1-tp) and bc:IsSummonType(SUMMON_TYPE_SPECIAL)
-end
-function s.dropop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local bc=nil
-	if Duel.GetAttacker()==c then
-		bc=Duel.GetAttackTarget()
-	elseif Duel.GetAttackTarget()==c then
-		bc=Duel.GetAttacker()
-	end
-	if not bc or bc:IsControler(tp) then return end -- make sure it's opponent's monster
+
+	if not opp or not you then return end
+	if not opp:IsSummonType(SUMMON_TYPE_SPECIAL) then return end
 
 	local count=Duel.GetMatchingGroupCount(function(c)
 		return c:IsFaceup() and c:GetOriginalType()&TYPE_PENDULUM~=0
 	end,tp,LOCATION_MZONE,0,nil)
+
 	if count==0 then return end
 
-	local e1=Effect.CreateEffect(c)
+	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_UPDATE_ATTACK)
 	e1:SetValue(-count*500)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_DAMAGE_CAL)
-	bc:RegisterEffect(e1)
+	opp:RegisterEffect(e1)
 end
+
 
 
 -- Place in Pendulum Zone
