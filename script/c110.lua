@@ -6,7 +6,7 @@ s.listed_series={0x10f8, 0x20f8, 0x10f2, 0x1046, 0x2017, 0x2073}
 function s.initial_effect(c)
 	Pendulum.AddProcedure(c)
 
-	--Pendulum Effect 1: Prevent Z-ARC from battle destruction once
+	--Pendulum Effect 1: Z-ARC battle indestructible once per turn
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_INDESTRUCTABLE_COUNT)
@@ -17,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetTarget(s.indtg)
 	c:RegisterEffect(e1)
 
-	--Pendulum Effect 2: If Z-ARC leaves field, revive banished Dragon
+	--Pendulum Effect 2: If Z-ARC leaves field, revive a banished Dragon
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -30,7 +30,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 
-	--Quick Effect: SS from hand and send 4 Dragon types from ED
+	--Quick Effect: SS from hand, send 4 Dragons from ED
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOGRAVE)
@@ -38,6 +38,7 @@ function s.initial_effect(c)
 	e3:SetCode(EVENT_CHAINING)
 	e3:SetRange(LOCATION_HAND)
 	e3:SetCountLimit(1,id+100)
+	e3:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_CHAIN_END)
 	e3:SetCondition(s.hspcon)
 	e3:SetTarget(s.hsptg)
 	e3:SetOperation(s.hspop)
@@ -65,12 +66,12 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 
---Z-ARC protection
+--Z-ARC battle indestructible
 function s.indtg(e,c)
 	return c:IsCode(13331639)
 end
 
---Z-ARC left field
+--If Z-ARC leaves the field
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(Card.IsCode,1,nil,13331639)
 end
@@ -88,17 +89,14 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Quick Summon Condition
+--Quick Effect: summon + send 4 archetypes to GY
 function s.hspcon(e,tp,eg,ep,ev,re,r,rp)
-	return rp==1-tp
+	return rp==1-tp and re~=nil
 end
-
---Archetype filters from ED (face-up or face-down)
 function s.hspfilter_pen(c) return c:IsSetCard(0x10f2) and c:IsAbleToGrave() end
 function s.hspfilter_fus(c) return c:IsSetCard(0x1046) and c:IsAbleToGrave() end
 function s.hspfilter_syn(c) return c:IsSetCard(0x2017) and c:IsAbleToGrave() end
 function s.hspfilter_xyz(c) return c:IsSetCard(0x2073) and c:IsAbleToGrave() end
-
 function s.hsptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then
@@ -111,7 +109,6 @@ function s.hsptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
 	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,4,tp,LOCATION_EXTRA)
 end
-
 function s.hspop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
@@ -149,7 +146,7 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Place self in Pendulum Zone if destroyed
+--Place itself into Pendulum Zone if destroyed
 function s.pztg2(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)
