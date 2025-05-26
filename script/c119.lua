@@ -3,16 +3,16 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	-- Fusion Materials: 2 Performapal monsters
-	Fusion.AddProcMixN(c,true,true,s.matfilter,2)
+	Fusion.AddProcMixN(c,true,true,aux.FilterBoolFunction(Card.IsSetCard,0x9f),2)
 
-	-- Track Pendulum material count on Fusion Summon
+	-- Check how many Pendulum Monsters were used
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetCode(EFFECT_MATERIAL_CHECK)
 	e0:SetValue(s.valcheck)
 	c:RegisterEffect(e0)
-	
-	-- Effect: If Fusion Summoned using 0 Pendulum monsters
+
+	-- 0 Pendulum: Add 1 Pendulum from Extra Deck
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND)
@@ -25,7 +25,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- Effect: 1+ Pendulums - protection from targeting/destruction
+	-- 1+ Pendulum: Protection
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -39,7 +39,7 @@ function s.initial_effect(c)
 	e3:SetValue(aux.tgoval)
 	c:RegisterEffect(e3)
 
-	-- Effect: 2+ Pendulums - negate monster effect & change position
+	-- 2+ Pendulum: Position change + negate
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_DISABLE+CATEGORY_POSITION)
@@ -53,21 +53,17 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
-s.listed_series={0x9f} -- Performapal
+s.listed_series={0x9f}
+s.material_setcode={0x9f} -- 💡 key to Fusion working
 
--- Fusion Material filter: must be Performapal
-function s.matfilter(c,fc,sumtype,tp)
-	return c:IsSetCard(0x9f,fc,sumtype,tp)
-end
-
--- Track number of Pendulum monsters used as material
+-- Count Pendulum Monsters used for Fusion
 function s.valcheck(e,c)
 	local g=c:GetMaterial()
 	local ct=g:FilterCount(Card.IsType,nil,TYPE_PENDULUM)
 	c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,EFFECT_FLAG_CLIENT_HINT,1,ct)
 end
 
--- 0 Pendulum materials: Add 1 Pendulum from Extra Deck
+-- Effect 1: Add 1 Pendulum from Extra Deck
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsSummonType(SUMMON_TYPE_FUSION) and c:GetFlagEffect(id)>0 and c:GetFlagEffectLabel(id)==0
@@ -87,13 +83,13 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- 1+ Pendulum: Target/destruction protection
+-- Effect 2: Protection from effects
 function s.protcon(e)
 	local c=e:GetHandler()
 	return c:GetFlagEffect(id)>0 and c:GetFlagEffectLabel(id)>=1
 end
 
--- 2+ Pendulums: Negate monster effect and change position
+-- Effect 3: Negate + position change
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:GetFlagEffect(id)>0 and c:GetFlagEffectLabel(id)>=2
@@ -108,7 +104,8 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=re:GetHandler()
-	if Duel.ChangePosition(tc,POS_FACEUP_DEFENSE,POS_FACEUP_ATTACK,POS_FACEUP_ATTACK,POS_FACEUP_ATTACK)~=0 then
+	if tc:IsRelateToEffect(re) and tc:IsCanChangePosition() then
+		Duel.ChangePosition(tc,POS_FACEUP_DEFENSE,POS_FACEUP_ATTACK,POS_FACEUP_ATTACK,POS_FACEUP_ATTACK)
 		Duel.NegateEffect(ev)
 	end
 end
