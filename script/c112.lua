@@ -22,9 +22,11 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
 	e2:SetCode(EFFECT_SPSUMMON_CONDITION)
-	e2:SetValue(aux.PendulumSummonCondition())
+	e2:SetValue(function(e,se,sp,st)
+		return st==SUMMON_TYPE_PENDULUM
+	end)
 	c:RegisterEffect(e2)
-
+	
 	-- Opponent cannot activate cards/effects
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
