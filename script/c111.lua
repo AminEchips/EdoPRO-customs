@@ -6,7 +6,7 @@ s.listed_series={0xf8, 0x20f8, 0x1046, 0x99}
 function s.initial_effect(c)
 	Pendulum.AddProcedure(c)
 
-	-- Pendulum Effect 1: Z-ARC cannot change control
+	-- Pendulum: Z-ARC control lock
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_CANNOT_CHANGE_CONTROL)
@@ -15,7 +15,7 @@ function s.initial_effect(c)
 	e1:SetTarget(function(e,c) return c:IsCode(13331639) and c:IsControler(e:GetHandlerPlayer()) end)
 	c:RegisterEffect(e1)
 
-	-- Pendulum Effect 2: If Dragon Pendulum Extra Deck monster destroys, SS this and place Pendulum
+	-- Pendulum: SS this + move Pendulum from ED when Dragon Pend ED monster destroys
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -28,7 +28,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.pop)
 	c:RegisterEffect(e2)
 
-	-- Monster Effect 1: SS self if SK Dragon in ED, then add or SS SK Dragon
+	-- Monster: SS this if SK Dragon in ED, then add/SS another SK Dragon
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
@@ -40,7 +40,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.ssop)
 	c:RegisterEffect(e3)
 
-	-- Monster Effect 2: Fusion Summon during Main or Battle Phase
+	-- Monster: Fusion Summon from hand/field
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,2))
 	e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_FUSION_SUMMON)
@@ -55,7 +55,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
--- Pendulum condition: Dragon Pendulum Extra Deck monster destroys
+-- Pendulum condition: Dragon Pendulum ED monster destroys
 function s.pfilter(c,tp)
 	return c:IsType(TYPE_PENDULUM) and c:IsType(TYPE_DRAGON)
 		and c:IsSummonLocation(LOCATION_EXTRA) and c:IsControler(tp)
@@ -81,7 +81,7 @@ function s.pop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Monster effect 1: SS self if SK Dragon in ED, add or SS SK Dragon
+-- Monster effect 1: Check for SK Dragon in ED
 function s.skfacefilter(c)
 	return c:IsSetCard(0x20f8) and c:IsType(TYPE_MONSTER) and c:IsFaceup()
 end
@@ -117,12 +117,12 @@ function s.ssop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Monster effect 2: Fusion Summon Odd-Eyes, Fusion Dragon, or Supreme King using hand/field
+-- Monster effect 2: Fusion Summon (Odd-Eyes, Fusion Dragon, SK)
 function s.fsfilter(c,e,tp,mg)
 	return c:IsType(TYPE_FUSION)
 		and (c:IsSetCard(0x99) or c:IsSetCard(0x1046) or c:IsSetCard(0xf8))
 		and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
-		and aux.FCheckAdditional(c,tp,mg,nil)
+		and c:CheckFusionMaterial(mg)
 end
 function s.fstg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local mg=Duel.GetFusionMaterial(tp)
