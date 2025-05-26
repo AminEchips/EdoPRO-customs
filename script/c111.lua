@@ -74,12 +74,15 @@ function s.pop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		local g=Duel.SelectMatchingCard(tp,function(tc) return tc:IsType(TYPE_PENDULUM) and not tc:IsForbidden() end,tp,LOCATION_EXTRA,0,1,1,nil)
+		local g=Duel.SelectMatchingCard(tp,function(tc)
+			return tc:IsType(TYPE_PENDULUM) and tc:IsFaceup() and not tc:IsForbidden()
+		end,tp,LOCATION_EXTRA,0,1,1,nil)
 		if #g>0 then
 			Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_PZONE,POS_FACEUP,true)
 		end
 	end
 end
+
 
 -- Monster effect 1: Check for SK Dragon in ED
 function s.skfacefilter(c)
