@@ -44,15 +44,17 @@ function s.initial_effect(c)
 	e5:SetValue(function(e,se,sp,st) return st==SUMMON_TYPE_PENDULUM or (se and se:GetHandler()==e:GetHandler()) end)
 	c:RegisterEffect(e5)
 
-	--Immunity to Spell Effects + ATK/DEF swap (Quick Effect if 3+ Pendulums)
+	--Immunity to Spell Effects + ATK/DEF swap (Quick if 3+ Pendulums)
 	local e6=Effect.CreateEffect(c)
 	e6:SetDescription(aux.Stringid(id,1))
 	e6:SetCategory(CATEGORY_POSITION)
 	e6:SetType(EFFECT_TYPE_IGNITION)
 	e6:SetRange(LOCATION_MZONE)
+	e6:SetCost(s.banishcost)
 	e6:SetCondition(s.quickcon_ignition)
 	e6:SetOperation(s.swapop)
 	c:RegisterEffect(e6)
+
 	local e6q=e6:Clone()
 	e6q:SetType(EFFECT_TYPE_QUICK_O)
 	e6q:SetCode(EVENT_FREE_CHAIN)
@@ -72,14 +74,14 @@ function s.initial_effect(c)
 	c:RegisterEffect(e7)
 end
 
---Scale adjustment condition
+--Scale condition
 function s.scalecon(e)
 	return not Duel.IsExistingMatchingCard(function(c)
 		return c:IsType(TYPE_PENDULUM) and c:IsLevel(10)
 	end,e:GetHandlerPlayer(),LOCATION_PZONE,0,1,e:GetHandler())
 end
 
---Special Summon from PZone when a Level 10+ Pendulum is Pendulum Summoned
+--Pendulum Summon of Level 10+ triggers Special Summon
 function s.psfilter(c,tp)
 	return c:IsType(TYPE_PENDULUM) and c:IsLevelAbove(10)
 		and c:IsSummonType(SUMMON_TYPE_PENDULUM) and c:IsControler(tp)
@@ -95,14 +97,13 @@ function s.psop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Direct attack trigger: destroy 2 Pendulum Zones, end Battle Phase
+--Direct attack condition
 function s.bpcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttacker():IsControler(1-tp) and Duel.GetAttackTarget()==nil
 end
 function s.bptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		return Duel.IsExistingMatchingCard(nil,tp,LOCATION_PZONE,0,1,nil)
-			and Duel.IsExistingMatchingCard(nil,tp,LOCATION_PZONE,0,2,nil)
+		return Duel.IsExistingMatchingCard(nil,tp,LOCATION_PZONE,0,2,nil)
 	end
 end
 function s.bpop(e,tp,eg,ep,ev,re,r,rp)
@@ -114,21 +115,39 @@ function s.bpop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Condition for Quick Effect version (3+ Pendulum monsters)
+--Cost: banish self temporarily
+function s.banishcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return c:IsAbleToRemoveAsCost() end
+	Duel.Remove(c,POS_FACEUP,REASON_COST+REASON_TEMPORARY)
+	-- Return to field at End Phase
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e1:SetCode(EVENT_PHASE+PHASE_END)
+	e1:SetReset(RESET_PHASE+PHASE_END)
+	e1:SetLabelObject(c)
+	e1:SetCountLimit(1)
+	e1:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
+		Duel.ReturnToField(e:GetLabelObject())
+	end)
+	Duel.RegisterEffect(e1,tp)
+end
+
+--Condition for Quick Effect (3+ Pendulum monsters)
 function s.quickcon_quick(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetMatchingGroupCount(Card.IsType,tp,LOCATION_MZONE,0,nil,TYPE_PENDULUM)>=3
 end
---Condition for Ignition if < 3 Pendulum Monsters
+--Condition for Ignition (less than 3 Pendulum monsters)
 function s.quickcon_ignition(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetMatchingGroupCount(Card.IsType,tp,LOCATION_MZONE,0,nil,TYPE_PENDULUM)<3
 end
 
---ATK/DEF switch and immunity setup
+--Effect: Immunity and ATK/DEF swap
 function s.swapop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 
-	--Immunity to Spell Effects for Pendulums you control
+	--Spell immunity for Pendulums
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_IMMUNE_EFFECT)
@@ -138,39 +157,25 @@ function s.swapop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e1,tp)
 
-	--Banish self temporarily
-	if Duel.Remove(c,POS_FACEUP,REASON_EFFECT+REASON_TEMPORARY)>0 then
-		local e2=Effect.CreateEffect(c)
-		e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		e2:SetCode(EVENT_PHASE+PHASE_END)
-		e2:SetReset(RESET_PHASE+PHASE_END)
-		e2:SetLabelObject(c)
-		e2:SetCountLimit(1)
-		e2:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
-			Duel.ReturnToField(e:GetLabelObject())
-		end)
-		Duel.RegisterEffect(e2,tp)
-	end
-
-	--Switch ATK/DEF of opponent's face-up monsters
+	--Swap ATK/DEF of opponent monsters
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
 	for tc in aux.Next(g) do
 		local atk=tc:GetAttack()
 		local def=tc:GetDefense()
-		local e3=Effect.CreateEffect(c)
-		e3:SetType(EFFECT_TYPE_SINGLE)
-		e3:SetCode(EFFECT_SET_ATTACK_FINAL)
-		e3:SetValue(def)
-		e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+		local e2=Effect.CreateEffect(c)
+		e2:SetType(EFFECT_TYPE_SINGLE)
+		e2:SetCode(EFFECT_SET_ATTACK_FINAL)
+		e2:SetValue(def)
+		e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+		tc:RegisterEffect(e2)
+		local e3=e2:Clone()
+		e3:SetCode(EFFECT_SET_DEFENSE_FINAL)
+		e3:SetValue(atk)
 		tc:RegisterEffect(e3)
-		local e4=e3:Clone()
-		e4:SetCode(EFFECT_SET_DEFENSE_FINAL)
-		e4:SetValue(atk)
-		tc:RegisterEffect(e4)
 	end
 end
 
---Place in Pendulum Zone if destroyed
+--Place in Pendulum Zone when destroyed
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)
