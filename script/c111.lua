@@ -28,7 +28,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.pop)
 	c:RegisterEffect(e2)
 
-	-- Monster: SS this if SK Dragon in ED, then add/SS another SK Dragon
+	-- Monster: SS self if SK Dragon in ED, then add/SS another SK Dragon
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
@@ -55,39 +55,31 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
--- Pendulum condition: Dragon Pendulum ED monster destroys a monster by battle
+-- Pendulum condition: Dragon Pendulum ED monster destroys
 function s.pfilter(c,tp)
 	return c:IsType(TYPE_PENDULUM) and c:IsType(TYPE_DRAGON)
 		and c:IsSummonLocation(LOCATION_EXTRA) and c:IsControler(tp)
 end
-
 function s.pcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.pfilter,1,nil,tp)
 end
-
 function s.ptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
-	if chk==0 then
-		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-			and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-			and Duel.IsExistingMatchingCard(function(tc) return tc:IsType(TYPE_PENDULUM) end,tp,LOCATION_EXTRA,0,1,nil)
-	end
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		and Duel.IsExistingMatchingCard(function(tc) return tc:IsType(TYPE_PENDULUM) end,tp,LOCATION_EXTRA,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
 end
-
 function s.pop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		local g=Duel.SelectMatchingCard(tp,
-			function(tc) return tc:IsType(TYPE_PENDULUM) and not tc:IsForbidden() end,
-			tp,LOCATION_EXTRA,0,1,1,nil)
+		local g=Duel.SelectMatchingCard(tp,function(tc) return tc:IsType(TYPE_PENDULUM) and not tc:IsForbidden() end,tp,LOCATION_EXTRA,0,1,1,nil)
 		if #g>0 then
 			Duel.MoveToField(g:GetFirst(),tp,tp,LOCATION_PZONE,POS_FACEUP,true)
 		end
 	end
 end
-
 
 -- Monster effect 1: Check for SK Dragon in ED
 function s.skfacefilter(c)
