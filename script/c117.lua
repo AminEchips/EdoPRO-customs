@@ -1,24 +1,24 @@
 --Performapal Odd-Eyes Curtainmaster
 local s,id=GetID()
-s.listed_series={0x99,0xf9,0xf2} -- Odd-Eyes, Performapal, Pendulum
+s.listed_series={0xf9,0x99,0xf2} -- Performapal, Odd-Eyes, Pendulum
 
 function s.initial_effect(c)
-	-- Fusion Materials
+	-- Fusion summon procedure
 	c:EnableReviveLimit()
-	Fusion.AddProcMixN(c, true, true, s.fusfilter, 2)
+	Fusion.AddProcMix(c,true,true,s.matfilter1,s.matfilter2)
 
-	-- Protection from targeting by Spell/Trap (except this card)
+	-- Protection: cannot be targeted by Spell/Trap effects (except this one)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetTargetRange(LOCATION_MZONE,0)
 	e1:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
+	e1:SetTargetRange(LOCATION_MZONE,0)
 	e1:SetTarget(s.prottg)
-	e1:SetValue(s.tgval)
+	e1:SetValue(function(e,re,rp) return re:IsActiveType(TYPE_SPELL+TYPE_TRAP) end)
 	c:RegisterEffect(e1)
 
-	-- ATK boost based on monster count, lasts until end of next turn
+	-- ATK boost
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_ATKCHANGE)
@@ -28,7 +28,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.atkop)
 	c:RegisterEffect(e2)
 
-	-- Floating effect: add 1 matching Spell/Trap from GY to hand
+	-- Floating: Add 1 Performapal/Odd-Eyes/Pendulum Spell/Trap from GY to hand
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_TOHAND)
@@ -42,21 +42,27 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Fusion material filter
-function s.fusfilter(c,fc,sumtype,tp)
-	return (c:IsSetCard(0xf9) or (c:IsSetCard(0x99) and (c:IsType(TYPE_RITUAL) or c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO) or c:IsType(TYPE_XYZ))))
-		and c:IsCanBeFusionMaterial(fc)
+-- Fusion material: Performapal monster
+function s.matfilter1(c,fc,sumtype,tp)
+	return c:IsSetCard(0xf9,fc,sumtype,tp)
 end
 
--- Protection Target: all Performapal or Odd-Eyes except this card
+-- Fusion material: Odd-Eyes Ritual/Fusion/Synchro/Xyz
+function s.matfilter2(c,fc,sumtype,tp)
+	return c:IsSetCard(0x99,fc,sumtype,tp) and (
+		c:IsType(TYPE_RITUAL,fc,sumtype,tp) or
+		c:IsType(TYPE_FUSION,fc,sumtype,tp) or
+		c:IsType(TYPE_SYNCHRO,fc,sumtype,tp) or
+		c:IsType(TYPE_XYZ,fc,sumtype,tp)
+	)
+end
+
+-- Protection effect: applies to all other Performapal and Odd-Eyes monsters
 function s.prottg(e,c)
 	return c~=e:GetHandler() and (c:IsSetCard(0xf9) or c:IsSetCard(0x99))
 end
-function s.tgval(e,re,rp)
-	return re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
-end
 
--- ATK boost operation
+-- ATK boost based on number of monsters on field
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_MZONE,0,nil)
 	local ct=Duel.GetMatchingGroupCount(aux.TRUE,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
@@ -72,13 +78,12 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Floating effect condition
+-- Floating condition: destroyed by battle or card effect
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsReason(REASON_BATTLE+REASON_EFFECT)
+	return e:GetHandler():IsReason(REASON_EFFECT+REASON_BATTLE)
 end
 
--- Target matching Spell/Trap in GY
+-- Floating target: Performapal/Odd-Eyes/Pendulum Spell/Trap
 function s.thfilter(c)
 	return c:IsType(TYPE_SPELL+TYPE_TRAP)
 		and (c:IsSetCard(0xf9) or c:IsSetCard(0x99) or c:IsSetCard(0xf2))
