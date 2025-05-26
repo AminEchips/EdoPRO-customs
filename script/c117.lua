@@ -1,14 +1,25 @@
 --Performapal Odd-Eyes Curtainmaster
 local s,id=GetID()
-s.listed_series={0x9f,0x99,0xf2} -- Performapal, Odd-Eyes, Pendulum
+s.listed_series={0x9f,0x99,0xf2}
 
 function s.initial_effect(c)
-	-- Fusion Summon procedure (Mirrorjade-style)
+	-- Fusion Summon Procedure (Mirrorjade-style)
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,
 		aux.FilterBoolFunction(Card.IsSetCard,0x9f), -- Performapal
-		s.oddmatfilter
+		s.fusmat2
 	)
+end
+
+function s.fusmat2(c,fc,sumtype,tp)
+	return c:IsSetCard(0x99,fc,sumtype,tp) and (
+		c:IsType(TYPE_RITUAL,fc,sumtype,tp)
+		or c:IsType(TYPE_FUSION,fc,sumtype,tp)
+		or c:IsType(TYPE_SYNCHRO,fc,sumtype,tp)
+		or c:IsType(TYPE_XYZ,fc,sumtype,tp)
+	)
+end
+
 
 	-- Protection: Other Performapal and Odd-Eyes monsters can't be targeted by Spell/Trap effects
 	local e1=Effect.CreateEffect(c)
