@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	Pendulum.AddProcedure(c)
 
-	--Pendulum Effect: Swap with Pendulum Xyz and possibly retrieve Odd-Eyes from GY
+	--Pendulum Effect
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
@@ -17,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.pop)
 	c:RegisterEffect(e1)
 
-	--Monster Effect 1: If destroyed by battle by opponent, take damage and end Battle Phase
+	--Battle destruction effect: take damage and end BP
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
@@ -27,30 +27,30 @@ function s.initial_effect(c)
 	e2:SetCountLimit(1,id+100)
 	c:RegisterEffect(e2)
 
-	--Monster Effect 2: Quick Effect - Send Odd-Eyes from ED to GY, banish opponent monster
+	--Ignition: Send Odd-Eyes from ED, target and banish opponent monster
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOGRAVE+CATEGORY_REMOVE)
-	e3:SetType(EFFECT_TYPE_QUICK_O)
-	e3:SetCode(EVENT_FREE_CHAIN)
+	e3:SetType(EFFECT_TYPE_IGNITION)
 	e3:SetRange(LOCATION_MZONE)
 	e3:SetCountLimit(1,id+200)
-	e3:SetHintTiming(0,TIMING_MAIN_END+TIMING_BATTLE_END)
+	e3:SetCost(s.rmcost)
 	e3:SetTarget(s.rmtg)
 	e3:SetOperation(s.rmop)
 	c:RegisterEffect(e3)
 end
 
--- Pendulum Effect: End of Battle Phase target a Pendulum Xyz you control
+--Pendulum: End of BP special summon self and swap
 function s.pcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()==tp
 end
 function s.pfilter(c,e,tp)
-	return c:IsFaceup() and c:IsType(TYPE_XYZ) and c:IsType(TYPE_PENDULUM) and c:IsControler(tp)
-		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return c:IsFaceup() and c:IsType(TYPE_XYZ) and c:IsType(TYPE_PENDULUM)
+		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.ptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.pfilter(chkc,e,tp) end
+	if chkc then return s.pfilter(chkc,e,tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) end
 	if chk==0 then return Duel.IsExistingTarget(s.pfilter,tp,LOCATION_MZONE,0,1,nil,e,tp) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
 	Duel.SelectTarget(tp,s.pfilter,tp,LOCATION_MZONE,0,1,1,nil,e,tp)
@@ -59,24 +59,25 @@ function s.pop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	local c=e:GetHandler()
 	if not tc or not tc:IsRelateToEffect(e) or not c:IsRelateToEffect(e) then return end
+	local attached=tc:GetOverlayGroup()
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
 		if Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) then
-			Duel.MoveToField(tc,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
-			if tc:GetOverlayGroup():IsExists(Card.IsSetCard,1,nil,0x99) then
-				local g=tc:GetOverlayGroup():Filter(Card.IsSetCard,nil,0x99)
-				g=g:Filter(Card.IsLocation,nil,LOCATION_GRAVE)
-				if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+			if Duel.MoveToField(tc,tp,tp,LOCATION_PZONE,POS_FACEUP,true) then
+				local sent=attached:Filter(function(c) return c:IsSetCard(0x99) and c:IsLocation(LOCATION_GRAVE) end,nil)
+				if #sent>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
 					Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-					local sg=g:Select(tp,1,1,nil)
-					Duel.SendtoHand(sg,nil,REASON_EFFECT)
-					Duel.ConfirmCards(1-tp,sg)
+					local sg=sent:Select(tp,1,1,nil)
+					if #sg>0 then
+						Duel.SendtoHand(sg,nil,REASON_EFFECT)
+						Duel.ConfirmCards(1-tp,sg)
+					end
 				end
 			end
 		end
 	end
 end
 
--- Battle destruction condition: destroyed by opponent's monster
+--Battle destruction check (by opponent's monster)
 function s.damcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
@@ -89,26 +90,31 @@ function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Quick Effect: Send face-up Odd-Eyes Pendulum from ED to GY, banish target opponent monster
+--Cost: send Odd-Eyes from ED, target opponent monster
 function s.rmfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x99) and c:IsAbleToGrave()
+	return c:IsFaceup() and c:IsSetCard(0x99) and c:IsAbleToGraveAsCost()
 end
-function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return Duel.IsExistingMatchingCard(s.rmfilter,tp,LOCATION_EXTRA,0,1,nil)
-			and Duel.IsExistingMatchingCard(Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,nil)
+			and Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,nil)
 	end
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_EXTRA)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,1-tp,LOCATION_MZONE)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+	local g=Duel.SelectMatchingCard(tp,s.rmfilter,tp,LOCATION_EXTRA,0,1,1,nil)
+	if #g==0 then return false end
+	e:SetLabelObject(g:GetFirst())
+	Duel.SendtoGrave(g,REASON_COST)
+end
+function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsAbleToRemove() end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+	local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
-	local g1=Duel.SelectMatchingCard(tp,s.rmfilter,tp,LOCATION_EXTRA,0,1,1,nil)
-	if #g1>0 and Duel.SendtoGrave(g1,REASON_EFFECT)>0 then
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-		local g2=Duel.SelectMatchingCard(tp,Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,1,nil)
-		if #g2>0 then
-			Duel.Remove(g2,POS_FACEUP,REASON_EFFECT)
-		end
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) then
+		Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
 	end
 end
