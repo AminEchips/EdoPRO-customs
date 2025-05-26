@@ -35,7 +35,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 
-	-- Monster Effect 2: Recover from face-up Extra Deck (no Fusion condition)
+	-- Monster Effect 2: Recover from face-up Extra Deck if you control Dragon Fusion
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
@@ -94,7 +94,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
 
-		-- Stat boost if Plant
+		-- Gain stats if Plant
 		if tc:IsRace(RACE_PLANT) then
 			local atk=tc:GetAttack()
 			if atk>0 then
@@ -127,10 +127,13 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- MONSTER EFFECT 2 (no Dragon Fusion condition)
+-- MONSTER EFFECT 2 (Extra Deck effect - requires Dragon Fusion)
+function s.fusionfilter(c)
+	return c:IsFaceup() and c:IsType(TYPE_FUSION) and c:IsRace(RACE_DRAGON)
+end
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsFaceup()
+	return c:IsFaceup() and Duel.IsExistingMatchingCard(s.fusionfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.retg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
