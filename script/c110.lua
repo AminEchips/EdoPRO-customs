@@ -30,7 +30,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 
-	--Quick Effect: SS from hand, send 4 Dragons from ED
+	--Quick Effect: Special Summon from hand, then optionally send Dragon ED monster to GY
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOGRAVE)
@@ -66,12 +66,12 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 
---Z-ARC battle indestructible
+-- Z-ARC battle indestructible
 function s.indtg(e,c)
 	return c:IsCode(13331639)
 end
 
---If Z-ARC leaves the field
+-- Z-ARC leaves field
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(Card.IsCode,1,nil,13331639)
 end
@@ -89,46 +89,36 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Quick Effect: summon + send 4 archetypes to GY
+-- Quick Effect: summon self + optionally send ED monster
 function s.hspcon(e,tp,eg,ep,ev,re,r,rp)
 	return rp==1-tp and re~=nil
 end
-function s.hspfilter_pen(c) return c:IsSetCard(0x10f2) and c:IsAbleToGrave() end
-function s.hspfilter_fus(c) return c:IsSetCard(0x1046) and c:IsAbleToGrave() end
-function s.hspfilter_syn(c) return c:IsSetCard(0x2017) and c:IsAbleToGrave() end
-function s.hspfilter_xyz(c) return c:IsSetCard(0x2073) and c:IsAbleToGrave() end
 function s.hsptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
-	if chk==0 then
-		return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-			and Duel.IsExistingMatchingCard(s.hspfilter_pen,tp,LOCATION_EXTRA,0,1,nil)
-			and Duel.IsExistingMatchingCard(s.hspfilter_fus,tp,LOCATION_EXTRA,0,1,nil)
-			and Duel.IsExistingMatchingCard(s.hspfilter_syn,tp,LOCATION_EXTRA,0,1,nil)
-			and Duel.IsExistingMatchingCard(s.hspfilter_xyz,tp,LOCATION_EXTRA,0,1,nil)
-	end
+	if chk==0 then return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,4,tp,LOCATION_EXTRA)
+end
+function s.hspfilter(c)
+	return c:IsAbleToGrave()
+		and (c:IsSetCard(0x10f2) or c:IsSetCard(0x1046) or c:IsSetCard(0x2017) or c:IsSetCard(0x2073))
 end
 function s.hspop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		local g1=Duel.SelectMatchingCard(tp,s.hspfilter_pen,tp,LOCATION_EXTRA,0,1,1,nil)
-		local g2=Duel.SelectMatchingCard(tp,s.hspfilter_fus,tp,LOCATION_EXTRA,0,1,1,nil)
-		local g3=Duel.SelectMatchingCard(tp,s.hspfilter_syn,tp,LOCATION_EXTRA,0,1,1,nil)
-		local g4=Duel.SelectMatchingCard(tp,s.hspfilter_xyz,tp,LOCATION_EXTRA,0,1,1,nil)
-		local g=Group.CreateGroup()
-		g:Merge(g1)
-		g:Merge(g2)
-		g:Merge(g3)
-		g:Merge(g4)
-		if #g==4 then
-			Duel.SendtoGrave(g,REASON_EFFECT)
+		if Duel.IsExistingMatchingCard(s.hspfilter,tp,LOCATION_EXTRA,0,1,nil)
+			and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
+			local g=Duel.SelectMatchingCard(tp,s.hspfilter,tp,LOCATION_EXTRA,0,1,1,nil)
+			if #g>0 then
+				Duel.SendtoGrave(g,REASON_EFFECT)
+			end
 		end
 	end
 end
 
---Place SK Gate into Pendulum Zone
+-- End Phase place SK Gate to Pend Zone
 function s.pzfilter(c)
 	return c:IsSetCard(0x10f8) and c:IsType(TYPE_PENDULUM) and not c:IsForbidden()
 end
@@ -146,7 +136,7 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Place itself into Pendulum Zone if destroyed
+-- Float to Pend Zone
 function s.pztg2(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)
