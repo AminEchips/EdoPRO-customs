@@ -5,10 +5,7 @@ s.listed_series={0x9f,0x99,0xf2} -- Performapal, Odd-Eyes, Pendulum
 function s.initial_effect(c)
 	-- Proper Fusion Summon Procedure
 	c:EnableReviveLimit()
-	Fusion.AddProcMix(c,true,true,
-		aux.FilterBoolFunction(Card.IsSetCard,0x9f), -- Performapal
-		s.fusmat2
-	)
+	Fusion.AddProcMix(c,true,true,aux.FilterBoolFunctionEx(Card.IsSetCard,SET_PERFORMAPAL),aux.FilterBoolFunctionEx(Card.IsType,TYPE_FUSION|TYPE_SYNCHRO|TYPE_XYZ|TYPE_LINK))
 
 	-- Protection for Performapal from Spell/Trap targeting
 	local e1=Effect.CreateEffect(c)
@@ -43,14 +40,6 @@ function s.initial_effect(c)
 	e3:SetOperation(s.thop)
 	e3:SetCountLimit(1,id+100)
 	c:RegisterEffect(e3)
-end
-
--- 2nd material must be Fusion OR Synchro OR Xyz OR Ritual
-function s.fusmat2(c,fc,sumtype,tp)
-	return c:IsType(TYPE_FUSION,fc,sumtype,tp)
-		or c:IsType(TYPE_SYNCHRO,fc,sumtype,tp)
-		or c:IsType(TYPE_XYZ,fc,sumtype,tp)
-		or c:IsType(TYPE_RITUAL,fc,sumtype,tp)
 end
 
 -- Protection: other Performapal monsters
