@@ -3,14 +3,14 @@ local s,id=GetID()
 s.listed_series={0x9f,0x99,0xf2} -- Performapal, Odd-Eyes, Pendulum
 
 function s.initial_effect(c)
-	-- Fusion Summon procedure: 1 Performapal + 1 Fusion/Synchro/Xyz/Ritual
+	-- Proper Fusion Summon Procedure
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,
-		aux.FilterBoolFunctionEx(Card.IsSetCard,0x9f), -- Performapal
-		aux.FilterBoolFunctionEx(Card.IsType,TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ+TYPE_RITUAL)
+		aux.FilterBoolFunction(Card.IsSetCard,0x9f), -- Performapal
+		s.fusmat2
 	)
 
-	-- Protection from Spell/Trap targeting (except this card)
+	-- Protection for Performapal from Spell/Trap targeting
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
@@ -21,7 +21,7 @@ function s.initial_effect(c)
 	e1:SetValue(s.tgval)
 	c:RegisterEffect(e1)
 
-	-- ATK boost: +100 per monster on the field, lasts until end of next turn
+	-- ATK Boost based on monsters on the field
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_ATKCHANGE)
@@ -31,7 +31,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.atkop)
 	c:RegisterEffect(e2)
 
-	-- Floating: add 1 Performapal/Odd-Eyes/Pendulum Spell/Trap from GY to hand
+	-- Floating effect: add 1 Performapal/Odd-Eyes/Pendulum Spell/Trap from GY
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_TOHAND)
@@ -45,7 +45,15 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Protection: all other Performapal monsters
+-- 2nd material must be Fusion OR Synchro OR Xyz OR Ritual
+function s.fusmat2(c,fc,sumtype,tp)
+	return c:IsType(TYPE_FUSION,fc,sumtype,tp)
+		or c:IsType(TYPE_SYNCHRO,fc,sumtype,tp)
+		or c:IsType(TYPE_XYZ,fc,sumtype,tp)
+		or c:IsType(TYPE_RITUAL,fc,sumtype,tp)
+end
+
+-- Protection: other Performapal monsters
 function s.prottg(e,c)
 	return c~=e:GetHandler() and c:IsSetCard(0x9f)
 end
@@ -53,12 +61,12 @@ function s.tgval(e,re,rp)
 	return re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
 end
 
--- ATK boost: 100 × total monsters, lasts 2 turns
+-- ATK boost: +100 per monster on the field, lasts until end of next turn
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_MZONE,0,nil)
-	local count=Duel.GetMatchingGroupCount(aux.TRUE,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
-	if count==0 then return end
-	local atk=count*100
+	local ct=Duel.GetMatchingGroupCount(aux.TRUE,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	if ct==0 then return end
+	local atk=ct*100
 	for tc in g:Iter() do
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
@@ -69,7 +77,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Floating effect: add Spell/Trap to hand
+-- Floating effect: recover Performapal/Odd-Eyes/Pendulum Spell/Trap from GY
 function s.thfilter(c)
 	return c:IsType(TYPE_SPELL+TYPE_TRAP)
 		and (c:IsSetCard(0x9f) or c:IsSetCard(0x99) or c:IsSetCard(0xf2))
