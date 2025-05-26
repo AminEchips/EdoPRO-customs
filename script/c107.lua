@@ -11,6 +11,7 @@ function s.initial_effect(c)
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e1:SetRange(LOCATION_PZONE)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetCountLimit(1,id)
 	e1:SetCondition(s.pcon)
 	e1:SetTarget(s.ptg)
@@ -49,14 +50,16 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
---Pendulum Effect: If you Ritual Summon an Odd-Eyes, revive a Dragon ED monster
+--Pendulum Effect: If you Ritual Summon an Odd-Eyes monster, revive a Dragon Extra Deck monster from GY
 function s.pfilter(c,tp)
 	return c:IsSummonType(SUMMON_TYPE_RITUAL) and c:IsSetCard(0x99) and c:IsSummonPlayer(tp)
 end
 function s.pcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.pfilter,1,nil,tp)
 end
-function s.ptg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.ptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp)
+		and chkc:IsType(TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ) and chkc:IsCanBeSpecialSummoned(e,0,tp,false,false) end
 	if chk==0 then
 		return Duel.IsExistingTarget(aux.FaceupFilter(Card.IsType,TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ),tp,LOCATION_GRAVE,0,1,nil)
 			and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x99),tp,LOCATION_EXTRA,0,1,nil)
@@ -67,15 +70,15 @@ function s.ptg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.pop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
+	if not tc or not tc:IsRelateToEffect(e) then return end
 	local g=Duel.SelectMatchingCard(tp,aux.FaceupFilter(Card.IsSetCard,0x99),tp,LOCATION_EXTRA,0,1,1,nil)
 	if #g==0 or Duel.SendtoGrave(g,REASON_EFFECT)==0 then return end
-	if tc and tc:IsRelateToEffect(e) then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
-	end
+	Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
 	if e:GetHandler():IsRelateToEffect(e) then
 		Duel.Destroy(e:GetHandler(),REASON_EFFECT)
 	end
 end
+
 
 
 --Special Summon this card from hand if you control a Level 4 monster (Doggy Diver logic)
