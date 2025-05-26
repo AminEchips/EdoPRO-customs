@@ -12,16 +12,17 @@ function s.initial_effect(c)
 	e0:SetValue(0x10f3) -- Predaplant
 	c:RegisterEffect(e0)
 
-	-- Pendulum Effect: Optional activation to boost DARK Pendulum monster
+	-- Pendulum Effect: Optional when DARK Pendulum declares attack
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DESTROY+CATEGORY_ATKCHANGE)
-	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e1:SetCode(EVENT_ATTACK_ANNOUNCE)
 	e1:SetRange(LOCATION_PZONE)
 	e1:SetCountLimit(1)
-	e1:SetCondition(s.pcon)
-	e1:SetTarget(s.ptg)
-	e1:SetOperation(s.pop)
+	e1:SetCondition(s.atkoptcon)
+	e1:SetTarget(s.atkoptg)
+	e1:SetOperation(s.atkopop)
 	c:RegisterEffect(e1)
 
 	-- Monster Effect 1: Special Summon self by targeting DARK, becomes DARK, gain stats if Plant
@@ -49,27 +50,23 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- PENDULUM EFFECT (manual activation)
-function s.pfilter(c)
-	return c:IsFaceup() and c:IsAttribute(ATTRIBUTE_DARK) and c:IsType(TYPE_PENDULUM)
-end
-function s.pcon(e,tp,eg,ep,ev,re,r,rp)
+-- PENDULUM EFFECT (optional on attack declare)
+function s.atkoptcon(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetAttacker()
 	local otherpz=Duel.GetFieldCard(tp,LOCATION_PZONE,1)
-	if not otherpz or not otherpz:IsAttribute(ATTRIBUTE_DARK) then return false end
-	return Duel.IsExistingMatchingCard(s.pfilter,tp,LOCATION_MZONE,0,1,nil)
+	return tc and tc:IsControler(tp)
+		and tc:IsAttribute(ATTRIBUTE_DARK) and tc:IsType(TYPE_PENDULUM)
+		and otherpz and otherpz:IsAttribute(ATTRIBUTE_DARK)
 end
-function s.ptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return e:GetHandler():IsDestructable()
-		and Duel.IsExistingMatchingCard(s.pfilter,tp,LOCATION_MZONE,0,1,nil) end
+function s.atkoptg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():IsDestructable() end
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,e:GetHandler(),1,0,0)
 end
-function s.pop(e,tp,eg,ep,ev,re,r,rp)
+function s.atkopop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
+	local tc=Duel.GetAttacker()
 	if not c:IsRelateToEffect(e) or Duel.Destroy(c,REASON_EFFECT)==0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectMatchingCard(tp,s.pfilter,tp,LOCATION_MZONE,0,1,1,nil)
-	local tc=g:GetFirst()
-	if tc then
+	if tc:IsRelateToBattle() and tc:IsFaceup() and tc:IsControler(tp) then
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_UPDATE_ATTACK)
