@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	e2:SetValue(function(e,se,sp,st) return st==SUMMON_TYPE_PENDULUM end)
 	c:RegisterEffect(e2)
 
-	-- On Summon: Opponent cannot activate this chain
+	-- On Summon: Opponent cannot activate in this chain
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e3:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -60,18 +60,16 @@ function s.initial_effect(c)
 	e5:SetOperation(s.placeop)
 	c:RegisterEffect(e5)
 
-	-- Global battle effect (once per duel field-wide registration)
-	if not s.global_check then
-		s.global_check=true
-		local ge=Effect.CreateEffect(c)
-		ge:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		ge:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
-		ge:SetOperation(s.globaldropop)
-		Duel.RegisterEffect(ge,0)
-	end
+	-- Local Battle Effect: Reduce ATK of opponent’s monster if battling a Pendulum Summoned monster you control
+	local e6=Effect.CreateEffect(c)
+	e6:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e6:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
+	e6:SetRange(LOCATION_MZONE)
+	e6:SetOperation(s.globaldropop)
+	c:RegisterEffect(e6)
 end
 
--- Pendulum effect: ATK boost
+-- Pendulum effect: Double ATK if you control fewer monsters than opponent
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0) < Duel.GetFieldGroupCount(tp,0,LOCATION_MZONE)
 end
@@ -98,7 +96,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Targeting negation
+-- Negation: negate if opponent targets Pendulum
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	if not re:IsActiveType(TYPE_MONSTER) or not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return false end
 	local g=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
@@ -117,7 +115,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Pendulum Zone placement
+-- Float: place in Pendulum Zone
 function s.placeop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) then
@@ -125,28 +123,25 @@ function s.placeop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Global battle effect for all Pendulum Summoned monsters you control
+-- Local field-only battle effect
 function s.globaldropop(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	local d=Duel.GetAttackTarget()
 	if not a or not d then return end
 
-	local p1 = a:IsControler(tp) and a:IsSummonType(SUMMON_TYPE_PENDULUM)
-	local p2 = d:IsControler(tp) and d:IsSummonType(SUMMON_TYPE_PENDULUM)
+	local c=e:GetHandler()
+	if not c or not c:IsRelateToEffect(e) then return end
 
-	local you = nil
-	local opp = nil
-
-	if p1 then
+	local you, opp
+	if a:IsControler(tp) and a:IsSummonType(SUMMON_TYPE_PENDULUM) then
 		you = a
 		opp = d
-	elseif p2 then
+	elseif d:IsControler(tp) and d:IsSummonType(SUMMON_TYPE_PENDULUM) then
 		you = d
 		opp = a
 	end
 
-	if not you or not opp then return end
-	if not opp:IsSummonType(SUMMON_TYPE_SPECIAL) then return end
+	if not you or not opp or not opp:IsSummonType(SUMMON_TYPE_SPECIAL) then return end
 
 	local count=Duel.GetMatchingGroupCount(function(c)
 		return c:IsFaceup() and c:GetOriginalType()&TYPE_PENDULUM~=0
@@ -154,7 +149,7 @@ function s.globaldropop(e,tp,eg,ep,ev,re,r,rp)
 
 	if count==0 then return end
 
-	local e1=Effect.CreateEffect(e:GetHandler())
+	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_UPDATE_ATTACK)
 	e1:SetValue(-count*500)
