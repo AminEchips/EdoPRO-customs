@@ -128,20 +128,28 @@ function s.dropcon(e,tp,eg,ep,ev,re,r,rp)
 	return bc and bc:IsControler(1-tp) and bc:IsSummonType(SUMMON_TYPE_SPECIAL)
 end
 function s.dropop(e,tp,eg,ep,ev,re,r,rp)
-	local bc=Duel.GetAttackTarget()
-	if Duel.GetAttacker()==bc then bc=Duel.GetAttacker() end
-	if not bc then return end
+	local c=e:GetHandler()
+	local bc=nil
+	if Duel.GetAttacker()==c then
+		bc=Duel.GetAttackTarget()
+	elseif Duel.GetAttackTarget()==c then
+		bc=Duel.GetAttacker()
+	end
+	if not bc or bc:IsControler(tp) then return end -- make sure it's opponent's monster
+
 	local count=Duel.GetMatchingGroupCount(function(c)
 		return c:IsFaceup() and c:GetOriginalType()&TYPE_PENDULUM~=0
 	end,tp,LOCATION_MZONE,0,nil)
 	if count==0 then return end
-	local e1=Effect.CreateEffect(e:GetHandler())
+
+	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_UPDATE_ATTACK)
 	e1:SetValue(-count*500)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_DAMAGE_CAL)
 	bc:RegisterEffect(e1)
 end
+
 
 -- Place in Pendulum Zone
 function s.placeop(e,tp,eg,ep,ev,re,r,rp)
