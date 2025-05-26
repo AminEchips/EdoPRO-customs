@@ -57,7 +57,7 @@ end
 
 -- Pendulum condition: Dragon Pendulum ED monster destroys
 function s.pfilter(c,tp)
-	return c:IsType(TYPE_PENDULUM) and c:IsType(TYPE_DRAGON)
+	return c:IsType(TYPE_PENDULUM) and c:IsRace(RACE_DRAGON) and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO) or c:IsType(TYPE_XYZ))
 		and c:IsSummonLocation(LOCATION_EXTRA) and c:IsControler(tp)
 end
 function s.pcon(e,tp,eg,ep,ev,re,r,rp)
