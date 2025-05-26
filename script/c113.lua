@@ -45,15 +45,29 @@ function s.initial_effect(c)
 
 	--Draw 2 if added to ED face-up
 	local e6=Effect.CreateEffect(c)
-	e6:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e6:SetCode(EVENT_PHASE+PHASE_DRAW)
-	e6:SetRange(LOCATION_EXTRA)
+	e6:SetDescription(aux.Stringid(id,1))
+	e6:SetCategory(CATEGORY_DRAW)
+	e6:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e6:SetProperty(EFFECT_FLAG_DELAY)
+	e6:SetCode(EVENT_TO_EXTRA)
 	e6:SetCountLimit(1,id+200)
-	e6:SetCondition(s.drawcon)
-	e6:SetOperation(s.drawop)
+	e6:SetCondition(function(e,tp,eg,ep,ev,re,r,rp)
+		local c=e:GetHandler()
+		return c:IsFaceup() and c:IsLocation(LOCATION_EXTRA) and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_HAND+LOCATION_DECK+LOCATION_GRAVE)
+	end)
+	e6:SetTarget(function(e,tp,eg,ep,ev,re,r,rp,chk)
+		if chk==0 then return Duel.IsPlayerCanDraw(tp,2) end
+		Duel.SetTargetPlayer(tp)
+		Duel.SetTargetParam(2)
+		Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,2)
+	end)
+	e6:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
+		local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
+		Duel.Draw(p,d,REASON_EFFECT)
+	end)
 	c:RegisterEffect(e6)
 
-	--Place to Pendulum Zone if destroyed
+	--Place in Pendulum Zone if destroyed
 	local e7=Effect.CreateEffect(c)
 	e7:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e7:SetCode(EVENT_DESTROYED)
@@ -112,14 +126,6 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 		e2:SetCode(EFFECT_DISABLE_EFFECT)
 		tc:RegisterEffect(e2)
 	end
-end
-
---Draw boost
-function s.drawcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()==tp and Duel.GetDrawCount(tp)>0
-end
-function s.drawop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Draw(tp,1,REASON_RULE)
 end
 
 --Place in Pendulum Zone
