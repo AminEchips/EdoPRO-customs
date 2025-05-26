@@ -144,11 +144,8 @@ end
 
 --Effect: Immunity and ATK/DEF swap
 function s.swapop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) then return end
-
-	--Spell immunity for Pendulums
-	local e1=Effect.CreateEffect(c)
+	-- Spell immunity for Pendulums
+	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_IMMUNE_EFFECT)
 	e1:SetTargetRange(LOCATION_MZONE,0)
@@ -157,12 +154,12 @@ function s.swapop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e1,tp)
 
-	--Swap ATK/DEF of opponent monsters
+	-- Swap ATK/DEF of opponent monsters
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
 	for tc in aux.Next(g) do
 		local atk=tc:GetAttack()
 		local def=tc:GetDefense()
-		local e2=Effect.CreateEffect(c)
+		local e2=Effect.CreateEffect(e:GetOwner())
 		e2:SetType(EFFECT_TYPE_SINGLE)
 		e2:SetCode(EFFECT_SET_ATTACK_FINAL)
 		e2:SetValue(def)
@@ -174,6 +171,7 @@ function s.swapop(e,tp,eg,ep,ev,re,r,rp)
 		tc:RegisterEffect(e3)
 	end
 end
+
 
 --Place in Pendulum Zone when destroyed
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
