@@ -3,12 +3,13 @@ local s,id=GetID()
 function s.initial_effect(c)
 	Pendulum.AddProcedure(c)
 
-	-- Once per turn: If you control "Supreme King Z-ARC", target other Pendulum Zone card; its scale becomes 13
+	-- Pendulum Effect: Change scale of other Pendulum Zone card to 13 if Z-ARC is controlled
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e1:SetType(EFFECT_TYPE_QUICK_O)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetRange(LOCATION_PZONE)
+	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
 	e1:SetCountLimit(1,id)
 	e1:SetCondition(s.sccon)
 	e1:SetTarget(s.sctg)
@@ -26,7 +27,7 @@ function s.initial_effect(c)
 	end)
 	c:RegisterEffect(e2)
 
-	-- If Pendulum Summoned with another monster: protection from being banished
+	-- If Pendulum Summoned with another monster: banish protection
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
@@ -36,7 +37,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.banishop)
 	c:RegisterEffect(e3)
 
-	-- If Pendulum in MZone destroyed, banish this and search a "Supreme King Z-ARC" Spell/Trap
+	-- If Pendulum Monster is destroyed while this card is face-up in ED, banish this card to search Z-ARC Spell/Trap
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,2))
 	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -50,29 +51,29 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
--- Check for "Supreme King Z-ARC" on field
+-- Check for Supreme King Z-ARC
 function s.sccon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_ONFIELD,0,1,nil,13331639) -- Supreme King Z-ARC ID
+	return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_ONFIELD,0,1,nil,13331639)
 end
 function s.sctg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		return Duel.GetFieldCard(tp,LOCATION_PZONE,0) or Duel.GetFieldCard(tp,LOCATION_PZONE,1)
-	end
+	if chk==0 then return true end
 end
 function s.scop(e,tp,eg,ep,ev,re,r,rp)
 	local zone1=Duel.GetFieldCard(tp,LOCATION_PZONE,0)
 	local zone2=Duel.GetFieldCard(tp,LOCATION_PZONE,1)
 	local tc=nil
 	if zone1 and zone2 then
+		local g=Group.FromCards(zone1, zone2)
+		g:RemoveCard(e:GetHandler())
+		if #g==0 then return end
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-		tc=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_PZONE,0,1,1,e:GetHandler()):GetFirst()
-	elseif zone1 then
+		tc=g:Select(tp,1,1,nil):GetFirst()
+	elseif zone1 and zone1~=e:GetHandler() then
 		tc=zone1
-	elseif zone2 then
+	elseif zone2 and zone2~=e:GetHandler() then
 		tc=zone2
 	end
 	if tc and tc:IsFaceup() and tc:IsType(TYPE_PENDULUM) then
-		-- Set LScale
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_LSCALE)
@@ -85,7 +86,7 @@ function s.scop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Banish protection if Pendulum Summoned with another monster
+-- If Pendulum Summoned with another monster
 function s.banishcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsSummonType(SUMMON_TYPE_PENDULUM) and Duel.GetMatchingGroupCount(nil,tp,LOCATION_MZONE,0,c)>0
@@ -100,19 +101,21 @@ function s.banishop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterEffect(e1,tp)
 end
 
--- Destroyed Pendulum Monster condition
+-- Search if Pendulum Monster destroyed while this is in ED
 function s.thfilter1(c,tp)
 	return c:IsType(TYPE_PENDULUM) and c:IsPreviousLocation(LOCATION_MZONE) and c:IsControler(tp)
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(s.thfilter1,1,nil,tp)
+	local c=e:GetHandler()
+	return c:IsFaceup() and c:IsLocation(LOCATION_EXTRA) and eg:IsExists(s.thfilter1,1,nil,tp)
 end
 function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return e:GetHandler():IsAbleToRemoveAsCost() end
-	Duel.Remove(e:GetHandler(),POS_FACEUP,REASON_COST)
+	local c=e:GetHandler()
+	if chk==0 then return c:IsAbleToRemoveAsCost() end
+	Duel.Remove(c,POS_FACEUP,REASON_COST)
 end
 function s.thfilter(c)
-	return c:IsAbleToHand() and (c:ListsCode(13331639) or c:IsCode(13331639)) and c:IsSpellTrap()
+	return c:IsSpellTrap() and (c:ListsCode(13331639) or c:IsCode(13331639)) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
