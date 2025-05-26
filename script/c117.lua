@@ -3,14 +3,14 @@ local s,id=GetID()
 s.listed_series={0x9f,0x99,0xf2} -- Performapal, Odd-Eyes, Pendulum
 
 function s.initial_effect(c)
-	-- Mirrorjade-style Fusion Procedure: 1 Performapal + 1 Fusion/Synchro/Xyz/Ritual
+	-- Fusion Summon procedure: 1 Performapal + 1 Fusion/Synchro/Xyz/Ritual
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,
-		aux.FilterBoolFunction(Card.IsSetCard,0x9f), -- Performapal
+		aux.FilterBoolFunctionEx(Card.IsSetCard,0x9f), -- Performapal
 		aux.FilterBoolFunctionEx(Card.IsType,TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ+TYPE_RITUAL)
 	)
 
-	-- Protection for other Performapal from Spell/Trap targeting
+	-- Protection from Spell/Trap targeting (except this card)
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
@@ -18,10 +18,10 @@ function s.initial_effect(c)
 	e1:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
 	e1:SetTargetRange(LOCATION_MZONE,0)
 	e1:SetTarget(s.prottg)
-	e1:SetValue(function(e,re,rp) return re:IsActiveType(TYPE_SPELL+TYPE_TRAP) end)
+	e1:SetValue(s.tgval)
 	c:RegisterEffect(e1)
 
-	-- ATK Boost based on total monsters on field, lasts until end of next turn
+	-- ATK boost: +100 per monster on the field, lasts until end of next turn
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_ATKCHANGE)
@@ -31,7 +31,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.atkop)
 	c:RegisterEffect(e2)
 
-	-- Floating: Add 1 Performapal/Odd-Eyes/Pendulum Spell/Trap from GY
+	-- Floating: add 1 Performapal/Odd-Eyes/Pendulum Spell/Trap from GY to hand
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_TOHAND)
@@ -49,8 +49,11 @@ end
 function s.prottg(e,c)
 	return c~=e:GetHandler() and c:IsSetCard(0x9f)
 end
+function s.tgval(e,re,rp)
+	return re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
+end
 
--- ATK Boost effect
+-- ATK boost: 100 × total monsters, lasts 2 turns
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_MZONE,0,nil)
 	local count=Duel.GetMatchingGroupCount(aux.TRUE,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
@@ -66,7 +69,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Floating: target 1 matching Spell/Trap in GY
+-- Floating effect: add Spell/Trap to hand
 function s.thfilter(c)
 	return c:IsType(TYPE_SPELL+TYPE_TRAP)
 		and (c:IsSetCard(0x9f) or c:IsSetCard(0x99) or c:IsSetCard(0xf2))
