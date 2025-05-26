@@ -4,8 +4,15 @@ s.listed_series={0x99,0xf9,0xf2} -- Odd-Eyes, Performapal, Pendulum
 
 function s.initial_effect(c)
 	--Fusion Materials
+	--Fusion Materials
 	c:EnableReviveLimit()
-	Fusion.AddProcMix(c,true,true,s.matfilter1,s.matfilter2)
+	Fusion.AddProcMix(c,true,true,
+		aux.FilterBoolFunction(Card.IsSetCard,0xf9), -- Performapal
+		function(c)
+			return c:IsSetCard(0x99) and (c:IsType(TYPE_RITUAL) or c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO) or c:IsType(TYPE_XYZ))
+		end
+)
+
 
 	--Protection for Performapal/Odd-Eyes from Spell/Trap targeting
 	local e1=Effect.CreateEffect(c)
