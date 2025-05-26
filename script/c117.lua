@@ -3,7 +3,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	-- Fusion Materials: 1 Performapal + 1 Fusion OR Synchro OR Xyz OR Ritual Monster
-	Fusion.AddProcMix(c,true,true,s.matfilter1,s.matfilter2)
+	Fusion.AddProcFun2(c,s.matfilter1,s.matfilter2,true)
 
 	-- Protection from being targeted by Spell/Trap effects
 	local e1=Effect.CreateEffect(c)
@@ -43,20 +43,20 @@ end
 function s.matfilter1(c,fc,sumtype,tp)
 	return c:IsSetCard(0x9f,fc,sumtype,tp)
 end
--- Fusion Material 2: Any Fusion, Synchro, Xyz, or Ritual Monster
+-- Fusion Material 2: Must be Fusion OR Synchro OR Xyz OR Ritual (not all at once)
 function s.matfilter2(c,fc,sumtype,tp)
-	return c:IsType(TYPE_FUSION,fc,sumtype,tp) or
-		   c:IsType(TYPE_SYNCHRO,fc,sumtype,tp) or
-		   c:IsType(TYPE_XYZ,fc,sumtype,tp) or
-		   c:IsType(TYPE_RITUAL,fc,sumtype,tp)
+	return c:IsType(TYPE_FUSION,fc,sumtype,tp)
+		or c:IsType(TYPE_SYNCHRO,fc,sumtype,tp)
+		or c:IsType(TYPE_XYZ,fc,sumtype,tp)
+		or c:IsType(TYPE_RITUAL,fc,sumtype,tp)
 end
 
--- Protection filter: affects all other Performapal or Odd-Eyes monsters you control
+-- Protection for other Performapal or Odd-Eyes
 function s.protg(e,c)
 	return c~=e:GetHandler() and (c:IsSetCard(0x9f) or c:IsSetCard(0x99))
 end
 
--- ATK boost operation
+-- ATK Boost
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
 	local ct=g:GetCount()
