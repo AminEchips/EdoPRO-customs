@@ -7,7 +7,9 @@ function s.initial_effect(c)
 	--Pendulum Effect: Gain LP when target deals damage
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_RECOVER)
 	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetRange(LOCATION_PZONE)
 	e1:SetCountLimit(1,id)
 	e1:SetCondition(s.lpcon)
@@ -15,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.lpop)
 	c:RegisterEffect(e1)
 
-	--Special Summon from Extra Deck by destroying 2 P-Zones
+	--Special Summon from Extra Deck by destroying 2 Pendulum Zone cards
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -49,21 +51,21 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
---Pendulum Effect
-
+--Pendulum Condition: Only Pendulum monsters on field
 function s.lpcon(e,tp,eg,ep,ev,re,r,rp)
-	-- Must control only Pendulum monsters
 	local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_MZONE,0,nil)
 	return #g>0 and not g:IsExists(function(c) return not c:IsType(TYPE_PENDULUM) end,1,nil)
 end
 
+--Targeting a monster for battle damage tracking
 function s.lptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and chkc:IsFaceup() end
 	if chk==0 then return Duel.IsExistingTarget(aux.FaceupFilter(Card.IsType,TYPE_MONSTER),tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,aux.FaceupFilter(Card.IsType,TYPE_MONSTER),tp,LOCATION_MZONE,0,1,1,nil)
+	Duel.SelectTarget(tp,aux.FaceupFilter(Card.IsType,TYPE_MONSTER),tp,LOCATION_MZONE,0,1,1,nil)
 end
 
+--Create a delayed battle damage recover tracker
 function s.lpop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
@@ -78,6 +80,7 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterEffect(e1,tp)
 end
 
+--If selected monster inflicts damage, gain LP
 function s.regcon(e,tp,eg,ep,ev,re,r,rp)
 	local tc=e:GetLabelObject()
 	return eg:GetFirst()==tc and ep~=tp and tc:IsRelateToBattle()
@@ -94,7 +97,7 @@ function s.regop(e,tp,eg,ep,ev,re,r,rp)
 	e:Reset()
 end
 
--- Special Summon from Extra Deck by destroying 2 Pendulum Zone cards
+--Special Summon from Extra Deck by destroying 2 Pendulum Zone cards
 function s.spfilter1(c)
 	return c:IsFaceup() and c:IsType(TYPE_PENDULUM)
 end
@@ -118,7 +121,7 @@ function s.spop1(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- On Special Summon: Special Summon Level 7+ Performapal (non-Dragon)
+--Special Summon a Level 7+ non-Dragon Performapal on Special Summon
 function s.spfilter2(c,e,tp)
 	return c:IsSetCard(0x9f) and not c:IsRace(RACE_DRAGON) and c:IsLevelAbove(7)
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
@@ -133,7 +136,7 @@ function s.spop2(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.SelectMatchingCard(tp,s.spfilter2,tp,LOCATION_DECK,0,1,1,nil,e,tp)
 	if #g>0 then
 		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
-		-- Lock to Performapal P-Summons
+		-- Lock to Performapal Pendulum Summons only
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_FIELD)
 		e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
@@ -148,7 +151,7 @@ function s.splimit(e,c,sump,sumtype,sumpos,targetp,se)
 	return (sumtype&SUMMON_TYPE_PENDULUM)==SUMMON_TYPE_PENDULUM and not c:IsSetCard(0x9f)
 end
 
--- Pendulum Zone replacement
+--Place into Pendulum Zone when destroyed from Monster Zone
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) end
 end
