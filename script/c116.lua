@@ -14,12 +14,13 @@ function s.initial_effect(c)
 	e0b:SetCode(EFFECT_CHANGE_RSCALE)
 	c:RegisterEffect(e0b)
 
-	-- Set 1 Trap from GY if monster destroyed by battle
+	-- Set 1 Trap from GY if monster destroyed by battle (TARGETS)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e1:SetCode(EVENT_BATTLE_DESTROYED)
 	e1:SetRange(LOCATION_PZONE)
+	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e1:SetCountLimit(1,id)
 	e1:SetTarget(s.settg)
 	e1:SetOperation(s.setop)
@@ -35,7 +36,7 @@ function s.initial_effect(c)
 	e2b:SetCode(EFFECT_CANNOT_MSET)
 	c:RegisterEffect(e2b)
 
-	-- Custom Special Summon from hand or Extra Deck by tributing 1 "Supreme King Gate" + 1 "Magician" Pendulum
+	-- Special Summon from hand or Extra Deck by tributing 1 "Supreme King Gate" + 1 "Magician" Pendulum
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
 	e3:SetCode(EFFECT_SPSUMMON_PROC)
@@ -46,7 +47,7 @@ function s.initial_effect(c)
 	e3:SetValue(SUMMON_TYPE_SPECIAL)
 	c:RegisterEffect(e3)
 
-	-- Quick Effect: immunity + battle suppression
+	-- Quick Effect: immunity + battle lock
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetType(EFFECT_TYPE_QUICK_O)
@@ -57,7 +58,7 @@ function s.initial_effect(c)
 	e4:SetOperation(s.qeop)
 	c:RegisterEffect(e4)
 
-	-- When destroyed: move to PZone, Set 1 Spell from GY
+	-- If destroyed: move to PZone, Set 1 Spell from GY
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,2))
 	e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
@@ -69,24 +70,30 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 
--- Scale condition
+-- Scale adjustment if no "Magician" or "Supreme King" in other PZone
 function s.scalecon(e)
 	local tp=e:GetHandlerPlayer()
 	return not Duel.IsExistingMatchingCard(function(c)
-		return c:IsType(TYPE_PENDULUM) and (c:IsSetCard(0xf8) or c:IsSetCard(0x98)) -- Supreme King or Magician
+		return c:IsType(TYPE_PENDULUM) and (c:IsSetCard(0xf8) or c:IsSetCard(0x98))
 	end,tp,LOCATION_PZONE,0,1,e:GetHandler())
 end
 
--- Pendulum: Set 1 Trap from GY
+-- Set Trap from GY when monster destroyed by battle (Pendulum effect) - with targeting
 function s.setfilter(c)
 	return c:IsType(TYPE_TRAP) and c:IsSSetable()
 end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
+function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.setfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+	local g=Duel.SelectTarget(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,g,1,0,0)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	if #g>0 then Duel.SSet(tp,g:GetFirst()) end
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) then
+		Duel.SSet(tp,tc)
+	end
 end
 
 -- Special Summon procedure
@@ -110,7 +117,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	Duel.Release(g1,REASON_COST)
 end
 
--- Quick effect: respond to Spell/Trap with immunity and activation lock
+-- Quick Effect: respond to Spell/Trap
 function s.qecon(e,tp,eg,ep,ev,re,r,rp)
 	return re:IsActiveType(TYPE_SPELL+TYPE_TRAP)
 end
@@ -125,7 +132,7 @@ function s.qeop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 	c:RegisterEffect(e1)
 
-	-- Prevent opponent activations during battle
+	-- Prevent opponent activation during battle
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetCode(EFFECT_CANNOT_ACTIVATE)
@@ -138,7 +145,7 @@ function s.qeop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.RegisterEffect(e2,tp)
 end
 
--- Float to PZone + Set Spell from GY
+-- Float: to PZone and Set 1 Spell from GY
 function s.setpzcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsPreviousLocation(LOCATION_MZONE)
 end
