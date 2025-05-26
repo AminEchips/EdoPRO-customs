@@ -1,12 +1,12 @@
 --Performapal Odd-Eyes Curtainmaster
 local s,id=GetID()
-s.listed_series={0xf9,0x99,0xf2} -- Performapal, Odd-Eyes, Pendulum
+s.listed_series={0x9f,0x99,0xf2} -- Performapal, Odd-Eyes, Pendulum
 
 function s.initial_effect(c)
 	-- Fusion Summon Procedure
 	c:EnableReviveLimit()
 	Fusion.AddProcMix(c,true,true,
-		aux.FilterBoolFunction(Card.IsSetCard,0xf9), -- Performapal
+		aux.FilterBoolFunction(Card.IsSetCard,0x9f), -- Correct Performapal code
 		function(c) return c:IsSetCard(0x99)
 			and (c:IsType(TYPE_RITUAL) or c:IsType(TYPE_FUSION)
 			or c:IsType(TYPE_SYNCHRO) or c:IsType(TYPE_XYZ)) end
@@ -49,7 +49,7 @@ end
 
 -- Protection applies to all Performapal/Odd-Eyes monsters except this one
 function s.prottg(e,c)
-	return c~=e:GetHandler() and (c:IsSetCard(0xf9) or c:IsSetCard(0x99))
+	return c~=e:GetHandler() and (c:IsSetCard(0x9f) or c:IsSetCard(0x99))
 end
 
 -- ATK Boost: applies to all monsters you control
@@ -70,7 +70,7 @@ end
 
 -- Floating: target 1 matching Spell/Trap in GY
 function s.thfilter(c)
-	return c:IsType(TYPE_SPELL+TYPE_TRAP) and (c:IsSetCard(0xf9) or c:IsSetCard(0x99) or c:IsSetCard(0xf2)) and c:IsAbleToHand()
+	return c:IsType(TYPE_SPELL+TYPE_TRAP) and (c:IsSetCard(0x9f) or c:IsSetCard(0x99) or c:IsSetCard(0xf2)) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter(chkc) end
