@@ -51,6 +51,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
+s.listed_names={13331639}
 -- Z-ARC must be controlled
 function s.sccon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(Card.IsCode,tp,LOCATION_ONFIELD,0,1,nil,13331639)
