@@ -18,7 +18,7 @@ function s.initial_effect(c)
 	--Pendulum Effect 2: On Dragon Pendulum ED monster destroy, SS this, place Pendulum from ED
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOFIELD)
+	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_BATTLE_DESTROYING)
 	e2:SetRange(LOCATION_PZONE)
