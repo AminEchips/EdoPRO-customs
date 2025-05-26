@@ -1,10 +1,12 @@
 --Supreme Iris Magician
 local s,id=GetID()
 s.listed_names={27813661} -- Sky Iris
+s.listed_series={0x10f2,0x98} -- Pendulum Dragon, Magician
+
 function s.initial_effect(c)
 	Pendulum.AddProcedure(c)
 
-	--Pendulum Effect: Discard 1; destroy this card; Special Summon 1 Dragon Pendulum from Extra Deck
+	--Pendulum Effect: Discard 1; destroy this card; Special Summon 1 Dragon Pendulum from face-up Extra Deck
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DESTROY+CATEGORY_SPECIAL_SUMMON)
@@ -15,13 +17,6 @@ function s.initial_effect(c)
 	e1:SetTarget(s.pentg)
 	e1:SetOperation(s.penop)
 	c:RegisterEffect(e1)
-
-	--Always treated as Pendulum Dragon
-	local e0=Effect.CreateEffect(c)
-	e0:SetType(EFFECT_TYPE_SINGLE)
-	e0:SetCode(EFFECT_ADD_CODE)
-	e0:SetValue(16178681) -- "Pendulum Dragon" identity
-	c:RegisterEffect(e0)
 
 	--On Pendulum Summon: Add Sky Iris, then discard 1
 	local e2=Effect.CreateEffect(c)
@@ -36,7 +31,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
 
-	--Destroy 1 other "Magician" Pendulum in zone; gain its original ATK until end of turn
+	--Destroy 1 Magician Pendulum in zone; gain its original ATK until end of turn
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_DESTROY+CATEGORY_ATKCHANGE)
@@ -48,7 +43,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.atkop)
 	c:RegisterEffect(e3)
 
-	--Draw 1 when this card declares attack on a monster
+	--If this card attacks a monster: draw 1
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,3))
 	e4:SetCategory(CATEGORY_DRAW)
@@ -61,7 +56,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
---Pendulum Cost: discard 1
+--Pendulum Effect
 function s.pencost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_HAND,0,1,nil) end
 	Duel.DiscardHand(tp,aux.TRUE,1,1,REASON_COST+REASON_DISCARD)
@@ -85,7 +80,7 @@ function s.penop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Pendulum Summon check
+--On Pendulum Summon
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_PENDULUM)
 end
@@ -108,7 +103,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Condition: at least 1 other Magician Pendulum in zone
+--Gain ATK by destroying another Magician Pendulum
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.atkfilter,tp,LOCATION_PZONE,0,1,e:GetHandler())
 end
@@ -135,9 +130,8 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Draw when attacking a monster
+--Draw 1 on attack declaration
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
 	local at=Duel.GetAttackTarget()
 	return at and at:IsControler(1-tp) and at:IsLocation(LOCATION_MZONE)
 end
