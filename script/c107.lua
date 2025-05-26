@@ -49,7 +49,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
---Pendulum Effect: If you Ritual Summon an Odd-Eyes, revive a Dragon Extra Deck monster
+--Pendulum Effect: If you Ritual Summon an Odd-Eyes, revive a Dragon ED monster
 function s.pfilter(c,tp)
 	return c:IsSummonType(SUMMON_TYPE_RITUAL) and c:IsSetCard(0x99) and c:IsSummonPlayer(tp)
 end
@@ -58,11 +58,11 @@ function s.pcon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.ptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
-		return Duel.IsExistingTarget(aux.FilterFaceupFunction(Card.IsType,TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ),tp,LOCATION_GRAVE,0,1,nil)
+		return Duel.IsExistingTarget(aux.FaceupFilter(Card.IsType,TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ),tp,LOCATION_GRAVE,0,1,nil)
 			and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x99),tp,LOCATION_EXTRA,0,1,nil)
 	end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,aux.FilterFaceupFunction(Card.IsType,TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ),tp,LOCATION_GRAVE,0,1,1,nil)
+	local g=Duel.SelectTarget(tp,aux.FaceupFilter(Card.IsType,TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ),tp,LOCATION_GRAVE,0,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,0,0)
 end
 function s.pop(e,tp,eg,ep,ev,re,r,rp)
@@ -76,6 +76,7 @@ function s.pop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Destroy(e:GetHandler(),REASON_EFFECT)
 	end
 end
+
 
 --Special Summon this card from hand if you control a Level 4 monster (Doggy Diver logic)
 function s.cfilter(c)
