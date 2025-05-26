@@ -35,7 +35,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 
-	-- Monster Effect 2: Recover from face-up Extra Deck
+	-- Monster Effect 2: Recover from face-up Extra Deck (no Fusion condition)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
@@ -43,11 +43,9 @@ function s.initial_effect(c)
 	e3:SetRange(LOCATION_EXTRA)
 	e3:SetCountLimit(1,{id,1})
 	e3:SetCondition(s.recon)
+	e3:SetTarget(s.retg)
 	e3:SetOperation(s.reop)
 	c:RegisterEffect(e3)
-
-	-- ✅ Enable Extra Deck Ignition (crucial for custom Pendulums)
-	aux.EnableExtraDeckIgnitionEffect(c,true)
 end
 
 -- PENDULUM EFFECT
@@ -96,7 +94,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
 
-		-- Gain stats if target is Plant
+		-- Stat boost if Plant
 		if tc:IsRace(RACE_PLANT) then
 			local atk=tc:GetAttack()
 			if atk>0 then
@@ -129,14 +127,18 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- MONSTER EFFECT 2 (Extra Deck)
+-- MONSTER EFFECT 2 (no Dragon Fusion condition)
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsFaceup() and Duel.IsExistingMatchingCard(function(tc)
-		return tc:IsFaceup() and tc:IsType(TYPE_FUSION) and tc:IsRace(RACE_DRAGON)
-	end,tp,LOCATION_EXTRA,0,1,nil)
+	return c:IsFaceup()
 end
-
+function s.retg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return c:IsAbleToHand()
+		and Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_GRAVE,0,1,nil,TYPE_PENDULUM) end
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,c,1,0,LOCATION_EXTRA)
+end
 function s.reop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
