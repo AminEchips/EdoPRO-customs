@@ -60,7 +60,7 @@ end
 
 -- Archetype references
 s.listed_names={100,101}
-s.listed_series={0x9f,0xf2,0xa2}
+s.listed_series={0x9f,0xf2,0x98}
 
 -- Pendulum summon check (Odd-Eyes, Performapal, or Magician)
 function s.pencon(e,tp,eg,ep,ev,re,r,rp)
@@ -112,16 +112,19 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Detach to bounce Spell/Trap
+-- Spell/Trap bounce
 function s.rthcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
 	e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
+function s.rthfilter(c,e)
+	return c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToHand() and c~=e:GetHandler()
+end
 function s.rthtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsOnField() and chkc:IsType(TYPE_SPELL+TYPE_TRAP) end
-	if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToHand,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
+	if chkc then return chkc:IsOnField() and s.rthfilter(chkc,e) end
+	if chk==0 then return Duel.IsExistingTarget(s.rthfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil,e) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-	local g=Duel.SelectTarget(tp,Card.IsAbleToHand,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
+	local g=Duel.SelectTarget(tp,s.rthfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil,e)
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
 end
 function s.rthop(e,tp,eg,ep,ev,re,r,rp)
