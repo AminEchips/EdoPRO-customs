@@ -83,24 +83,28 @@ end
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
 	local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,3,nil)
+	e:SetLabel(Duel.SelectYesNo(tp,aux.Stringid(id,4)) and 1 or 0)
+	g:KeepAlive()
 	e:SetLabelObject(g)
-	if Duel.SelectYesNo(tp,aux.Stringid(id,4)) then e:SetLabel(1) else e:SetLabel(0) end
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
-	local g=e:GetLabelObject():Filter(Card.IsRelateToEffect,nil,e)
-	for tc in g:Iter() do
-		local e1=Effect.CreateEffect(e:GetHandler())
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_DISABLE)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY,2)
-		tc:RegisterEffect(e1)
-		local e2=e1:Clone()
-		e2:SetCode(EFFECT_DISABLE_EFFECT)
-		tc:RegisterEffect(e2)
+	local g=e:GetLabelObject()
+	if not g then return end
+	local tg=Group.CreateGroup()
+	for tc in aux.Next(g) do
+		if tc:IsRelateToEffect(e) then
+			local e1=Effect.CreateEffect(e:GetHandler())
+			e1:SetType(EFFECT_TYPE_SINGLE)
+			e1:SetCode(EFFECT_DISABLE)
+			e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY,2)
+			tc:RegisterEffect(e1)
+			local e2=e1:Clone()
+			e2:SetCode(EFFECT_DISABLE_EFFECT)
+			tc:RegisterEffect(e2)
+			tg:AddCard(tc)
+		end
 	end
-	if e:GetLabel()==1 then
-		local tg=Group.CreateGroup()
-		for tc in g:Iter() do tg:AddCard(tc) end
+	if e:GetLabel()==1 and #tg>0 then
 		local ef=Effect.CreateEffect(e:GetHandler())
 		ef:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		ef:SetCode(EVENT_PHASE+PHASE_END)
@@ -109,6 +113,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 		ef:SetReset(RESET_PHASE+PHASE_END)
 		Duel.RegisterEffect(ef,tp)
 	end
+	g:DeleteGroup()
 end
 
 --Battle destruction effect (non-targeting)
