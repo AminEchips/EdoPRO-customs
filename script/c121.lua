@@ -1,10 +1,9 @@
 --Odd-Eyes Continuum Gazing Magician of Time and Space
 local s,id=GetID()
 function s.initial_effect(c)
-    --Pendulum Attribute
     Pendulum.AddProcedure(c)
 
-    --Pendulum Effect: Damage based on attacks declared
+    -- Pendulum Effect: Burn based on attacks
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_DAMAGE)
@@ -16,7 +15,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.pdop)
     c:RegisterEffect(e1)
 
-    --Pendulum Effect: Quick LP gain
+    -- Pendulum Effect: Quick LP gain
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_RECOVER)
@@ -27,14 +26,14 @@ function s.initial_effect(c)
     e2:SetOperation(s.lpop)
     c:RegisterEffect(e2)
 
-    --Fusion Summon procedure
+    -- Fusion procedure
     c:EnableReviveLimit()
     Fusion.AddProcMix(c,true,true,s.oddEyesFilter,s.magicianFilter1,s.magicianFilter2)
 
-    --Negate up to 3 face-up cards
+    -- Negate and optionally destroy
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
-    e3:SetCategory(CATEGORY_DISABLE)
+    e3:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
     e3:SetType(EFFECT_TYPE_IGNITION)
     e3:SetRange(LOCATION_MZONE)
     e3:SetCountLimit(1,id+200)
@@ -42,7 +41,7 @@ function s.initial_effect(c)
     e3:SetOperation(s.negop)
     c:RegisterEffect(e3)
 
-    --Battle destroy: revive Pendulum and burn
+    -- Battle destroy: revive Pendulum and burn
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,3))
     e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_DAMAGE)
@@ -53,7 +52,7 @@ function s.initial_effect(c)
     e4:SetOperation(s.bop)
     c:RegisterEffect(e4)
 
-    --Floating effect: revive Pendulum Zone card, enter PZone, optionally recover
+    -- Float on destruction
     local e5=Effect.CreateEffect(c)
     e5:SetDescription(aux.Stringid(id,4))
     e5:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
@@ -65,7 +64,7 @@ function s.initial_effect(c)
     e5:SetOperation(s.pzop)
     c:RegisterEffect(e5)
 
-    -- Global check: count attacks declared this turn
+    -- Global: Count attacks
     if not s.global_check then
         s.global_check=true
         s.attack_count=0
@@ -94,7 +93,7 @@ function s.magicianFilter2(c)
     return c:IsSetCard(0x98) and c:IsType(TYPE_PENDULUM)
 end
 
--- Pendulum Effect: damage
+-- Pendulum damage condition and effect
 function s.pdcon(e,tp,eg,ep,ev,re,r,rp)
     local a=Duel.GetAttacker()
     local d=Duel.GetAttackTarget()
@@ -114,7 +113,7 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Negate up to 3 face-up cards
+-- Negate up to 3 cards until your next Standby, then optionally destroy
 function s.negfilter(c)
     return c:IsFaceup() and not c:IsDisabled()
 end
@@ -130,12 +129,22 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     if not g then return end
     for tc in aux.Next(g) do
         if tc:IsFaceup() and tc:IsRelateToEffect(e) then
+            -- Negate until your next Standby Phase
+            local reset=RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY+RESET_SELF_TURN
             local e1=Effect.CreateEffect(e:GetHandler())
             e1:SetType(EFFECT_TYPE_SINGLE)
             e1:SetCode(EFFECT_DISABLE)
-            e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY)
+            e1:SetReset(reset)
             tc:RegisterEffect(e1)
+            local e2=e1:Clone()
+            e2:SetCode(EFFECT_DISABLE_EFFECT)
+            tc:RegisterEffect(e2)
         end
+    end
+    -- Optional destroy
+    if Duel.SelectYesNo(tp,aux.Stringid(id,6)) then
+        local dg=g:Filter(Card.IsRelateToEffect,nil,e)
+        Duel.Destroy(dg,REASON_EFFECT)
     end
     g:DeleteGroup()
 end
@@ -155,7 +164,7 @@ function s.bop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Float on destroy
+-- Floating: revive Pendulum Zone card, go to Pendulum Zone, optional add from GY
 function s.pzfilter(c)
     return c:IsFaceup() and c:IsLocation(LOCATION_PZONE) and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
 end
