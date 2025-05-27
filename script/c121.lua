@@ -153,14 +153,14 @@ end
 function s.btg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-            and Duel.IsExistingMatchingCard(s.bfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE+LOCATION_EXTRA,0,1,nil,e,tp)
+            and Duel.IsExistingMatchingCard(s.bfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE,0,1,nil,e,tp)
     end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE+LOCATION_EXTRA)
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE)
 end
 function s.bop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,s.bfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE+LOCATION_EXTRA,0,1,1,nil,e,tp)
+    local g=Duel.SelectMatchingCard(tp,s.bfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE,0,1,1,nil,e,tp)
     local sc=g:GetFirst()
     if sc and Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)>0 then
         Duel.Damage(1-tp,sc:GetAttack(),REASON_EFFECT)
