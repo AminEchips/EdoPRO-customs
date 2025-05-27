@@ -96,7 +96,7 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 end
 function s.thfilter(c)
 	return ((c:IsSetCard(0x9f) or c:IsSetCard(0xf2)) and c:IsSpellTrap())
-		or (c:IsSetCard(0xa2) and c:IsSpell() and c:IsType(TYPE_CONTINUOUS))
+		or (c:IsSetCard(0x98) and c:IsSpell() and c:IsType(TYPE_CONTINUOUS))
 		and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
