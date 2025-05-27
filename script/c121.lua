@@ -45,7 +45,7 @@ function s.initial_effect(c)
 	--Pendulum OPT limiter
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e4:SetCode(EVENT_PHASE+PHASE_START)
+	e4:SetCode(EVENT_PHASE+PHASE_DRAW)
 	e4:SetOperation(function(_,tp) Duel.ResetFlagEffect(tp,id) end)
 	Duel.RegisterEffect(e4,0)
 
