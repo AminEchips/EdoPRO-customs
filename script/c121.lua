@@ -187,7 +187,8 @@ function s.penop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local g=Duel.SelectMatchingCard(tp,s.penfilter,tp,LOCATION_PZONE,0,1,1,nil,e,tp)
     if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)>0 then
-        if Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)>0 then
+        -- fixed boolean check
+    if Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true) then
             if Duel.GetMatchingGroupCount(Card.IsAbleToHand,tp,LOCATION_GRAVE,0,nil)>0
                 and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
                 Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
