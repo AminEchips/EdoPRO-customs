@@ -58,10 +58,11 @@ function s.initial_effect(c)
     e5:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
     e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e5:SetCode(EVENT_DESTROYED)
-    e5:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+    e5:SetProperty(EFFECT_FLAG_DELAY)
     e5:SetCountLimit(1,id+300)
-    e5:SetTarget(s.pztg)
-    e5:SetOperation(s.pzop)
+    e5:SetCondition(s.pencon)
+    e5:SetTarget(s.pentg)
+    e5:SetOperation(s.penop)
     c:RegisterEffect(e5)
 
     -- Global: Count attacks
@@ -93,7 +94,7 @@ function s.magicianFilter2(c)
     return c:IsSetCard(0x98) and c:IsType(TYPE_PENDULUM)
 end
 
--- Pendulum damage condition and effect
+-- Pendulum damage
 function s.pdcon(e,tp,eg,ep,ev,re,r,rp)
     local a=Duel.GetAttacker()
     local d=Duel.GetAttackTarget()
@@ -113,7 +114,7 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Negate up to 3 cards until your next Standby, then optionally destroy
+-- Negate up to 3 cards and optionally destroy
 function s.negfilter(c)
     return c:IsFaceup() and not c:IsDisabled()
 end
@@ -121,35 +122,28 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingTarget(s.negfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
     local g=Duel.SelectTarget(tp,s.negfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,3,nil)
-    g:KeepAlive()
-    e:SetLabelObject(g)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
-    local g=e:GetLabelObject()
-    if not g then return end
-    for tc in aux.Next(g) do
+    local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+    for tc in aux.Next(tg) do
         if tc:IsFaceup() and tc:IsRelateToEffect(e) then
-            -- Negate until your next Standby Phase
-            local reset=RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY+RESET_SELF_TURN
             local e1=Effect.CreateEffect(e:GetHandler())
             e1:SetType(EFFECT_TYPE_SINGLE)
             e1:SetCode(EFFECT_DISABLE)
-            e1:SetReset(reset)
+            e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY+RESET_SELF_TURN)
             tc:RegisterEffect(e1)
             local e2=e1:Clone()
             e2:SetCode(EFFECT_DISABLE_EFFECT)
             tc:RegisterEffect(e2)
         end
     end
-    -- Optional destroy
     if Duel.SelectYesNo(tp,aux.Stringid(id,6)) then
-        local dg=g:Filter(Card.IsRelateToEffect,nil,e)
+        local dg=tg:Filter(Card.IsRelateToEffect,nil,e)
         Duel.Destroy(dg,REASON_EFFECT)
     end
-    g:DeleteGroup()
 end
 
--- Revive on battle destroy
+-- Battle destroy: revive Pendulum and burn
 function s.btg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
 end
@@ -164,28 +158,33 @@ function s.bop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Floating: revive Pendulum Zone card, go to Pendulum Zone, optional add from GY
-function s.pzfilter(c)
-    return c:IsFaceup() and c:IsLocation(LOCATION_PZONE) and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
-end
-function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsLocation(LOCATION_PZONE) and chkc:IsControler(tp) and s.pzfilter(chkc) end
-    if chk==0 then return Duel.IsExistingTarget(s.pzfilter,tp,LOCATION_PZONE,0,1,nil) end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    Duel.SelectTarget(tp,s.pzfilter,tp,LOCATION_PZONE,0,1,1,nil)
-end
-function s.pzop(e,tp,eg,ep,ev,re,r,rp)
+-- Float effect (revive Pendulum Zone card, go to PZone, optional add from GY)
+function s.pencon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    local tc=Duel.GetFirstTarget()
-    if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)>0 then
-        if c:IsRelateToEffect(e) and Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)>0 then
+    return c:IsPreviousLocation(LOCATION_MZONE) and c:IsFaceup()
+end
+function s.penfilter(c,e,tp)
+    return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+end
+function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+        and Duel.IsExistingMatchingCard(s.penfilter,tp,LOCATION_PZONE,0,1,nil,e,tp) end
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_PZONE)
+end
+function s.penop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<1 then return end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+    local g=Duel.SelectMatchingCard(tp,s.penfilter,tp,LOCATION_PZONE,0,1,1,nil,e,tp)
+    if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)>0 then
+        if Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)>0 then
             if Duel.IsExistingMatchingCard(Card.IsAbleToHand,tp,LOCATION_GRAVE,0,1,nil)
-                and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
+            and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
                 Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-                local g=Duel.SelectMatchingCard(tp,Card.IsAbleToHand,tp,LOCATION_GRAVE,0,1,1,nil)
-                if #g>0 then
-                    Duel.SendtoHand(g,nil,REASON_EFFECT)
-                    Duel.ConfirmCards(1-tp,g)
+                local sg=Duel.SelectMatchingCard(tp,Card.IsAbleToHand,tp,LOCATION_GRAVE,0,1,1,nil)
+                if #sg>0 then
+                    Duel.SendtoHand(sg,nil,REASON_EFFECT)
+                    Duel.ConfirmCards(1-tp,sg)
                 end
             end
         end
