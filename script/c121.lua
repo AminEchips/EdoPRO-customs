@@ -121,7 +121,7 @@ end
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingTarget(s.negfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-    local g=Duel.SelectTarget(tp,s.negfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,3,nil)
+    Duel.SelectTarget(tp,s.negfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,3,nil)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
@@ -144,31 +144,38 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Battle destroy: revive Pendulum and burn
+function s.bfilter(c,e,tp)
+    return c:IsType(TYPE_PENDULUM) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+end
 function s.btg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
+    if chk==0 then
+        return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+            and Duel.IsExistingMatchingCard(s.bfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE+LOCATION_EXTRA,0,1,nil,e,tp)
+    end
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE+LOCATION_EXTRA)
 end
 function s.bop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsType,TYPE_PENDULUM),tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_EXTRA,0,nil)
-    if #g>0 then
-        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-        local sc=g:Select(tp,1,1,nil):GetFirst()
-        if sc and Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)>0 then
-            Duel.Damage(1-tp,sc:GetAttack(),REASON_EFFECT)
-        end
+    if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+    local g=Duel.SelectMatchingCard(tp,s.bfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED+LOCATION_PZONE+LOCATION_EXTRA,0,1,1,nil,e,tp)
+    local sc=g:GetFirst()
+    if sc and Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)>0 then
+        Duel.Damage(1-tp,sc:GetAttack(),REASON_EFFECT)
     end
 end
 
--- Float effect (revive Pendulum Zone card, go to PZone, optional add from GY)
+-- Float effect
 function s.pencon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    return c:IsPreviousLocation(LOCATION_MZONE) and c:IsFaceup()
+    return e:GetHandler():IsPreviousLocation(LOCATION_MZONE) and e:GetHandler():IsFaceup()
 end
 function s.penfilter(c,e,tp)
     return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and Duel.IsExistingMatchingCard(s.penfilter,tp,LOCATION_PZONE,0,1,nil,e,tp) end
+    if chk==0 then
+        return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+            and Duel.IsExistingMatchingCard(s.penfilter,tp,LOCATION_PZONE,0,1,nil,e,tp)
+    end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_PZONE)
 end
 function s.penop(e,tp,eg,ep,ev,re,r,rp)
@@ -178,10 +185,10 @@ function s.penop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.SelectMatchingCard(tp,s.penfilter,tp,LOCATION_PZONE,0,1,1,nil,e,tp)
     if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)>0 then
         if Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)>0 then
-            if Duel.IsExistingMatchingCard(Card.IsAbleToHand,tp,LOCATION_GRAVE,0,1,nil)
-            and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
+            local gy=Duel.GetMatchingGroup(Card.IsAbleToHand,tp,LOCATION_GRAVE,0,nil)
+            if #gy>0 and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
                 Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-                local sg=Duel.SelectMatchingCard(tp,Card.IsAbleToHand,tp,LOCATION_GRAVE,0,1,1,nil)
+                local sg=gy:Select(tp,1,1,nil)
                 if #sg>0 then
                     Duel.SendtoHand(sg,nil,REASON_EFFECT)
                     Duel.ConfirmCards(1-tp,sg)
