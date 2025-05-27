@@ -7,10 +7,10 @@ function s.initial_effect(c)
 	--Fusion Materials: 1 Odd-Eyes + 2 Magician Pendulums with different Scales
 	Fusion.AddProcMixN(c,true,true,s.matfilter1,1,s.matfilter2,2)
 
-	--Negate and optionally destroy
+	--Negate and optionally destroy immediately
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_DISABLE)
+	e1:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_CANNOT_INACTIVATE)
 	e1:SetRange(LOCATION_MZONE)
@@ -79,18 +79,16 @@ function s.matfilter2(c,fc,sumtype,tp)
 	return c:IsSetCard(0x98,fc,sumtype,tp) and c:IsType(TYPE_PENDULUM)
 end
 
---Negate up to 3 and store them for destruction later
+--Negate and destroy instantly if chosen
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
 	local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,3,nil)
 	e:SetLabel(Duel.SelectYesNo(tp,aux.Stringid(id,4)) and 1 or 0)
-	g:KeepAlive()
 	e:SetLabelObject(g)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local g=e:GetLabelObject()
 	if not g then return end
-	local tg=Group.CreateGroup()
 	for tc in aux.Next(g) do
 		if tc:IsRelateToEffect(e) then
 			local e1=Effect.CreateEffect(e:GetHandler())
@@ -101,19 +99,12 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 			local e2=e1:Clone()
 			e2:SetCode(EFFECT_DISABLE_EFFECT)
 			tc:RegisterEffect(e2)
-			tg:AddCard(tc)
+			if e:GetLabel()==1 then
+				Duel.BreakEffect()
+				Duel.Destroy(tc,REASON_EFFECT)
+			end
 		end
 	end
-	if e:GetLabel()==1 and #tg>0 then
-		local ef=Effect.CreateEffect(e:GetHandler())
-		ef:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-		ef:SetCode(EVENT_PHASE+PHASE_END)
-		ef:SetCountLimit(1)
-		ef:SetOperation(function() Duel.Destroy(tg,REASON_EFFECT) end)
-		ef:SetReset(RESET_PHASE+PHASE_END)
-		Duel.RegisterEffect(ef,tp)
-	end
-	g:DeleteGroup()
 end
 
 --Battle destruction effect (non-targeting)
