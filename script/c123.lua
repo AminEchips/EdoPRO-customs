@@ -1,10 +1,11 @@
 --Performapal Sky Xyz Magician
 local s,id=GetID()
 function s.initial_effect(c)
-	--Pendulum procedure
+	--Pendulum Procedure
 	Pendulum.AddProcedure(c)
-	--Xyz procedure
-	Xyz.AddProcedure(c,nil,4,2,s.ovfilter)
+
+	--Xyz Summon: any 2 Level 4 monsters
+	Xyz.AddProcedure(c,nil,4,2)
 	c:EnableReviveLimit()
 
 	--Pendulum Effect: Destroy 1 Extra Deck monster and draw
@@ -21,7 +22,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.penop)
 	c:RegisterEffect(e1)
 
-	--Main Phase: If has Joker Archer or Mage, search
+	--Main Phase: If has Joker Archer or Mage as material, search
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -33,7 +34,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
 
-	--Quick Effect: Return 1 Spell/Trap to hand
+	--Quick Effect: Detach to bounce 1 Spell/Trap
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND)
@@ -47,7 +48,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.rthop)
 	c:RegisterEffect(e3)
 
-	--If destroyed, place in Pendulum Zone
+	--If destroyed in Monster Zone, place in Pendulum Zone
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e4:SetCode(EVENT_DESTROYED)
@@ -57,20 +58,15 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
--- Archetype & ID support
+-- Archetype references
 s.listed_names={100,101}
 s.listed_series={0x9f,0xf2,0xa2}
 
--- Overlay filter: any Performapal
-function s.ovfilter(c,tp,lc)
-	return c:IsSetCard(0x9f)
-end
-
--- Pendulum Condition: A Performapal/Odd-Eyes/Magician Pendulum was summoned
+-- Pendulum summon check (Odd-Eyes, Performapal, or Magician)
 function s.pencon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
-		return c:IsSummonType(SUMMON_TYPE_PENDULUM) and 
-			(c:IsSetCard(0x9f) or c:IsSetCard(0x98) or c:IsSetCard(0x99))
+		return c:IsSummonType(SUMMON_TYPE_PENDULUM)
+			and (c:IsSetCard(0x9f) or c:IsSetCard(0x98) or c:IsSetCard(0x99))
 	end,1,nil)
 end
 function s.penfilter(c)
@@ -78,7 +74,7 @@ function s.penfilter(c)
 		or c:IsType(TYPE_XYZ) or c:IsType(TYPE_LINK))
 end
 function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and s.penfilter(chkc) end
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and s.penfilter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.penfilter,tp,0,LOCATION_MZONE,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 	local g=Duel.SelectTarget(tp,s.penfilter,tp,0,LOCATION_MZONE,1,1,nil)
@@ -92,7 +88,7 @@ function s.penop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Search condition: has Joker Archer or Joker Mage
+-- Search if specific material present
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local mg=c:GetOverlayGroup()
@@ -116,7 +112,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Return Spell/Trap
+-- Detach to bounce Spell/Trap
 function s.rthcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
 	e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
@@ -135,7 +131,7 @@ function s.rthop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Place in Pendulum Zone when destroyed
+-- Floating into Pendulum Zone
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsPreviousLocation(LOCATION_MZONE)
 end
