@@ -7,7 +7,7 @@ function s.initial_effect(c)
 	-- Fusion Materials: 1 "Odd-Eyes" Dragon + 1 "Magician" Pendulum
 	Fusion.AddProcMix(c,true,true,s.mat1filter,s.mat2filter)
 
-	-- Custom Special Summon condition: must be Fusion Summoned or tribute correct Pendulum Summoned monsters
+	-- Must be Fusion Summoned or Special Summoned by tributing above Pendulum Summoned monsters
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_SINGLE)
 	e0:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_UNCOPYABLE)
@@ -15,14 +15,14 @@ function s.initial_effect(c)
 	e0:SetValue(s.splimit)
 	c:RegisterEffect(e0)
 
-	-- Store number of Pendulum Dragon materials
+	-- Material Check: store Pendulum Dragon material count
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_MATERIAL_CHECK)
 	e1:SetValue(s.valcheck)
 	c:RegisterEffect(e1)
 
-	-- Quick Effect: negate and destroy, up to count of Pendulum Dragon materials
+	-- Quick Effect: negate and destroy a face-up monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
@@ -34,10 +34,10 @@ function s.initial_effect(c)
 	e2:SetCondition(s.negcon)
 	e2:SetTarget(s.negtg)
 	e2:SetOperation(s.negop)
-	c:RegisterEffect(e2)
 	e2:SetLabelObject(e1)
+	c:RegisterEffect(e2)
 
-	-- Floating effect: move to Pendulum Zone
+	-- Floating: place in Pendulum Zone if destroyed
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_DESTROYED)
@@ -46,7 +46,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.placeop)
 	c:RegisterEffect(e3)
 
-	-- Pendulum Effect: Destroy this card to summon 1 Pendulum Dragon
+	-- Pendulum Effect: destroy self, summon Pendulum Dragon
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -58,10 +58,10 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
-s.listed_series={0x99,0x98,0x10f2}
+s.listed_series={0x99,0x98,0x10f2} -- Odd-Eyes, Magician, Pendulum Dragon
 s.material_setcode={0x99,0x98}
 
--- Fusion materials
+-- Fusion Materials
 function s.mat1filter(c,fc,sumtype,tp)
 	return c:IsSetCard(0x99,fc,sumtype,tp) and c:IsRace(RACE_DRAGON)
 end
@@ -69,12 +69,12 @@ function s.mat2filter(c,fc,sumtype,tp)
 	return c:IsSetCard(0x98,fc,sumtype,tp) and c:IsType(TYPE_PENDULUM)
 end
 
--- Special Summon condition (Fusion only, or custom future case)
+-- Special Summon Limit
 function s.splimit(e,se,sp,st)
 	return st==SUMMON_TYPE_FUSION
 end
 
--- Count Pendulum Dragon (0x10f2) materials
+-- Count Pendulum Dragon materials
 function s.valcheck(e,c)
 	local g=c:GetMaterial()
 	local ct=g:FilterCount(function(c) return c:IsSetCard(0x10f2) end,nil)
@@ -84,11 +84,8 @@ end
 -- Negate condition: up to number of Pendulum Dragon materials
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if not c:IsSummonType(SUMMON_TYPE_FUSION) then return false end
-	local max = e:GetLabelObject():GetLabel()
-	if not max or max <= 0 then return false end
-	if not c.registered_negations then c.registered_negations = 0 end
-	return c.registered_negations < max
+	local max=e:GetLabelObject():GetLabel()
+	return c:IsSummonType(SUMMON_TYPE_FUSION) and Duel.GetFlagEffect(tp,id)==0 and max>0 and c:GetFlagEffect(id+1000)<max
 end
 
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
@@ -101,9 +98,7 @@ end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	local c=e:GetHandler()
-	if not c.registered_negations then c.registered_negations = 0 end
-	c.registered_negations = c.registered_negations + 1
-	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and not tc:IsDisabled() then
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() then
 		Duel.NegateRelatedChain(tc,RESET_TURN_SET)
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
@@ -115,10 +110,11 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 		tc:RegisterEffect(e2)
 		Duel.BreakEffect()
 		Duel.Destroy(tc,REASON_EFFECT)
+		c:RegisterFlagEffect(id+1000,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
 	end
 end
 
--- Floating to Pendulum Zone
+-- Float into Pendulum Zone
 function s.placeop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) then
@@ -126,7 +122,7 @@ function s.placeop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Pendulum effect: destroy itself to summon Pendulum Dragon
+-- Pendulum Effect: destroy self to summon Pendulum Dragon
 function s.penfilter(c,e,tp)
 	return c:IsSetCard(0x10f2) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
@@ -141,7 +137,6 @@ function s.penop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) or Duel.Destroy(c,REASON_EFFECT)==0 then return end
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local g=Duel.SelectMatchingCard(tp,s.penfilter,tp,LOCATION_HAND+LOCATION_EXTRA,0,1,1,nil,e,tp)
 	if #g>0 then
 		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
