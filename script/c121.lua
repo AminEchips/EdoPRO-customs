@@ -46,7 +46,7 @@ function s.initial_effect(c)
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	e4:SetCode(EVENT_PHASE+PHASE_DRAW)
-	e4:SetOperation(function(_,tp) Duel.ResetFlagEffect(tp,id) end)
+	e4:SetOperation(function(_,tp) Duel.ResetFlagEffect(tp,id) Duel.ResetFlagEffect(tp,id+1) end)
 	Duel.RegisterEffect(e4,0)
 
 	--Pendulum Damage at Damage Step End
@@ -69,6 +69,16 @@ function s.initial_effect(c)
 	e6:SetCondition(function(_,tp) return Duel.GetFlagEffect(tp,id)==0 end)
 	e6:SetOperation(s.lpop)
 	c:RegisterEffect(e6)
+
+	-- Global attack counter like Meteor Rush - Monochroid
+	if not s.global_check then
+		s.global_check=true
+		local ge1=Effect.CreateEffect(c)
+		ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ge1:SetCode(EVENT_ATTACK_ANNOUNCE)
+		ge1:SetOperation(function(_,_,_,ep) Duel.RegisterFlagEffect(ep,id+1,RESET_PHASE+PHASE_END,0,1) end)
+		Duel.RegisterEffect(ge1,0)
+	end
 end
 
 --Fusion material filters
@@ -84,10 +94,10 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
 	local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,3,nil)
 	e:SetLabel(Duel.SelectYesNo(tp,aux.Stringid(id,4)) and 1 or 0)
-	e:SetLabelObject(g)
+	e:SetLabelObject(g:GetFirst())
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
-	local g=e:GetLabelObject()
+	local g=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
 	if not g then return end
 	for tc in aux.Next(g) do
 		if tc:IsRelateToEffect(e) then
@@ -154,8 +164,7 @@ end
 
 -- Pendulum damage effect
 function s.damcon(e,tp,eg,ep,ev,re,r,rp)
-	local ph=Duel.GetCurrentPhase()
-	return (ph==PHASE_DAMAGE or ph==PHASE_DAMAGE_CAL) and Duel.GetFlagEffect(tp,id+1)>0
+	return Duel.GetFlagEffect(tp,id+1)>0 and Duel.GetCurrentPhase()==PHASE_DAMAGE
 end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	local ct=Duel.GetFlagEffect(tp,id+1)
@@ -171,14 +180,4 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.Recover(tp,1200,REASON_EFFECT)
 		Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
 	end
-end
-
--- Global attack counter like Meteor Rush - Monochroid
-if not s.global_check then
-	s.global_check=true
-	local ge1=Effect.CreateEffect(s)
-	ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	ge1:SetCode(EVENT_ATTACK_ANNOUNCE)
-	ge1:SetOperation(function(_,_,_,ep) Duel.RegisterFlagEffect(ep,id+1,RESET_PHASE+PHASE_END,0,1) end)
-	Duel.RegisterEffect(ge1,0)
 end
