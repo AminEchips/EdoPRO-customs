@@ -30,13 +30,14 @@ function s.initial_effect(c)
     c:EnableReviveLimit()
     Fusion.AddProcMix(c,true,true,s.oddEyesFilter,s.magicianFilter1,s.magicianFilter2)
 
-    -- Negate and optionally destroy
+    -- Negate and optionally destroy (properly targets)
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
     e3:SetType(EFFECT_TYPE_IGNITION)
     e3:SetRange(LOCATION_MZONE)
     e3:SetCountLimit(1,id+200)
+    e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e3:SetTarget(s.negtg)
     e3:SetOperation(s.negop)
     c:RegisterEffect(e3)
@@ -114,17 +115,19 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Negate up to 3 cards and optionally destroy
+-- Negate effect (properly targets)
 function s.negfilter(c)
     return c:IsFaceup() and not c:IsDisabled()
 end
-function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsOnField() and s.negfilter(chkc) end
     if chk==0 then return Duel.IsExistingTarget(s.negfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
     Duel.SelectTarget(tp,s.negfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,3,nil)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
+    if not tg then return end
     for tc in aux.Next(tg) do
         if tc:IsFaceup() and tc:IsRelateToEffect(e) then
             local e1=Effect.CreateEffect(e:GetHandler())
@@ -143,7 +146,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Battle destroy: revive Pendulum and burn
+-- Battle destroy: revive and burn from any zone
 function s.bfilter(c,e,tp)
     return c:IsType(TYPE_PENDULUM) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
@@ -164,7 +167,7 @@ function s.bop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Float effect
+-- Float on destruction
 function s.pencon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsPreviousLocation(LOCATION_MZONE) and e:GetHandler():IsFaceup()
 end
@@ -185,10 +188,10 @@ function s.penop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.SelectMatchingCard(tp,s.penfilter,tp,LOCATION_PZONE,0,1,1,nil,e,tp)
     if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)>0 then
         if Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)>0 then
-            local gy=Duel.GetMatchingGroup(Card.IsAbleToHand,tp,LOCATION_GRAVE,0,nil)
-            if #gy>0 and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
+            if Duel.GetMatchingGroupCount(Card.IsAbleToHand,tp,LOCATION_GRAVE,0,nil)>0
+                and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
                 Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-                local sg=gy:Select(tp,1,1,nil)
+                local sg=Duel.SelectMatchingCard(tp,Card.IsAbleToHand,tp,LOCATION_GRAVE,0,1,1,nil)
                 if #sg>0 then
                     Duel.SendtoHand(sg,nil,REASON_EFFECT)
                     Duel.ConfirmCards(1-tp,sg)
