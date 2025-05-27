@@ -30,7 +30,7 @@ function s.initial_effect(c)
     c:EnableReviveLimit()
     Fusion.AddProcMix(c,true,true,s.oddEyesFilter,s.magicianFilter1,s.magicianFilter2)
 
-    -- Negate and optionally destroy (properly targets & lasts until your Standby)
+    -- Negate and optionally destroy (properly targets & resets on YOUR Standby Phase)
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
@@ -95,7 +95,7 @@ function s.magicianFilter2(c)
     return c:IsSetCard(0x98) and c:IsType(TYPE_PENDULUM)
 end
 
--- Pendulum damage
+-- Pendulum burn effect
 function s.pdcon(e,tp,eg,ep,ev,re,r,rp)
     local a=Duel.GetAttacker()
     local d=Duel.GetAttackTarget()
@@ -107,7 +107,7 @@ function s.pdop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- LP gain
+-- LP recovery
 function s.lpop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if Duel.Destroy(c,REASON_EFFECT)>0 then
@@ -115,7 +115,7 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Negate effect
+-- Negate and optional destroy
 function s.negfilter(c)
     return c:IsFaceup() and not c:IsDisabled()
 end
@@ -127,17 +127,12 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
-    local turn=Duel.GetTurnCount()
     for tc in aux.Next(tg) do
         if tc:IsFaceup() and tc:IsRelateToEffect(e) then
             local e1=Effect.CreateEffect(e:GetHandler())
             e1:SetType(EFFECT_TYPE_SINGLE)
             e1:SetCode(EFFECT_DISABLE)
             e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY,2)
-            e1:SetLabel(turn)
-            e1:SetCondition(function(e)
-                return Duel.GetTurnCount() > e:GetLabel() and Duel.GetTurnPlayer() == e:GetOwnerPlayer()
-            end)
             tc:RegisterEffect(e1)
             local e2=e1:Clone()
             e2:SetCode(EFFECT_DISABLE_EFFECT)
@@ -150,7 +145,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Battle destroy: revive Pendulum and burn (no Extra Deck)
+-- Battle destroy: revive from GY/banished/PZ only
 function s.bfilter(c,e,tp)
     return c:IsType(TYPE_PENDULUM) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
@@ -171,7 +166,7 @@ function s.bop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Float on destruction
+-- Float into PZone + optional recover from GY
 function s.pencon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsPreviousLocation(LOCATION_MZONE) and e:GetHandler():IsFaceup()
 end
