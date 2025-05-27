@@ -76,7 +76,9 @@ function s.initial_effect(c)
 		local ge1=Effect.CreateEffect(c)
 		ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		ge1:SetCode(EVENT_ATTACK_ANNOUNCE)
-		ge1:SetOperation(function(_,_,_,ep) Duel.RegisterFlagEffect(ep,id+1,RESET_PHASE+PHASE_END,0,1) end)
+		ge1:SetOperation(function(_,tp,_,ep)
+			Duel.RegisterFlagEffect(ep,id+1,RESET_PHASE+PHASE_END,0,1)
+		end)
 		Duel.RegisterEffect(ge1,0)
 	end
 end
@@ -92,7 +94,7 @@ end
 --Negate and destroy instantly if chosen
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
-	local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,3,nil)
+	local g=Duel.SelectTarget(tp,aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONfFIELD,1,3,nil)
 	e:SetLabel(Duel.SelectYesNo(tp,aux.Stringid(id,4)) and 1 or 0)
 	e:SetLabelObject(g:GetFirst())
 end
