@@ -1,13 +1,15 @@
 --Performapal Sky Xyz Magician
 local s,id=GetID()
 function s.initial_effect(c)
+	--Pendulum procedure
 	Pendulum.AddProcedure(c)
+	--Xyz procedure
+	Xyz.AddProcedure(c,nil,4,2,s.ovfilter)
 	c:EnableReviveLimit()
-	aux.AddXyzProcedure(c,nil,4,2,s.ovfilter,aux.Stringid(id,0),2)
 
-	--PENDULUM EFFECT
+	--Pendulum Effect: Destroy 1 Extra Deck monster and draw
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,1))
+	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DESTROY+CATEGORY_DRAW)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -19,9 +21,9 @@ function s.initial_effect(c)
 	e1:SetOperation(s.penop)
 	c:RegisterEffect(e1)
 
-	--Search if has specific material
+	--Main Phase: If has Joker Archer or Mage, search
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,2))
+	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetRange(LOCATION_MZONE)
@@ -31,9 +33,9 @@ function s.initial_effect(c)
 	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
 
-	--Quick Effect: Return Spell/Trap to hand
+	--Quick Effect: Return 1 Spell/Trap to hand
 	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,3))
+	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND)
 	e3:SetType(EFFECT_TYPE_QUICK_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
@@ -45,7 +47,7 @@ function s.initial_effect(c)
 	e3:SetOperation(s.rthop)
 	c:RegisterEffect(e3)
 
-	--Floating effect to PZone
+	--If destroyed, place in Pendulum Zone
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e4:SetCode(EVENT_DESTROYED)
@@ -55,20 +57,25 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
+-- Archetype & ID support
 s.listed_names={100,101}
 s.listed_series={0x9f,0xf2,0xa2}
 
---Overlay filter
+-- Overlay filter: any Performapal
 function s.ovfilter(c,tp,lc)
-	return c:IsFaceup() and c:IsSetCard(0x9f)
+	return c:IsSetCard(0x9f)
 end
 
---Pendulum condition: if a Performapal, Magician, or Odd-Eyes Pendulum is summoned
+-- Pendulum Condition: A Performapal/Odd-Eyes/Magician Pendulum was summoned
 function s.pencon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
-		return c:IsSummonType(SUMMON_TYPE_PENDULUM)
-			and (c:IsSetCard(0x9f) or c:IsSetCard(0x98) or c:IsSetCard(0x99))
+		return c:IsSummonType(SUMMON_TYPE_PENDULUM) and 
+			(c:IsSetCard(0x9f) or c:IsSetCard(0x98) or c:IsSetCard(0x99))
 	end,1,nil)
+end
+function s.penfilter(c)
+	return c:IsFaceup() and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO)
+		or c:IsType(TYPE_XYZ) or c:IsType(TYPE_LINK))
 end
 function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and s.penfilter(chkc) end
@@ -78,9 +85,6 @@ function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
 end
-function s.penfilter(c)
-	return c:IsFaceup() and (c:IsType(TYPE_FUSION) or c:IsType(TYPE_SYNCHRO) or c:IsType(TYPE_XYZ) or c:IsType(TYPE_LINK))
-end
 function s.penop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if tc and tc:IsRelateToEffect(e) and Duel.Destroy(tc,REASON_EFFECT)>0 then
@@ -88,7 +92,7 @@ function s.penop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Search condition
+-- Search condition: has Joker Archer or Joker Mage
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local mg=c:GetOverlayGroup()
@@ -112,7 +116,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Return Spell/Trap
+-- Return Spell/Trap
 function s.rthcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
 	e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
@@ -131,10 +135,9 @@ function s.rthop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Floating to PZone
+-- Place in Pendulum Zone when destroyed
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_MZONE)
+	return e:GetHandler():IsPreviousLocation(LOCATION_MZONE)
 end
 function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
