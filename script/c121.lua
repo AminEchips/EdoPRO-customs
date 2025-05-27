@@ -30,7 +30,7 @@ function s.initial_effect(c)
     c:EnableReviveLimit()
     Fusion.AddProcMix(c,true,true,s.oddEyesFilter,s.magicianFilter1,s.magicianFilter2)
 
-    -- Negate and optionally destroy (properly targets)
+    -- Negate and optionally destroy (properly targets & lasts until your Standby)
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
@@ -115,7 +115,7 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Negate effect (properly targets)
+-- Negate effect
 function s.negfilter(c)
     return c:IsFaceup() and not c:IsDisabled()
 end
@@ -127,13 +127,17 @@ function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local tg=Duel.GetChainInfo(0,CHAININFO_TARGET_CARDS)
-    if not tg then return end
+    local turn=Duel.GetTurnCount()
     for tc in aux.Next(tg) do
         if tc:IsFaceup() and tc:IsRelateToEffect(e) then
             local e1=Effect.CreateEffect(e:GetHandler())
             e1:SetType(EFFECT_TYPE_SINGLE)
             e1:SetCode(EFFECT_DISABLE)
-            e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY+RESET_SELF_TURN)
+            e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_STANDBY,2)
+            e1:SetLabel(turn)
+            e1:SetCondition(function(e)
+                return Duel.GetTurnCount() > e:GetLabel() and Duel.GetTurnPlayer() == e:GetOwnerPlayer()
+            end)
             tc:RegisterEffect(e1)
             local e2=e1:Clone()
             e2:SetCode(EFFECT_DISABLE_EFFECT)
@@ -146,7 +150,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Battle destroy: revive and burn from any zone
+-- Battle destroy: revive Pendulum and burn (no Extra Deck)
 function s.bfilter(c,e,tp)
     return c:IsType(TYPE_PENDULUM) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
@@ -187,8 +191,7 @@ function s.penop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local g=Duel.SelectMatchingCard(tp,s.penfilter,tp,LOCATION_PZONE,0,1,1,nil,e,tp)
     if #g>0 and Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)>0 then
-        -- fixed boolean check
-    if Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true) then
+        if Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true) then
             if Duel.GetMatchingGroupCount(Card.IsAbleToHand,tp,LOCATION_GRAVE,0,nil)>0
                 and Duel.SelectYesNo(tp,aux.Stringid(id,5)) then
                 Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
