@@ -15,19 +15,23 @@ end
 
 -- Filters
 function s.negfilter(c)
-	return c:IsFaceup() and c:IsCanBeDisabled()
+	return c:IsFaceup() and aux.disfilter1(c)
 end
 function s.thfilter(c)
 	return c:IsSetCard(0x9f) and c:IsType(TYPE_PENDULUM) and c:IsLevelBelow(6) and c:IsAbleToHand()
 		and (c:IsLocation(LOCATION_DECK) or (c:IsFaceup() and c:IsLocation(LOCATION_EXTRA)))
 end
+function s.oddEyesFilter(c)
+	return c:IsFaceup() and c:IsSetCard(0x99)
+end
 
--- Target
+-- Target selection
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	local b1=Duel.IsExistingMatchingCard(s.negfilter,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil)
-		and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsSetCard,0x99),tp,LOCATION_MZONE,0,1,nil) -- "Odd-Eyes"
+		and Duel.IsExistingMatchingCard(s.oddEyesFilter,tp,LOCATION_MZONE,0,1,nil)
 	local b2=Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK+LOCATION_EXTRA,0,1,nil)
 	if chk==0 then return b1 or b2 end
+
 	local op=0
 	if b1 and b2 then
 		op=Duel.SelectOption(tp,aux.Stringid(id,1),aux.Stringid(id,2))
@@ -46,12 +50,12 @@ function s.target(e,tp,eg,ep,ev,re,r,rp,chk)
 	end
 end
 
--- Operation
+-- Effect execution
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local op=e:GetLabel()
 	if op==0 then
 		local tc=Duel.GetFirstTarget()
-		if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() then
+		if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() and aux.disfilter1(tc) then
 			Duel.NegateRelatedChain(tc,RESET_TURN_SET)
 			local e1=Effect.CreateEffect(e:GetHandler())
 			e1:SetType(EFFECT_TYPE_SINGLE)
@@ -61,7 +65,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
 			local e2=e1:Clone()
 			e2:SetCode(EFFECT_DISABLE_EFFECT)
 			tc:RegisterEffect(e2)
-			--Reduce ATK of all opponent's monsters
+			-- ATK reduction
 			local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
 			for oc in g:Iter() do
 				local e3=Effect.CreateEffect(e:GetHandler())
