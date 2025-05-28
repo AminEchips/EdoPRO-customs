@@ -85,15 +85,21 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 		end
 
 	elseif op==1 then
-		-- Reveal Pendulum as cost, discard, then move to Pendulum Zone
+		-- Reveal Pendulum as cost, discard, then place it in Pendulum Zone
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
 		local g=Duel.SelectMatchingCard(tp,s.revealcostfilter,tp,LOCATION_EXTRA,0,1,1,nil)
 		if #g==0 then return end
 		local rc=g:GetFirst()
 		Duel.ConfirmCards(1-tp,rc)
 		if Duel.DiscardHand(tp,nil,1,1,REASON_EFFECT+REASON_DISCARD)>0 and rc:IsRelateToEffect(e) then
-			Duel.MoveToField(rc,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
+			if Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) then
+				Duel.MoveToField(rc,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
+			else
+				-- Both zones are occupied
+				Duel.SendtoExtraP(rc,tp,REASON_RULE)
+			end
 		end
+
 
 	elseif op==2 then
 		-- Target and Special Summon ignoring conditions
