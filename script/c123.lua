@@ -59,7 +59,6 @@ function s.initial_effect(c)
 end
 
 -- Archetype references
-s.listed_names={100,101}
 s.listed_series={0x9f,0xf2,0x98}
 
 -- Pendulum summon check (Odd-Eyes, Performapal, or Magician)
@@ -92,7 +91,7 @@ end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local mg=c:GetOverlayGroup()
-	return mg:IsExists(Card.IsCode,1,nil,100,101)
+	return mg:IsExists(Card.IsSetCard,1,nil,0x9f)
 end
 function s.thfilter(c)
 	return ((c:IsSetCard(0x9f) or c:IsSetCard(0xf2)) and c:IsSpellTrap())
