@@ -5,7 +5,7 @@ function s.initial_effect(c)
 	Xyz.AddProcedure(c,nil,6,3)
 	c:EnableReviveLimit()
 
-	-- Can also Xyz Summon using Rank 5 DARK Dragon Xyz Monster
+	-- Can also Xyz Summon using a Rank 5 DARK Dragon Xyz Monster
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_FIELD)
 	e0:SetCode(EFFECT_SPSUMMON_PROC)
@@ -17,14 +17,14 @@ function s.initial_effect(c)
 	e0:SetValue(SUMMON_TYPE_XYZ)
 	c:RegisterEffect(e0)
 
-	-- Effect 1: DEF loss on battle
+	-- DEF loss during battle
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e1:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
 	e1:SetOperation(s.defop)
 	c:RegisterEffect(e1)
 
-	-- Effect 2: ATK zeroing + gain original ATK
+	-- Quick Effect: Temporarily zero ATK of non-Dragons, gain own ATK permanently
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_ATKCHANGE)
@@ -37,7 +37,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.atkop)
 	c:RegisterEffect(e2)
 
-	-- Effect 3: Revive 2 DARK Pendulum Monsters if sent from field
+	-- GY revival if Xyz Summoned
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -50,7 +50,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Alternative Summon using Rank 5 DARK Dragon Xyz
+-- Alternative Xyz Summon (Rank 5 DARK Dragon)
 function s.xyzfilter(c)
 	return c:IsFaceup() and c:IsRank(5) and c:IsRace(RACE_DRAGON) and c:IsAttribute(ATTRIBUTE_DARK)
 end
@@ -78,7 +78,7 @@ function s.xyzop(e,tp,eg,ep,ev,re,r,rp,c,og,min,max)
 	tc:CancelToGrave()
 end
 
--- DEF loss during battle
+-- Battle: target loses DEF equal to its original ATK
 function s.defop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
@@ -93,22 +93,21 @@ function s.defop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Quick Effect Condition: Opponent’s Battle Phase
+-- Quick Effect: Opponent’s Battle Phase only
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local ph=Duel.GetCurrentPhase()
 	return Duel.GetTurnPlayer()~=tp and ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
 end
-
--- Cost: Detach 2
 function s.atkcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,2,REASON_COST) end
 	e:GetHandler():RemoveOverlayCard(tp,2,2,REASON_COST)
 end
-
--- Operation: Zero ATK for non-Dragons + gain original ATK
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local g=Duel.GetMatchingGroup(function(tc) return tc:IsFaceup() and not tc:IsRace(RACE_DRAGON) end,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	-- Temporarily set ATK of all non-Dragons to 0
+	local g=Duel.GetMatchingGroup(function(tc)
+		return tc:IsFaceup() and not tc:IsRace(RACE_DRAGON)
+	end,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
 	for tc in g:Iter() do
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
@@ -117,16 +116,18 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 		tc:RegisterEffect(e1)
 	end
+
+	-- Permanently gain own base ATK
 	local atk=c:GetBaseAttack()
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetCode(EFFECT_UPDATE_ATTACK)
 	e2:SetValue(atk)
-	e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+	e2:SetReset(RESET_EVENT+RESETS_STANDARD)
 	c:RegisterEffect(e2)
 end
 
--- Revive DARK Pendulum on GY send (if Xyz Summoned)
+-- GY Trigger: If Xyz Summoned and sent to GY, SS 2 DARK Pendulums
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_MZONE) and c:IsSummonType(SUMMON_TYPE_XYZ)
