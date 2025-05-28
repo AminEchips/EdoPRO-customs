@@ -19,3 +19,7 @@ Includes:
 - Therion
 - Spright
 - Bystial
+- Odd-Eyes
+- Performapal
+- Magician Pendulums
+- Supreme King Z-Arc/Dragon/Gate
