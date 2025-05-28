@@ -98,8 +98,6 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 		if tc and Duel.GetLocationCount(tp,LOCATION_PZONE)>0 then
 			Duel.MoveToField(tc,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
 		end
-	end
-
 
 	elseif op==2 then
 		-- Target and Special Summon ignoring conditions
