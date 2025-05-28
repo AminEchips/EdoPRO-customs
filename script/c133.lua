@@ -31,6 +31,7 @@ end
 local SUPREME_KING_DRAGON = 0x20f8
 local REBELLION = 0x13b
 local ODD_EYES = 0x99
+s.listed_names={13331639}
 
 -- Rank-Up
 function s.rufilter(c,e,tp)
