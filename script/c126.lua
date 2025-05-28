@@ -17,18 +17,17 @@ function s.initial_effect(c)
 	e1:SetOperation(s.addop)
 	c:RegisterEffect(e1)
 
-	--Board wipe if used Pendulum Zone materials
+	--Board wipe: destroy all monsters except those in Pendulum Zones
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY)
 	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1,id+100)
-	e2:SetCondition(s.wipecon)
 	e2:SetOperation(s.wipeop)
 	c:RegisterEffect(e2)
 
-	--Revive during End Phase
+	--Revive during End Phase if destroyed and sent to GY
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -48,7 +47,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
---Fusion Materials
+-- Fusion Materials
 function s.matfilter1(c,fc,sumtype,tp)
 	return c:IsType(TYPE_FUSION,fc,sumtype,tp)
 end
@@ -56,7 +55,7 @@ function s.matfilter2(c,fc,sumtype,tp)
 	return c:IsAttribute(ATTRIBUTE_DARK,fc,sumtype,tp) and c:IsType(TYPE_PENDULUM,fc,sumtype,tp)
 end
 
---Effect 1: Add 1 "Fusion" or "Polymerization" Spell
+-- Effect 1: Add Fusion/Polymerization Spell on Fusion Summon
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
 end
@@ -78,12 +77,7 @@ function s.addop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Effect 2: Destroy all monsters except those in Pendulum Zones
-function s.wipecon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local mat=c:GetMaterial()
-	return mat:IsExists(function(tc) return tc:IsLocation(LOCATION_PZONE) end,1,nil)
-end
+-- Effect 2: Destroy all monsters except Pendulum Zones
 function s.wipeop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(function(c) return c:IsMonster() and not c:IsLocation(LOCATION_PZONE) end,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
 	if #g>0 then
@@ -91,18 +85,21 @@ function s.wipeop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Effect 3: Revive a Dragon from GY or face-up Extra Deck if destroyed
+-- Effect 3: Register if destroyed this turn
 function s.regop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if c:IsReason(REASON_EFFECT+REASON_DESTROY) or c:IsReason(REASON_BATTLE) then
+	if c:IsReason(REASON_BATTLE) or (rp==1-tp and c:IsReason(REASON_EFFECT)) then
 		c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
 	end
 end
-function s.spfilter(c,e,tp)
-	return c:IsRace(RACE_DRAGON) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-end
+
+-- Effect 3: Revive a Dragon during End Phase
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():GetFlagEffect(id)>0
+end
+function s.spfilter(c,e,tp)
+	return c:IsRace(RACE_DRAGON) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		and (c:IsLocation(LOCATION_GRAVE) or (c:IsLocation(LOCATION_EXTRA) and c:IsFaceup()))
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
