@@ -1,11 +1,18 @@
 --Odd-Eyes Crystalstream Dragon
 local s,id=GetID()
 function s.initial_effect(c)
-	--Link Summon
+	-- Link Summon
 	c:EnableReviveLimit()
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),3,3,s.lcheck)
 
-	--Floating effect on destruction
+	-- Material check for Odd-Eyes Pendulum Dragon
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_SINGLE)
+	e0:SetCode(EFFECT_MATERIAL_CHECK)
+	e0:SetValue(s.matcheck)
+	c:RegisterEffect(e0)
+
+	-- Floating effect when destroyed by battle or opponent's effect
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -18,7 +25,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	--Bonus effect if Link Summoned using Odd-Eyes Pendulum Dragon
+	-- Bonus effect if Odd-Eyes Pendulum Dragon was used
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TODECK+CATEGORY_DRAW+CATEGORY_DESTROY)
@@ -31,12 +38,20 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
---Material check: requires 1 "Odd-Eyes" Pendulum Monster
+-- Link Material Check: requires an Odd-Eyes Pendulum
 function s.lcheck(g,lc,sumtype,tp)
 	return g:IsExists(function(c) return c:IsSetCard(0x99) and c:IsType(TYPE_PENDULUM,lc,sumtype,tp) end,1,nil)
 end
 
---Float: If destroyed by opponent or battle
+-- Material check logic
+function s.matcheck(e,c)
+	local g=c:GetMaterial()
+	if g:IsExists(Card.IsCode,1,nil,16178681) then
+		c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,0)
+	end
+end
+
+-- Floating Effect Condition: destroyed by battle or opponent's effect
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousPosition(POS_FACEUP) and c:IsPreviousControler(tp) and
@@ -59,12 +74,12 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Condition: Was Link Summoned using Odd-Eyes Pendulum Dragon
+-- Condition for Bonus Effect
 function s.cond_oddeyes(e)
-	return e:GetHandler():GetMaterial():IsExists(Card.IsCode,1,nil,16178681)
+	return e:GetHandler():GetFlagEffect(id)>0
 end
 
---Return F/S/X from any GY to Extra Deck, then draw 1 and maybe destroy
+-- Fusion/Synchro/Xyz recycle, draw, destroy
 function s.tdfilter(c,typ)
 	return c:IsType(typ) and c:IsAbleToDeck() and c:IsLocation(LOCATION_GRAVE)
 end
@@ -79,15 +94,12 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Group.CreateGroup()
 	local types_returned=0
 
-	-- Try to return Fusion
 	local fg=Duel.SelectMatchingCard(tp,s.tdfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,0,1,1,nil,TYPE_FUSION)
 	if #fg>0 then g:Merge(fg) types_returned=types_returned+1 end
 
-	-- Try to return Synchro
 	local sg=Duel.SelectMatchingCard(tp,s.tdfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,0,1,1,nil,TYPE_SYNCHRO)
 	if #sg>0 then g:Merge(sg) types_returned=types_returned+1 end
 
-	-- Try to return Xyz
 	local xg=Duel.SelectMatchingCard(tp,s.tdfilter,tp,LOCATION_GRAVE,LOCATION_GRAVE,0,1,1,nil,TYPE_XYZ)
 	if #xg>0 then g:Merge(xg) types_returned=types_returned+1 end
 
