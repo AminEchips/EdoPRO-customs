@@ -21,6 +21,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e1)
 end
 
+s.listed_names={13331639}
 -- Filters
 function s.setfilter(c)
 	return c:IsType(TYPE_SPELL+TYPE_TRAP) and not c:IsCode(id) and c:ListsCode(13331639) and c:IsSSetable()
