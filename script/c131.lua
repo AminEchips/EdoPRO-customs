@@ -38,7 +38,7 @@ end
 -- ATK boost based on total Levels in Pendulum Zones
 function s.atkval(e,c)
     local tp=e:GetHandlerPlayer()
-    local g=Duel.GetMatchingGroup(Card.IsType,tp,LOCATION_PZONE,0,nil,TYPE_MONSTER)
+    local g=Duel.GetMatchingGroup(Card.IsOriginalType,tp,LOCATION_PZONE,0,nil,TYPE_MONSTER)
     local lv=g:GetSum(Card.GetLevel)
     return lv*100
 end
