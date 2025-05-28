@@ -23,7 +23,7 @@ function s.thfilter(c)
 		and (c:IsLocation(LOCATION_DECK) or (c:IsFaceup() and c:IsLocation(LOCATION_EXTRA)))
 end
 function s.oddEyesFilter(c)
-	return c:IsFaceup() and c:IsSetCard(0x99)
+	return c:IsFaceup() and c:IsSetCard(0x99) and (c:IsLevel(7) or c:IsRank(7))
 end
 
 -- Target selector
