@@ -94,9 +94,6 @@ function s.operation(e,tp,eg,ep,ev,re,r,rp)
 		if Duel.DiscardHand(tp,nil,1,1,REASON_EFFECT+REASON_DISCARD)>0 and rc:IsRelateToEffect(e) then
 			if Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) then
 				Duel.MoveToField(rc,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
-			else
-				-- Both zones are occupied
-				Duel.SendtoExtraP(rc,tp,REASON_RULE)
 			end
 		end
 
