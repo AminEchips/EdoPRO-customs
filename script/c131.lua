@@ -35,13 +35,13 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- ATK boost based on total Levels in Pendulum Zones
+-- ATK boost based on number of cards in Pendulum Zones ×500
 function s.atkval(e,c)
-    local tp=e:GetHandlerPlayer()
-    local g=Duel.GetMatchingGroup(Card.IsOriginalType,tp,LOCATION_PZONE,0,nil,TYPE_MONSTER)
-    local lv=g:GetSum(Card.GetLevel)
-    return lv*100
+	local tp=e:GetHandlerPlayer()
+	local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_PZONE,0,nil)
+	return g:GetCount() * 500
 end
+
 
 -- GY effect only usable if not sent this turn
 function s.gycon(e,tp,eg,ep,ev,re,r,rp)
