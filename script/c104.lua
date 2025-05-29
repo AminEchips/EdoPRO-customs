@@ -147,9 +147,6 @@ function s.spop2(e,tp,eg,ep,ev,re,r,rp)
 		Duel.RegisterEffect(e1,tp)
 	end
 end
-function s.splimit(e,c,sump,sumtype,sumpos,targetp,se)
-	return (sumtype&SUMMON_TYPE_PENDULUM)==SUMMON_TYPE_PENDULUM and not c:IsSetCard(0x9f)
-end
 
 --Place into Pendulum Zone when destroyed from Monster Zone
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
