@@ -15,20 +15,17 @@ function s.initial_effect(c)
 	e0:SetOperation(s.pzop)
 	c:RegisterEffect(e0)
 
-	--Set Level/Rank and allow as Xyz Material if summoned
+	--Set Level/Rank and allow as Xyz Material (Ignition)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,1))
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e1:SetCode(EVENT_SUMMON_SUCCESS)
+	e1:SetCategory(CATEGORY_LVCHANGE)
+	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_MZONE)
 	e1:SetCountLimit(1,{id,1})
 	e1:SetCondition(s.lvcon)
 	e1:SetTarget(s.lvtg)
 	e1:SetOperation(s.lvop)
 	c:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
-	c:RegisterEffect(e2)
 
 	--Special Summon from GY if only Raidraptor and banish when it leaves
 	local e3=Effect.CreateEffect(c)
@@ -70,35 +67,50 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.lvcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsContains(e:GetHandler())
+	local c=e:GetHandler()
+	return c:IsSummonType(SUMMON_TYPE_NORMAL) or c:IsSummonType(SUMMON_TYPE_SPECIAL)
 end
 function s.lvfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0xba) and (c:GetLevel()>0 or c:GetRank()>0)
+	return c:IsFaceup() and c:IsSetCard(0xba) and c:IsControler(tp) and (c:GetLevel()>0 or c:GetRank()>0) and not c:IsCode(id)
 end
-function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.lvfilter,tp,LOCATION_MZONE,0,1,nil) end
+function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.lvfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.lvfilter,tp,LOCATION_MZONE,0,1,e:GetHandler()) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+	Duel.SelectTarget(tp,s.lvfilter,tp,LOCATION_MZONE,0,1,1,e:GetHandler())
 end
 function s.lvop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local g=Duel.SelectMatchingCard(tp,s.lvfilter,tp,LOCATION_MZONE,0,1,1,nil)
-	local tc=g:GetFirst()
-	if not tc or not c:IsRelateToEffect(e) then return end
+	local tc=Duel.GetFirstTarget()
+	if not c:IsRelateToEffect(e) or not tc or not tc:IsRelateToEffect(e) then return end
 	local lv=tc:GetLevel()
 	local rk=tc:GetRank()
-	local newval=lv>0 and lv or rk
-	if newval>0 then
+	local val=(lv>0) and lv or rk
+	if val<=0 then return end
+	if Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+		-- Change Metal Strix level
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_LEVEL)
-		e1:SetValue(newval)
+		e1:SetValue(val)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
-
-		local e2=e1:Clone()
+	else
+		-- Change target's level
+		local e1=Effect.CreateEffect(tc)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_CHANGE_LEVEL)
+		e1:SetValue(c:GetLevel())
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		tc:RegisterEffect(e1)
+	end
+	if tc:IsType(TYPE_XYZ) then
+		local e2=Effect.CreateEffect(c)
+		e2:SetType(EFFECT_TYPE_SINGLE)
 		e2:SetCode(EFFECT_XYZ_LEVEL)
-		e2:SetValue(newval*65536+newval)
-		c:RegisterEffect(e2)
+		e2:SetValue(val*65536+val)
+		e2:SetReset(RESET_EVENT+RESETS_STANDARD)
+		tc:RegisterEffect(e2)
 	end
 end
 
