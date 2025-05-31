@@ -28,7 +28,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.spop)
     c:RegisterEffect(e2)
 
-    --Monster Effect: Move to Pendulum Zone if destroyed/sent by DARK effect
+    --Monster Effect: Move to Pendulum Zone if destroyed or sent to GY as cost for DARK monster
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
@@ -42,7 +42,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0xba} -- Raidraptor
 
---🔷 Pendulum Effect: When attack declared on your Winged Beast Xyz
+--🔷 Effect 1: Redirect attack to this card
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
     local d=Duel.GetAttackTarget()
     return d and d:IsControler(tp) and d:IsRace(RACE_WINGEDBEAST) and d:IsType(TYPE_XYZ)
@@ -60,7 +60,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
---🔶 Monster Effect: You can only Special Summon this if no monsters or only DARK Winged Beast
+--🔶 Effect 2: Special Summon condition
 function s.onlydarkwinged(c)
     return c:IsAttribute(ATTRIBUTE_DARK) and c:IsRace(RACE_WINGEDBEAST)
 end
@@ -80,11 +80,13 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
---🔶 Monster Effect: If destroyed or sent to GY to activate a DARK monster’s effect
+--🔶 Effect 3: Move to Pendulum Zone
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return (c:IsReason(REASON_DESTROY) or (re and re:GetHandler():IsAttribute(ATTRIBUTE_DARK) and re:IsActivated()))
-        and c:IsPreviousLocation(LOCATION_ONFIELD)
+    return (
+        c:IsReason(REASON_DESTROY) or
+        ((r & REASON_COST) ~= 0 and re and re:IsActivated() and re:GetHandler():IsAttribute(ATTRIBUTE_DARK))
+    ) and c:IsPreviousLocation(LOCATION_ONFIELD)
 end
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
