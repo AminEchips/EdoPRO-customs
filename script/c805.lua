@@ -4,6 +4,18 @@ function s.initial_effect(c)
 	--Pendulum Attribute
 	Pendulum.AddProcedure(c)
 
+	--Pendulum Effect: Redirect attack to this card
+	local e0=Effect.CreateEffect(c)
+	e0:SetDescription(aux.Stringid(id,2))
+	e0:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e0:SetCode(EVENT_ATTACK_ANNOUNCE)
+	e0:SetRange(LOCATION_PZONE)
+	e0:SetCountLimit(1,{id,2})
+	e0:SetCondition(s.pzcon)
+	e0:SetTarget(s.pztg)
+	e0:SetOperation(s.pzop)
+	c:RegisterEffect(e0)
+
 	--Special Summon itself from hand if you control no monsters or only DARK Winged Beast monsters
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -36,6 +48,26 @@ function s.initial_effect(c)
 	e3:SetTarget(s.pentg)
 	e3:SetOperation(s.penop)
 	c:RegisterEffect(e3)
+end
+
+-- Pendulum Zone: Redirect attack condition
+function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
+	local at=Duel.GetAttackTarget()
+	return at and at:IsControler(tp) and at:IsRace(RACE_WINGEDBEAST) and at:IsType(TYPE_XYZ) and at:IsFaceup()
+end
+function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
+end
+function s.pzop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)~=0 then
+		local atk=Duel.GetAttacker()
+		if atk:IsRelateToBattle() then
+			Duel.ChangeAttackTarget(c)
+		end
+	end
 end
 
 -- Special Summon condition
