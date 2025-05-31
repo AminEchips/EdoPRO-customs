@@ -13,13 +13,12 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Discard this card to revive a Raidraptor/Rebellion Xyz (Quick Effect)
+    -- Effect 2: Discard to revive Rank 6 or lower Raidraptor/Rebellion Xyz (Ignition)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
-    e2:SetType(EFFECT_TYPE_QUICK_O)
-    e2:SetCode(EVENT_FREE_CHAIN)
-    e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
+    e2:SetType(EFFECT_TYPE_IGNITION)
+    e2:SetProperty(EFFECT_FLAG_CARD_TARGET) -- ✅ ensures targeting works
     e2:SetRange(LOCATION_HAND+LOCATION_MZONE)
     e2:SetCountLimit(1,{id,1})
     e2:SetCost(s.spcost)
@@ -29,7 +28,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0xba, 0x13b} -- Raidraptor, Rebellion
 
--- Effect 1: Target 1 banished DARK monster
+-- Effect 1: Target 1 banished DARK monster to add to hand
 function s.thfilter(c)
     return c:IsAttribute(ATTRIBUTE_DARK) and c:IsAbleToHand()
 end
@@ -48,15 +47,16 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Discard this card to revive a Rank 6 or lower Raidraptor/Rebellion Xyz from GY
+-- Effect 2: Discard this card to Special Summon Rank 6 or lower Raidraptor/Rebellion Xyz from GY
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
     if chk==0 then return c:IsDiscardable() end
     Duel.SendtoGrave(c,REASON_COST+REASON_DISCARD)
 end
 function s.spfilter(c,e,tp)
-    return c:IsType(TYPE_XYZ) and c:IsRankBelow(6) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+    return c:IsType(TYPE_XYZ) and c:IsRankBelow(6)
         and (c:IsSetCard(0xba) or c:IsSetCard(0x13b))
+        and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp) end
@@ -69,14 +69,6 @@ end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc and tc:IsRelateToEffect(e) then
-        if Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)~=0 then
-            -- Can only attack once this turn
-            local e1=Effect.CreateEffect(e:GetHandler())
-            e1:SetType(EFFECT_TYPE_SINGLE)
-            e1:SetCode(EFFECT_ATTACK_LIMIT)
-            e1:SetValue(1)
-            e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-            tc:RegisterEffect(e1)
-        end
+        Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
     end
 end
