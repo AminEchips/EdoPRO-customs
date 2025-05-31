@@ -13,7 +13,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Attach from GY/banished when Rebellion Xyz is Spell-Summoned
+    -- Effect 2: Attach from GY/banished when Rebellion Xyz is Special Summoned by any effect
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -28,7 +28,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0xba, 0xdb, 0x13b} -- Raidraptor, Phantom Knights, Rebellion
 
--- Effect 1: Tribute 1 Winged Beast monster
+-- Effect 1: Cost = Tribute 1 Winged Beast
 function s.costfilter(c)
     return c:IsRace(RACE_WINGEDBEAST) and c:IsReleasable()
 end
@@ -38,7 +38,7 @@ function s.cost(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.Release(g,REASON_COST)
 end
 
--- Effect 1: Search a Raidraptor or Phantom Knights Spell
+-- Effect 1: Search
 function s.thfilter(c)
     return ((c:IsSetCard(0xba) or c:IsSetCard(0xdb)) and c:IsType(TYPE_SPELL) and c:IsAbleToHand())
 end
@@ -53,7 +53,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
         Duel.SendtoHand(g,nil,REASON_EFFECT)
         Duel.ConfirmCards(1-tp,g)
     end
-    -- Optional level increase/decrease
+    -- Optional level change
     local c=e:GetHandler()
     if c:IsRelateToEffect(e) and c:IsFaceup() and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
         local op=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4)) -- 0 = increase, 1 = decrease
@@ -67,10 +67,9 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Trigger condition — Spell effect caused Special Summon
+-- Effect 2: Trigger if Rebellion Xyz was Special Summoned by any effect
 function s.attachcon(e,tp,eg,ep,ev,re,r,rp)
-    return re and re:IsActiveType(TYPE_SPELL)
-        and eg:IsExists(s.rebellionfilter,1,nil,tp)
+    return re and eg:IsExists(s.rebellionfilter,1,nil,tp)
 end
 
 function s.rebellionfilter(c,tp)
