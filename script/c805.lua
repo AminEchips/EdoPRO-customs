@@ -28,7 +28,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.spop)
     c:RegisterEffect(e2)
 
-    --Monster Effect: Move to Pendulum Zone if destroyed/sent to GY for DARK effect
+    --Monster Effect: Move to Pendulum Zone if destroyed/sent by DARK effect
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
@@ -42,7 +42,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0xba} -- Raidraptor
 
---🔷 Pendulum Effect: If attack is declared on your Winged Beast Xyz Monster
+--🔷 Pendulum Effect: When attack declared on your Winged Beast Xyz
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
     local d=Duel.GetAttackTarget()
     return d and d:IsControler(tp) and d:IsRace(RACE_WINGEDBEAST) and d:IsType(TYPE_XYZ)
@@ -60,19 +60,18 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
---🔶 Monster Effect: Special Summon if no monsters or only DARK Winged Beasts
+--🔶 Monster Effect: You can only Special Summon this if no monsters or only DARK Winged Beast
+function s.onlydarkwinged(c)
+    return c:IsAttribute(ATTRIBUTE_DARK) and c:IsRace(RACE_WINGEDBEAST)
+end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetFieldGroup(tp,LOCATION_MZONE,0)
     return #g==0 or g:FilterCount(s.onlydarkwinged,nil)==#g
 end
-function s.onlydarkwinged(c)
-    return c:IsAttribute(ATTRIBUTE_DARK) and c:IsRace(RACE_WINGEDBEAST)
-end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-    local c=e:GetHandler()
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
+        and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
@@ -81,17 +80,21 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
---🔶 Monster Effect: Move to Pendulum Zone if destroyed or used for DARK monster effect
+--🔶 Monster Effect: If destroyed or sent to GY to activate a DARK monster’s effect
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return (c:IsReason(REASON_BATTLE) or (re and re:IsActivated() and re:GetHandler():IsAttribute(ATTRIBUTE_DARK)))
+    return (c:IsReason(REASON_DESTROY) or (re and re:GetHandler():IsAttribute(ATTRIBUTE_DARK) and re:IsActivated()))
         and c:IsPreviousLocation(LOCATION_ONFIELD)
 end
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.CheckLocation(tp,LOCATION_PZONE,0)
-        or Duel.CheckLocation(tp,LOCATION_PZONE,1) end
+    if chk==0 then
+        return Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)
+    end
 end
 function s.pzop(e,tp,eg,ep,ev,re,r,rp)
-    if not Duel.CheckLocation(tp,LOCATION_PZONE,0) and not Duel.CheckLocation(tp,LOCATION_PZONE,1) then return end
-    Duel.MoveToField(e:GetHandler(),tp,tp,LOCATION_PZONE,POS_FACEUP,true)
+    local c=e:GetHandler()
+    if not c:IsRelateToEffect(e) then return end
+    if Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) then
+        Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
+    end
 end
