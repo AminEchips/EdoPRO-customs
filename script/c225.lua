@@ -54,9 +54,6 @@ end
 s.material_setcode={0x3008}
 
 -- Effect 1: Special Summon non-Warrior HERO from hand or Deck
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
-end
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(0x8) and not c:IsRace(RACE_WARRIOR)
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
