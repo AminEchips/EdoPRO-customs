@@ -23,10 +23,6 @@ end
 s.listed_names={37318031,86188410,20721928} -- R - Righteous Justice
 s.material_setcode={0x3008}
 
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-    return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
-end
-
 function s.thfilter(c)
     return c:IsCode(37318031) and c:IsAbleToHand()
 end
