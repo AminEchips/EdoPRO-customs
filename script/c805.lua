@@ -16,17 +16,26 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	--Place in Pendulum Zone if destroyed or sent to GY/Extra Deck as cost for a DARK monster
+	--Place in Pendulum Zone if destroyed or sent to GY as cost for a DARK monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_TO_GRAVE+EVENT_DESTROYED)
+	e2:SetCode(EVENT_DESTROYED)
 	e2:SetProperty(EFFECT_FLAG_DELAY)
-	e2:SetCountLimit(1,{id,1})
-	e2:SetCondition(s.pencon)
+	e2:SetCondition(s.pencon_dest)
 	e2:SetTarget(s.pentg)
 	e2:SetOperation(s.penop)
 	c:RegisterEffect(e2)
+
+	local e3=Effect.CreateEffect(c)
+	e3:SetDescription(aux.Stringid(id,1))
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e3:SetCode(EVENT_TO_GRAVE)
+	e3:SetProperty(EFFECT_FLAG_DELAY)
+	e3:SetCondition(s.pencon_cost)
+	e3:SetTarget(s.pentg)
+	e3:SetOperation(s.penop)
+	c:RegisterEffect(e3)
 end
 
 -- Special Summon condition
@@ -49,14 +58,14 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Pendulum Zone placement condition
-function s.pencon(e,tp,eg,ep,ev,re,r,rp)
+-- Pendulum Zone placement condition when destroyed
+function s.pencon_dest(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	-- If destroyed in Monster Zone (goes to GY or Extra Deck)
-	if c:IsPreviousLocation(LOCATION_MZONE) and c:IsReason(REASON_DESTROY) then
-		return true
-	end
-	-- If sent to GY as cost to activate a DARK monster effect
+	return c:IsPreviousLocation(LOCATION_MZONE) and c:IsFaceup()
+end
+-- Pendulum Zone placement condition when sent as cost to DARK monster effect
+function s.pencon_cost(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
 	if bit.band(r,REASON_COST)~=0 and re and re:IsActivated() and re:IsMonsterEffect() then
 		local rc=re:GetHandler()
 		if rc:IsAttribute(ATTRIBUTE_DARK) or bit.band(Duel.GetChainInfo(0,CHAININFO_TRIGGERING_ATTRIBUTE),ATTRIBUTE_DARK)~=0 then
