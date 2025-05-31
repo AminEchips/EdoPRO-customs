@@ -2,20 +2,10 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    -- Fusion Material Check
-    local e0=Effect.CreateEffect(c)
-    e0:SetType(EFFECT_TYPE_SINGLE)
-    e0:SetCode(EFFECT_MATERIAL_CHECK)
-    e0:SetValue(function(e,c)
-        local mat=c:GetMaterial()
-        e:GetHandler():SetMaterial(mat)
-    end)
-    c:RegisterEffect(e0)
-
     -- Fusion Summon procedure: 1 Level 7 LIGHT Dragon + 1 or more LIGHT Fairy
-    Fusion.AddProcMixRep(c,true,true,s.fairyfilter,1,99,s.dragonfilter)
+    Fusion.AddProcMix(c,true,true,s.dragonfilter,s.fairyfilter,1,99)
 
-    -- On Special Summon: Send 1 LIGHT Fairy or Dragon to GY
+    -- On Special Summon: Send 1 Level 7 LIGHT Dragon or 1 "Starry Knight" monster from Deck to GY
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_TOGRAVE)
@@ -26,22 +16,20 @@ function s.initial_effect(c)
     e1:SetOperation(s.tgop)
     c:RegisterEffect(e1)
 
-    -- Quick Effect: Tribute this card to destroy all cards + set 1 from GY
+    -- Quick Effect: Target itself, tribute, destroy all, set 1 from GY
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetCategory(CATEGORY_DESTROY+CATEGORY_TOGRAVE)
+    e2:SetCategory(CATEGORY_DESTROY+CATEGORY_TOGRAVE+CATEGORY_LEAVE_GRAVE)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_FREE_CHAIN)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,1})
     e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
-    e2:SetCondition(s.setcon)
-    e2:SetCost(s.setcost)
+    e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e2:SetTarget(s.settg)
     e2:SetOperation(s.setop)
     c:RegisterEffect(e2)
 end
-
 s.listed_series={0x15b}
 
 -- Fusion Material Filters
@@ -52,9 +40,10 @@ function s.fairyfilter(c)
     return c:IsRace(RACE_FAIRY) and c:IsAttribute(ATTRIBUTE_LIGHT)
 end
 
--- Effect 1: Send LIGHT Fairy or Dragon to GY
+-- Effect 1: Send to GY on Special Summon
 function s.tgfilter(c)
-    return c:IsAttribute(ATTRIBUTE_LIGHT) and (c:IsRace(RACE_FAIRY) or c:IsRace(RACE_DRAGON)) and c:IsAbleToGrave()
+    return (c:IsRace(RACE_DRAGON) and c:IsLevel(7) and c:IsAttribute(ATTRIBUTE_LIGHT))
+        or (c:IsSetCard(0x15b)) and c:IsAbleToGrave()
 end
 function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil) end
@@ -68,50 +57,40 @@ function s.tgop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: Tribute this card if Fusion Summoned using 4 materials with different names
-function s.setcon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if not c:IsSummonType(SUMMON_TYPE_FUSION) then return false end
-    local mat=c:GetMaterial()
-    if not mat or #mat<4 then return false end
-    local codes={}
-    for tc in aux.Next(mat) do
-        local code=tc:GetCode()
-        if codes[code] then return false end
-        codes[code]=true
-    end
-    return true
-end
-
-function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    local c=e:GetHandler()
-    if chk==0 then return c:IsReleasable() end
-    Duel.Release(c,REASON_COST)
-end
-
+-- Effect 2: Tribute self (target), destroy all, then set 1 Starry Knight Continuous S/T from GY
 function s.setfilter(c)
     return c:IsSetCard(0x15b) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsSSetable()
 end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_GRAVE,0,1,nil) end
+function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc==e:GetHandler() end
+    if chk==0 then return e:GetHandler():IsReleasable() end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
+    Duel.SetTargetCard(e:GetHandler()) -- target self
+    Duel.SetOperationInfo(0,CATEGORY_RELEASE,e:GetHandler(),1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,0,PLAYER_ALL,LOCATION_ONFIELD)
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    if not c:IsRelateToEffect(e) or not Duel.Release(c,REASON_EFFECT) then return end
+
+    -- Destroy all cards on the field
     local g=Duel.GetMatchingGroup(aux.TRUE,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
-    if Duel.Destroy(g,REASON_EFFECT)~=0 then
-        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-        local sc=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil):GetFirst()
-        if sc then Duel.SSet(tp,sc) end
+    if Duel.Destroy(g,REASON_EFFECT)==0 then return end
 
-        -- Cannot Special Summon Sabatiel again this turn
-        local e1=Effect.CreateEffect(e:GetHandler())
-        e1:SetType(EFFECT_TYPE_FIELD)
-        e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-        e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-        e1:SetTargetRange(1,0)
-        e1:SetTarget(function(_,c) return c:IsCode(id) end)
-        e1:SetReset(RESET_PHASE+PHASE_END)
-        Duel.RegisterEffect(e1,tp)
+    -- Select and set 1 "Starry Knight" Continuous S/T from GY
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+    local sg=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+    if #sg>0 then
+        Duel.SSet(tp,sg:GetFirst())
     end
-end
 
+    -- Restrict Special Summoning another Sabatiel this turn
+    local e1=Effect.CreateEffect(c)
+    e1:SetType(EFFECT_TYPE_FIELD)
+    e1:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
+    e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+    e1:SetTargetRange(1,0)
+    e1:SetTarget(function(_,c) return c:IsCode(id) end)
+    e1:SetReset(RESET_PHASE+PHASE_END)
+    Duel.RegisterEffect(e1,tp)
+end
