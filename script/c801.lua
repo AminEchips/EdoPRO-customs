@@ -13,21 +13,19 @@ function s.initial_effect(c)
     e1:SetOperation(s.thop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: Attach and pop if Rebellion Xyz is Spell-summoned
+    -- Effect 2: Attach from GY or banished when Rebellion Xyz is Spell-summoned
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetCategory(CATEGORY_ATTACH+CATEGORY_DESTROY)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
     e2:SetCode(EVENT_SPSUMMON_SUCCESS)
     e2:SetRange(LOCATION_GRAVE+LOCATION_REMOVED)
-    e2:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
-    e2:SetCountLimit(1,{id,1})
-    e2:SetCondition(s.attachcon)
+    e2:SetCountLimit(1,{id,1}) -- Once per duel
     e2:SetTarget(s.attachtg)
     e2:SetOperation(s.attachop)
     c:RegisterEffect(e2)
 end
-s.listed_series={0xba,0xdb,0x13b}
+s.listed_series={0xba,0xdb,0x13b} -- Raidraptor, Phantom Knights, Rebellion
 
 -- Effect 1: Cost = Tribute 1 other Winged Beast
 function s.costfilter(c)
@@ -41,7 +39,7 @@ end
 
 -- Search target: Raidraptor or Phantom Knights Spell
 function s.thfilter(c)
-    return (c:IsSetCard(0xba) or c:IsSetCard(0xdb)) and c:IsType(TYPE_SPELL) and c:IsAbleToHand()
+    return ((c:IsSetCard(0xba) or c:IsSetCard(0xdb)) and c:IsType(TYPE_SPELL) and c:IsAbleToHand())
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
@@ -56,10 +54,9 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
     -- Optional Level Change
     local c=e:GetHandler()
-    if c:IsRelateToEffect(e) and c:IsFaceup() and c:IsLevelAbove(2) and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-        local op=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4))
-        local lv=-1
-        if op==0 then lv=1 end
+    if c:IsRelateToEffect(e) and c:IsFaceup() and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+        local op=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4)) -- Increase or decrease
+        local lv = (op==0) and 1 or -1
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_UPDATE_LEVEL)
@@ -69,23 +66,26 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Effect 2: If Rebellion Xyz is Special Summoned by Spell
-function s.cfilter(c,tp)
+-- Effect 2: Attach from GY/banished if Rebellion Xyz was Spell-summoned
+function s.rebellionfilter(c,e,tp)
     return c:IsFaceup() and c:IsSetCard(0x13b) and c:IsType(TYPE_XYZ)
         and c:GetSummonPlayer()==tp and c:GetSummonType()==SUMMON_TYPE_SPECIAL
+        and not c:IsImmuneToEffect(e) and c:IsCanBeEffectTarget(e)
 end
-function s.attachcon(e,tp,eg,ep,ev,re,r,rp)
-    return re and re:IsActiveType(TYPE_SPELL) and eg:IsExists(s.cfilter,1,nil,tp)
-end
-function s.attachtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return true end
-    Duel.SetOperationInfo(0,CATEGORY_ATTACH,e:GetHandler(),1,0,0)
-    Duel.SetOperationInfo(0,CATEGORY_DESTROY,nil,1,0,LOCATION_ONFIELD)
+function s.attachtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return eg:IsContains(chkc) and s.rebellionfilter(chkc,e,tp) end
+    if chk==0 then return re and re:IsActiveType(TYPE_SPELL) and eg:IsExists(s.rebellionfilter,1,nil,e,tp) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
+    local g=eg:FilterSelect(tp,s.rebellionfilter,1,1,nil,e,tp)
+    Duel.SetTargetCard(g)
+    if e:GetHandler():IsLocation(LOCATION_GRAVE) then
+        Duel.SetOperationInfo(0,CATEGORY_LEAVE_GRAVE,e:GetHandler(),1,tp,0)
+    end
 end
 function s.attachop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    local tc=eg:FilterSelect(tp,s.cfilter,1,1,nil,tp):GetFirst()
-    if not tc or not c:IsRelateToEffect(e) or tc:IsImmuneToEffect(e) then return end
+    local tc=Duel.GetFirstTarget()
+    if not tc or not c:IsRelateToEffect(e) or not tc:IsRelateToEffect(e) or tc:IsImmuneToEffect(e) then return end
     Duel.Overlay(tc,Group.FromCards(c))
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
     local dg=Duel.SelectMatchingCard(tp,nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
