@@ -85,9 +85,8 @@ end
 function s.attachop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     local tc=Duel.GetFirstTarget()
-    if c:IsRelateToEffect(e) and tc and tc:IsRelateToEffect(e) and not tc:IsImmuneToEffect(e) then
+    if c:IsRelateToEffect(e) and tc and tc:IsRelateToEffect(e) then
         Duel.Overlay(tc,Group.FromCards(c))
-        -- Then destroy 1 card on field
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
         local dg=Duel.SelectMatchingCard(tp,nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
         if #dg>0 then
@@ -95,3 +94,4 @@ function s.attachop(e,tp,eg,ep,ev,re,r,rp)
         end
     end
 end
+
