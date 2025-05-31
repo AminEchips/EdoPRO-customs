@@ -1,7 +1,14 @@
 --Raidraptor - Force Lanius
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Effect 1: Special Summon from hand during End Phase
+    -- Track if added to hand this turn (excluding draw)
+    local e0=Effect.CreateEffect(c)
+    e0:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+    e0:SetCode(EVENT_TO_HAND)
+    e0:SetOperation(s.regop)
+    c:RegisterEffect(e0)
+
+    -- Effect 1: End Phase Special Summon if added to hand this turn
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOGRAVE)
@@ -14,21 +21,28 @@ function s.initial_effect(c)
     e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
 
-    -- Effect 2 (setup): Register End Phase effect if destroyed this turn
+    -- Effect 2: Register End Phase search if destroyed this turn
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
     e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
     e2:SetCode(EVENT_TO_GRAVE)
-    e2:SetOperation(s.regop)
+    e2:SetOperation(s.regop2)
     c:RegisterEffect(e2)
 end
 s.listed_series={0xba} -- Raidraptor
 s.listed_names={id}
 
--- First Effect: End Phase Special Summon if added to hand this turn
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+-- Track if added to hand this turn (but not drawn)
+function s.regop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return Duel.GetTurnPlayer()==tp and c:IsPublic()
+    if not c:IsReason(REASON_DRAW) then
+        c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
+    end
+end
+
+-- Effect 1: End Phase Special Summon
+function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+    return e:GetHandler():GetFlagEffect(id)>0
 end
 function s.tgfilter(c)
     return c:IsSetCard(0xba) and c:IsLevel(4) and not c:IsCode(id) and c:IsAbleToGrave()
@@ -50,8 +64,8 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Second Effect: Register End Phase search effect if destroyed and sent to GY this turn
-function s.regop(e,tp,eg,ep,ev,re,r,rp)
+-- Effect 2: Register End Phase search if destroyed this turn
+function s.regop2(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsReason(REASON_DESTROY) then
         local e1=Effect.CreateEffect(c)
