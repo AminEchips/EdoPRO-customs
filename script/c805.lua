@@ -57,7 +57,7 @@ function s.pencon(e,tp,eg,ep,ev,re,r,rp)
 	-- If sent to GY as cost to activate a DARK monster effect
 	if bit.band(r,REASON_COST)~=0 and re and re:IsActivated() and re:IsMonsterEffect() then
 		local rc=re:GetHandler()
-		if rc:IsRace(RACE_DARK) or bit.band(Duel.GetChainInfo(0,CHAININFO_TRIGGERING_RACE),RACE_DARK)~=0 then
+		if rc:IsAttribute(ATTRIBUTE_DARK) or bit.band(Duel.GetChainInfo(ev,CHAININFO_TRIGGERING_ATTRIBUTE),ATTRIBUTE_DARK)~=0 then
 			return true
 		end
 	end
