@@ -6,7 +6,7 @@ function s.initial_effect(c)
 	--Pendulum Effect: Special Summon and retarget if effect targets Raidraptor
 	local e0=Effect.CreateEffect(c)
 	e0:SetDescription(aux.Stringid(id,0))
-	e0:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e0:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_QUICK_O)
 	e0:SetCode(EVENT_CHAINING)
 	e0:SetRange(LOCATION_PZONE)
 	e0:SetCountLimit(1,{id,0})
@@ -55,11 +55,15 @@ function s.initial_effect(c)
 end
 
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
-	local tg=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
-	return tg and tg:IsExists(Card.IsSetCard,1,nil,0xba) and rp==1-tp
+	if not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return false end
+	local g=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
+	if not g or #g~=1 then return false end
+	local tc=g:GetFirst()
+	local c=e:GetHandler()
+	return tc:IsFaceup() and tc:IsControler(tp) and tc:IsSetCard(0xba) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+	if chk==0 then return true end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
 function s.pzop(e,tp,eg,ep,ev,re,r,rp)
@@ -67,12 +71,12 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)~=0 then
 		if rp==1-tp then
-			local tg=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
-			if tg and #tg==1 and Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_MZONE,1,nil) then
+			local g=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
+			if g and #g==1 then
 				Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-				local g=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_MZONE,1,1,nil)
-				if #g>0 then
-					Duel.ChangeTargetCard(ev,g)
+				local tg=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_MZONE,1,1,nil)
+				if #tg>0 then
+					Duel.ChangeTargetCard(ev,tg)
 				end
 			end
 		end
@@ -86,7 +90,7 @@ function s.lvfilter(c,tp)
 	return c:IsFaceup() and c:IsSetCard(0xba) and c:IsControler(tp) and (c:GetLevel()>0 or c:GetRank()>0)
 end
 function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return s.lvfilter(chkc,tp) and chkc~=e:GetHandler() end
+	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.lvfilter(chkc,tp) and chkc~=e:GetHandler() end
 	if chk==0 then return Duel.IsExistingTarget(s.lvfilter,tp,LOCATION_MZONE,0,1,e:GetHandler(),tp) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
 	Duel.SelectTarget(tp,s.lvfilter,tp,LOCATION_MZONE,0,1,1,e:GetHandler(),tp)
