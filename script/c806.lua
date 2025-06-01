@@ -38,6 +38,20 @@ function s.initial_effect(c)
 	e3:SetTarget(s.gytg)
 	e3:SetOperation(s.gyop)
 	c:RegisterEffect(e3)
+
+	-- Register summon tracking for "summoned this turn" condition
+	aux.GlobalCheck(s,function()
+		local ge1=Effect.CreateEffect(c)
+		ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+		ge1:SetCode(EVENT_SUMMON_SUCCESS)
+		ge1:SetLabel(id)
+		ge1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+		ge1:SetOperation(aux.sumreg)
+		Duel.RegisterEffect(ge1,0)
+		local ge2=ge1:Clone()
+		ge2:SetCode(EVENT_SPSUMMON_SUCCESS)
+		Duel.RegisterEffect(ge2,0)
+	end)
 end
 
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
@@ -53,7 +67,6 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)~=0 then
 		if rp==1-tp then
-			local te=Duel.GetChainInfo(ev,CHAININFO_TRIGGERING_EFFECT)
 			local tg=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
 			if tg and #tg==1 and Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_MZONE,1,nil) then
 				Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
@@ -67,17 +80,16 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.lvcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsSummonType(SUMMON_TYPE_NORMAL) or c:IsSummonType(SUMMON_TYPE_SPECIAL)
+	return e:GetHandler():GetFlagEffect(id)>0
 end
-function s.lvfilter(c)
-	return c:IsFaceup() and c:IsSetCard(0xba) and c:IsControler(tp) and (c:GetLevel()>0 or c:GetRank()>0) and not c:IsCode(id)
+function s.lvfilter(c,tp)
+	return c:IsFaceup() and c:IsSetCard(0xba) and c:IsControler(tp) and (c:GetLevel()>0 or c:GetRank()>0)
 end
 function s.lvtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.lvfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.lvfilter,tp,LOCATION_MZONE,0,1,e:GetHandler()) end
+	if chkc then return s.lvfilter(chkc,tp) and chkc~=e:GetHandler() end
+	if chk==0 then return Duel.IsExistingTarget(s.lvfilter,tp,LOCATION_MZONE,0,1,e:GetHandler(),tp) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	Duel.SelectTarget(tp,s.lvfilter,tp,LOCATION_MZONE,0,1,1,e:GetHandler())
+	Duel.SelectTarget(tp,s.lvfilter,tp,LOCATION_MZONE,0,1,1,e:GetHandler(),tp)
 end
 function s.lvop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
@@ -88,7 +100,6 @@ function s.lvop(e,tp,eg,ep,ev,re,r,rp)
 	local val=(lv>0) and lv or rk
 	if val<=0 then return end
 	if Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-		-- Change Metal Strix level
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_LEVEL)
@@ -96,7 +107,6 @@ function s.lvop(e,tp,eg,ep,ev,re,r,rp)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
 	else
-		-- Change target's level
 		local e1=Effect.CreateEffect(tc)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_LEVEL)
