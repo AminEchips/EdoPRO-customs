@@ -55,12 +55,13 @@ function s.initial_effect(c)
 end
 
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
-	if not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return false end
+	if rp==tp or not re:IsHasProperty(EFFECT_FLAG_CARD_TARGET) then return false end
 	local g=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
 	if not g or #g~=1 then return false end
 	local tc=g:GetFirst()
 	local c=e:GetHandler()
-	return tc:IsFaceup() and tc:IsControler(tp) and tc:IsSetCard(0xba) and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+	return tc:IsFaceup() and tc:IsControler(tp) and tc:IsSetCard(0xba)
+		and Duel.CheckChainTarget(ev,c) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return true end
@@ -69,17 +70,10 @@ end
 function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)~=0 then
-		if rp==1-tp then
-			local g=Duel.GetChainInfo(ev,CHAININFO_TARGET_CARDS)
-			if g and #g==1 then
-				Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-				local tg=Duel.SelectTarget(tp,aux.TRUE,tp,0,LOCATION_MZONE,1,1,nil)
-				if #tg>0 then
-					Duel.ChangeTargetCard(ev,tg)
-				end
-			end
-		end
+	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
+		local g=Group.CreateGroup()
+		g:AddCard(c)
+		Duel.ChangeTargetCard(ev,g)
 	end
 end
 
