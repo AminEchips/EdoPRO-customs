@@ -55,7 +55,7 @@ end
 
 -- Must have 3 Raidraptor monsters
 function s.ovfilter(c)
-    return c:IsSetCard(0xba) and c:IsType(TYPE_MONSTER)
+    return c:IsSetCard(0xba) and c:IsType(TYPE_MONSTER) and c:IsLevel(11)
 end
 
 -- Unaffected by other effects
