@@ -5,7 +5,7 @@ function s.initial_effect(c)
     Xyz.AddProcedure(c,nil,3,2)
     c:EnableReviveLimit()
 
-    -- Gain ATK equal to damage taken (mandatory)
+    -- Gain ATK equal to damage taken (mandatory trigger)
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_ATKCHANGE)
@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.atkop)
     c:RegisterEffect(e1)
 
-    -- Set or attach Trap (OPT)
+    -- Set or attach a Raidraptor/Phantom Knights Trap from hand or Deck
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -31,7 +31,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.setop)
     c:RegisterEffect(e2)
 
-    -- Draw when destroyed (OPT)
+    -- Draw 1 if destroyed by battle or monster effect
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_DRAW)
@@ -45,7 +45,9 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- e1: Gain ATK equal to damage taken
+-------------------
+-- Effect 1: ATK gain
+-------------------
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
     return ep==tp
 end
@@ -61,39 +63,46 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- e2: Set or attach Raidraptor/Phantom Knight Trap
-function s.cfilter(c,tp)
-    return c:IsReason(REASON_BATTLE+REASON_EFFECT) and c:IsPreviousControler(tp) and c:IsLocation(LOCATION_GRAVE)
-end
+-------------------
+-- Effect 2: Set/Attach Trap
+-------------------
 function s.setcon(e,tp,eg,ep,ev,re,r,rp)
-    return eg:IsExists(s.cfilter,1,nil,tp)
+    local c=e:GetHandler()
+    return eg:IsExists(function(tc)
+        return tc:IsType(TYPE_MONSTER)
+            and tc:IsPreviousLocation(LOCATION_MZONE)
+            and tc:IsReason(REASON_BATTLE+REASON_EFFECT)
+            and tc~=c
+    end,1,nil)
 end
 function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
 function s.setfilter(c)
-    return c:IsType(TYPE_TRAP) and (c:IsSetCard(0xba) or c:IsSetCard(0xdb)) and c:IsSSetable()
+    return c:IsType(TYPE_TRAP)
+        and (c:IsSetCard(0xba) or c:IsSetCard(0xdb))
+        and (c:IsSSetable() or c:IsAbleToOverlay())
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,nil) end
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
     local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_HAND+LOCATION_DECK,0,1,1,nil)
     local tc=g:GetFirst()
-    if tc then
-        local opt=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4)) -- 0=set, 1=attach
-        if opt==0 then
-            Duel.SSet(tp,tc)
-        else
-            local c=e:GetHandler()
-            Duel.Overlay(c,Group.FromCards(tc))
-        end
+    if not tc then return end
+    local opt=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4)) -- "Set it", "Attach it"
+    if opt==0 and tc:IsSSetable() then
+        Duel.SSet(tp,tc)
+    elseif opt==1 and tc:IsAbleToOverlay() then
+        Duel.Overlay(e:GetHandler(),Group.FromCards(tc))
     end
 end
 
--- e3: Draw 1 if destroyed by battle or monster effect
+-------------------
+-- Effect 3: Draw on destruction
+-------------------
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return c:IsPreviousLocation(LOCATION_MZONE)
