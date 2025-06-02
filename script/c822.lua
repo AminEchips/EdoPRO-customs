@@ -40,7 +40,7 @@ end
 function s.spcon(e,c)
     if c==nil then return true end
     return Duel.GetLocationCount(c:GetControler(),LOCATION_MZONE)>0
-        and Duel.IsExistingMatchingGroup(s.cfilter,c:GetControler(),LOCATION_MZONE,0,1,nil)
+        and Duel.IsExistingMatchingCard(s.cfilter,c:GetControler(),LOCATION_MZONE,0,1,nil)
 end
 
 -- Level increase prompt (after being Special Summoned by its own effect)
