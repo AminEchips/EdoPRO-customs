@@ -1,11 +1,11 @@
 --Raidraptor - Apex Falcon
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Xyz Summon
-    Xyz.AddProcedure(c,nil,11,3,s.ovfilter,aux.Stringid(id,0),3,nil)
+    -- Xyz Summon using 2 Level 11 "Raidraptor" monsters
+    Xyz.AddProcedure(c,function(c) return c:IsSetCard(0xba) end,11,2)
     c:EnableReviveLimit()
 
-    -- Unaffected by other cards' effects
+    -- Unaffected by other card effects
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_SINGLE)
     e0:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -24,7 +24,7 @@ function s.initial_effect(c)
     e1:SetValue(-1000)
     c:RegisterEffect(e1)
 
-    -- Destroy opponent's monsters with 0 ATK from this effect
+    -- Destroy opponent's monsters with 0 ATK from that effect
     local e2=Effect.CreateEffect(c)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
     e2:SetCode(EVENT_ADJUST)
@@ -46,31 +46,25 @@ function s.initial_effect(c)
     e3:SetOperation(s.ctrlop)
     c:RegisterEffect(e3)
 
-    -- Extra attack if it battled a lower ATK monster
+    -- Always gain 1 extra attack each Battle Phase
     local e4=Effect.CreateEffect(c)
-    e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-    e4:SetCode(EVENT_BATTLED)
-    e4:SetCondition(s.extracon)
-    e4:SetOperation(s.extraop)
+    e4:SetType(EFFECT_TYPE_SINGLE)
+    e4:SetCode(EFFECT_EXTRA_ATTACK)
+    e4:SetValue(1)
     c:RegisterEffect(e4)
 end
 
--- Must use "Raidraptor" monsters for Xyz Material
-function s.ovfilter(c)
-    return c:IsSetCard(0xba) and c:IsType(TYPE_MONSTER)
-end
-
--- Unaffected by other card effects
+-- Unaffected by opponent's effects
 function s.efilter(e,te)
     return te:GetOwner()~=e:GetOwner()
 end
 
--- Affects opponent's Special Summoned monsters
+-- Target: Opponent’s Special Summoned monsters
 function s.atktg(e,c)
     return c:IsSummonType(SUMMON_TYPE_SPECIAL)
 end
 
--- Destroy those with 0 ATK
+-- Destroy monsters with 0 ATK due to reduction
 function s.desop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(function(c)
         return c:IsFaceup() and c:IsSummonType(SUMMON_TYPE_SPECIAL) and c:GetAttack()==0
@@ -80,12 +74,12 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Condition: has "Raidraptor" Xyz as material
+-- Must have a Raidraptor Xyz as material
 function s.ctrlcon(e)
     return e:GetHandler():GetOverlayGroup():IsExists(Card.IsSetCard,1,nil,0xba)
 end
 
--- Detach 2 materials as cost
+-- Cost: detach 2
 function s.ctrlcost(e,tp,eg,ep,ev,re,r,rp,chk)
     return e:GetHandler():CheckRemoveOverlayCard(tp,2,REASON_COST)
 end
@@ -104,7 +98,7 @@ function s.ctrltg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     Duel.SetOperationInfo(0,CATEGORY_CONTROL,g,1,0,0)
 end
 
--- Control operation
+-- Take control and treat as Raidraptor
 function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     local c=e:GetHandler()
@@ -112,27 +106,8 @@ function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_ADD_SETCODE)
-        e1:SetValue(0xba) -- Become "Raidraptor"
+        e1:SetValue(0xba) -- Becomes "Raidraptor"
         e1:SetReset(RESET_EVENT+RESETS_STANDARD)
         tc:RegisterEffect(e1)
-    end
-end
-
--- If it battled a monster with lower ATK, gain one more attack this turn
-function s.extracon(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    local bc=c:GetBattleTarget()
-    return bc and bc:IsRelateToBattle() and bc:IsFaceup() and bc:GetAttack()<c:GetAttack()
-end
-
-function s.extraop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    if c:IsFaceup() then
-        local e1=Effect.CreateEffect(c)
-        e1:SetType(EFFECT_TYPE_SINGLE)
-        e1:SetCode(EFFECT_EXTRA_ATTACK_MONSTER)
-        e1:SetValue(1)
-        e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-        c:RegisterEffect(e1)
     end
 end
