@@ -5,17 +5,21 @@ function s.initial_effect(c)
     Xyz.AddProcedure(c,nil,6,2)
     c:EnableReviveLimit()
 
-    -- Gain LP if summoned using DARK Xyz
+    -- Optional LP Gain on Xyz Summon using DARK Xyz
     local e1=Effect.CreateEffect(c)
-    e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+    e1:SetDescription(aux.Stringid(id,0))
+    e1:SetCategory(CATEGORY_RECOVER)
+    e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+    e1:SetProperty(EFFECT_FLAG_DELAY)
     e1:SetCondition(s.lpcon)
+    e1:SetTarget(s.lptg)
     e1:SetOperation(s.lpop)
     c:RegisterEffect(e1)
 
     -- Negate Spell/Trap
     local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,0))
+    e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_NEGATE+CATEGORY_DESTROY)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_CHAINING)
@@ -29,7 +33,7 @@ function s.initial_effect(c)
 
     -- Special Summon a Raidraptor from GY or hand
     local e3=Effect.CreateEffect(c)
-    e3:SetDescription(aux.Stringid(id,1))
+    e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
     e3:SetType(EFFECT_TYPE_IGNITION)
     e3:SetRange(LOCATION_GRAVE)
@@ -40,24 +44,31 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- LP Gain
+-- LP Gain (optional on summon)
 function s.lpcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    local mat=c:GetMaterial()
-    return c:IsSummonType(SUMMON_TYPE_XYZ) and mat:IsExists(function(tc) return tc:IsAttribute(ATTRIBUTE_DARK) and tc:IsType(TYPE_XYZ) end,1,nil)
+    return c:IsSummonType(SUMMON_TYPE_XYZ) and c:GetMaterial():IsExists(s.matfilter,1,nil)
 end
-function s.lpop(e,tp,eg,ep,ev,re,r,rp)
+function s.matfilter(c)
+    return c:IsAttribute(ATTRIBUTE_DARK) and c:IsType(TYPE_XYZ)
+end
+function s.lptg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return true end
     local c=e:GetHandler()
     local mat=c:GetMaterial()
-    local atk=0
     for tc in mat:Iter() do
-        if tc:IsAttribute(ATTRIBUTE_DARK) and tc:IsType(TYPE_XYZ) then
-            atk=tc:GetBaseAttack()
+        if s.matfilter(tc) then
+            Duel.SetTargetPlayer(tp)
+            Duel.SetTargetParam(tc:GetBaseAttack())
+            Duel.SetOperationInfo(0,CATEGORY_RECOVER,nil,0,tp,tc:GetBaseAttack())
             break
         end
     end
-    if atk>0 then
-        Duel.Recover(tp,atk,REASON_EFFECT)
+end
+function s.lpop(e,tp,eg,ep,ev,re,r,rp)
+    local p,d=Duel.GetChainInfo(0,CHAININFO_TARGET_PLAYER,CHAININFO_TARGET_PARAM)
+    if d>0 then
+        Duel.Recover(p,d,REASON_EFFECT)
     end
 end
 
