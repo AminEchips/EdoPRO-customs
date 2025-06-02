@@ -14,11 +14,6 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
 end
 
--- Prevent activation/negation if LP ≤ 2000
-function s.negfilter(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetLP(tp)<=2000
-end
-
 -- Filter: DARK Xyz on field or in GY
 function s.xyzfilter(c,e,tp)
     local rk=c:GetRank()
@@ -57,7 +52,13 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
         local mat=tc:GetOverlayGroup()
         sc:SetMaterial(Group.FromCards(tc))
         Duel.Overlay(sc,mat)
+
+        -- Prevent this Spell from being sent to GY on attach
+        c:CancelToGrave()
+
+        -- Attach target and this Spell
         Duel.Overlay(sc,Group.FromCards(tc,c))
+
         if Duel.SpecialSummon(sc,SUMMON_TYPE_XYZ,tp,tp,false,false,POS_FACEUP)>0 then
             sc:CompleteProcedure()
         end
