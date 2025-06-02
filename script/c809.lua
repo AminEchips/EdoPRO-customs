@@ -87,7 +87,8 @@ end
 
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if c:IsRelateToEffect(e) then
+	if c:IsRelateToEffect(e) and c:IsFaceup() then
+		Duel.BreakEffect()
 		Duel.Remove(c,POS_FACEUP,REASON_EFFECT)
 	end
 end
