@@ -92,7 +92,7 @@ end
 -- Replacement condition: if Rank 4 DARK monster would be destroyed
 function s.repfilter(c,tp)
     return c:IsFaceup() and c:IsControler(tp)
-        and c:IsAttribute(ATTRIBUTE_DARK) and c:IsLevel(4)
+        and c:IsAttribute(ATTRIBUTE_DARK) and c:IsRank(4)
         and c:IsReason(REASON_EFFECT) and not c:IsReason(REASON_REPLACE)
 end
 function s.reptg(e,tp,eg,ep,ev,re,r,rp,chk)
