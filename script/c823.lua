@@ -1,6 +1,7 @@
 --The Phantom Knights of Cursed Steeds
 local s,id=GetID()
 function s.initial_effect(c)
+    -- Pendulum procedure
     Pendulum.AddProcedure(c)
 
     -- Pendulum Effect: Add 1 DARK Warrior during End Phase if activated this turn
@@ -23,6 +24,7 @@ function s.initial_effect(c)
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_REMOVE)
     e2:SetRange(LOCATION_HAND+LOCATION_GRAVE)
+    e2:SetProperty(EFFECT_FLAG_DELAY)
     e2:SetCountLimit(1,{id,1})
     e2:SetCondition(s.spcon)
     e2:SetTarget(s.sptg)
@@ -30,13 +32,13 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Pendulum Condition: if this card was activated this turn
+-- Pendulum effect: check if this card was activated this turn
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return Duel.GetTurnCount()==c:GetTurnID()
 end
 
--- Search filter for DARK Warrior
+-- Filter for DARK Warrior from Deck or face-up Extra Deck
 function s.thfilter(c)
     return c:IsRace(RACE_WARRIOR) and c:IsAttribute(ATTRIBUTE_DARK)
         and c:IsAbleToHand() and (c:IsLocation(LOCATION_DECK) or c:IsFaceup())
@@ -58,13 +60,13 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Monster Condition: Phantom Knights card banished from GY
+-- Trigger condition: a Phantom Knights card was banished from your GY
 function s.spfilter(c,tp)
     return c:IsSetCard(0x10db) and c:IsPreviousLocation(LOCATION_GRAVE) and c:IsControler(tp)
 end
 
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    return (Duel.GetCurrentPhase()~=PHASE_DAMAGE or not Duel.IsDamageCalculated())
+    return (Duel.GetCurrentPhase() ~= PHASE_DAMAGE or not Duel.IsDamageCalculated())
         and eg:IsExists(s.spfilter,1,nil,tp)
 end
 
