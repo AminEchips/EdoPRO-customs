@@ -30,13 +30,13 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Check if this card was activated this turn (Pendulum)
+-- Pendulum Condition: if this card was activated this turn
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return Duel.GetTurnCount()==c:GetTurnID()
 end
 
--- Filter DARK Warrior in Deck or Extra Deck
+-- Search filter for DARK Warrior
 function s.thfilter(c)
     return c:IsRace(RACE_WARRIOR) and c:IsAttribute(ATTRIBUTE_DARK)
         and c:IsAbleToHand() and (c:IsLocation(LOCATION_DECK) or c:IsFaceup())
@@ -58,14 +58,14 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Monster Effect: Check if "Phantom Knights" card was banished from GY (not during damage step)
+-- Monster Condition: Phantom Knights card banished from GY
 function s.spfilter(c,tp)
-    return c:IsSetCard(0x10db) and c:IsPreviousLocation(LOCATION_GRAVE)
-        and c:IsControler(tp)
+    return c:IsSetCard(0x10db) and c:IsPreviousLocation(LOCATION_GRAVE) and c:IsControler(tp)
 end
 
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-    return not Duel.IsDamageStep() and eg:IsExists(s.spfilter,1,nil,tp)
+    return (Duel.GetCurrentPhase()~=PHASE_DAMAGE or not Duel.IsDamageCalculated())
+        and eg:IsExists(s.spfilter,1,nil,tp)
 end
 
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
