@@ -5,7 +5,7 @@ function s.initial_effect(c)
     Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_DARK),6,3)
     c:EnableReviveLimit()
 
-    --Alternative Summon using a DARK Rank 5 or lower Xyz summoned by Rank-Up-Magic
+    --Alternative Summon using any Rank 5 or lower DARK Xyz
     local e0=Effect.CreateEffect(c)
     e0:SetType(EFFECT_TYPE_FIELD)
     e0:SetCode(EFFECT_SPSUMMON_PROC)
@@ -45,11 +45,9 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
---Alternative Xyz Summon: from DARK Rank 5 or lower Xyz that was summoned by a Rank-Up-Magic Spell
+--Alternative Xyz Summon: any DARK Rank 5 or lower Xyz
 function s.matfilter(c)
     return c:IsFaceup() and c:IsRankBelow(5) and c:IsAttribute(ATTRIBUTE_DARK) and c:IsType(TYPE_XYZ)
-        and c:GetMaterial():IsExists(function(mc) return mc:IsType(TYPE_SPELL) and mc:IsSetCard(0x95) end,1,nil)
-        and c:IsSummonType(SUMMON_TYPE_SPECIAL)
 end
 function s.xyzcon(e,c)
     if c==nil then return true end
@@ -74,20 +72,20 @@ function s.xyzop(e,tp,eg,ep,ev,re,r,rp,c)
     Duel.Overlay(c,Group.FromCards(tc))
 end
 
---Battle Phase check
+--Battle Phase condition
 function s.atkcon(e)
     return Duel.IsBattlePhase()
 end
 
---ATK gain: 200 per banished PK
+--ATK gain: 200 per banished "The Phantom Knights" monster
 function s.atkfilter(c)
-    return c:IsSetCard(0x10db) and c:IsFaceup()
+    return c:IsSetCard(0x10db) and c:IsFaceup() and c:IsType(MONSTER)
 end
 function s.atkval(e,c)
     return Duel.GetMatchingGroupCount(s.atkfilter,c:GetControler(),LOCATION_REMOVED,0,nil)*200
 end
 
---Floating effect condition: if this card was Xyz Summoned and sent to GY by opponent's card
+--Floating: If Xyz Summoned & sent to GY by opponent
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return c:IsSummonType(SUMMON_TYPE_XYZ) and rp==1-tp and c:IsPreviousLocation(LOCATION_ONFIELD)
@@ -107,7 +105,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
         tc:RegisterEffect(e2)
     end
 
-    --Add 1 "Rank-Up-Magic" from Deck to hand
+    --Search 1 "Rank-Up-Magic" from Deck
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
     local sg=Duel.SelectMatchingCard(tp,function(c) return c:IsSetCard(0x95) and c:IsAbleToHand() end,
         tp,LOCATION_DECK,0,1,1,nil)
