@@ -2,9 +2,9 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    Xyz.AddProcedure(c,nil,3,2,nil,nil,99)
+    Xyz.AddProcedure(c,nil,3,2,nil,nil,Xyz.InfiniteMats)
 
-    -- Effect 1: Detach to Special Summon from Deck (lock non-DARK)
+    --Detach to Special Summon from Deck
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -16,10 +16,10 @@ function s.initial_effect(c)
     e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
 
-    -- Effect 2: If destroyed (while Xyz Summoned), recover 1 Level 4 Phantom Knights monster
+    --If destroyed, add or place 1 Level 4 "The Phantom Knights" monster
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
-    e2:SetCategory(CATEGORY_TOHAND+CATEGORY_PLACE)
+    e2:SetCategory(CATEGORY_TOHAND)
     e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e2:SetCode(EVENT_DESTROYED)
     e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
@@ -29,10 +29,9 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 
--- Set codes
-s.listed_series={0x10db}
+s.listed_series={0x10db} -- The Phantom Knights
 
--- Effect 1: Cost = Detach 1
+-- Cost: detach 1 material
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
@@ -55,7 +54,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_DECK,0,1,1,nil,e,tp)
     if #g>0 then
         Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
-        -- Restriction: No non-DARK Special Summons for rest of turn
+        -- DARK-only restriction for the rest of the turn
         local e1=Effect.CreateEffect(e:GetHandler())
         e1:SetType(EFFECT_TYPE_FIELD)
         e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
@@ -71,7 +70,7 @@ function s.splimit(e,c)
     return not c:IsAttribute(ATTRIBUTE_DARK)
 end
 
--- Effect 2: If destroyed while Xyz Summoned
+-- Grave effect: on destruction while Xyz Summoned
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return c:IsPreviousLocation(LOCATION_MZONE) and c:IsSummonType(SUMMON_TYPE_XYZ)
@@ -82,16 +81,18 @@ function s.thfilter(c)
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-    if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.thfilter(chkc) end
+    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.thfilter(chkc) end
     if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-    Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+    local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+    Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
 end
 
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
     local tc=Duel.GetFirstTarget()
     if tc and tc:IsRelateToEffect(e) then
-        if tc:IsType(TYPE_PENDULUM) and Duel.CheckPendulumZones(tp) and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+        if tc:IsType(TYPE_PENDULUM) and Duel.CheckPendulumZones(tp)
+            and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
             Duel.MoveToField(tc,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
         else
             Duel.SendtoHand(tc,nil,REASON_EFFECT)
