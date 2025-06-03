@@ -81,49 +81,28 @@ function s.qscon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.qsop(e,tp,eg,ep,ev,re,r,rp)
-    local g=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsMonster),tp,LOCATION_MZONE,0,nil)
-    if not g:IsExists(Card.IsSetCard,1,nil,0x10db) then return end -- Require at least one Phantom Knights monster
+    if not Duel.IsMainPhase() then return end
+    local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,0,nil)
+    if not g:IsExists(Card.IsSetCard,1,nil,0x10db) then return end
 
-    Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,2)) -- Prompt
+    local xyz_list=Duel.GetMatchingGroup(s.xyzfilter,tp,LOCATION_EXTRA,0,nil,g,tp)
+    if #xyz_list==0 then return end
 
-    local options = {}
-    if Duel.GetLocationCountFromEx(tp,tp,g,nil)>0 and Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,g,tp) then
-        table.insert(options,1)
-    end
-    if Duel.GetLocationCountFromEx(tp,tp,g,nil)>0 and Duel.IsExistingMatchingCard(s.linkfilter,tp,LOCATION_EXTRA,0,1,nil,g,tp) then
-        table.insert(options,2)
-    end
-    if #options==0 then return end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+    local sc=xyz_list:Select(tp,1,1,nil):GetFirst()
+    if not sc then return end
 
-    local opt
-    if #options==2 then
-        opt=Duel.SelectOption(tp,aux.Stringid(id,3),aux.Stringid(id,4)) -- Xyz / Link
-    else
-        opt=options[1]-1
-    end
+    local mg=g:Filter(Card.IsCanBeXyzMaterial,nil,sc)
+    if not aux.MustMaterialCheck(sc,tp,EFFECT_MUST_BE_XMATERIAL) then return end
 
-    if opt==0 then
-        -- Xyz
-        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-        local xyzs=Duel.SelectMatchingCard(tp,s.xyzfilter,tp,LOCATION_EXTRA,0,1,1,nil,g,tp)
-        local sc=xyzs:GetFirst()
-        if sc then
-            Duel.XyzSummon(tp,sc,g)
-        end
-    else
-        -- Link
-        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-        local links=Duel.SelectMatchingCard(tp,s.linkfilter,tp,LOCATION_EXTRA,0,1,1,nil,g,tp)
-        local sc=links:GetFirst()
-        if sc then
-            Duel.LinkSummon(tp,sc,nil,g)
-        end
-    end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_XMATERIAL)
+    local mat=mg:Select(tp,sc:GetOverlayCount(),sc:GetOverlayCount(),nil)
+    if #mat==0 then return end
+
+    Duel.XyzSummon(tp,sc,mat)
 end
 
 function s.xyzfilter(c,mg,tp)
-    return c:IsType(TYPE_XYZ) and c:IsAttribute(ATTRIBUTE_DARK) and c:IsXyzSummonable(nil,mg,2,2)
-end
-function s.linkfilter(c,mg,tp)
-    return c:IsType(TYPE_LINK) and c:IsAttribute(ATTRIBUTE_DARK) and c:IsLinkSummonable(nil,mg)
+    return c:IsType(TYPE_XYZ) and c:IsAttribute(ATTRIBUTE_DARK)
+        and c:IsXyzSummonable(nil,mg)
 end
