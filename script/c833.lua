@@ -79,7 +79,7 @@ end
 
 --ATK gain: 200 per banished "The Phantom Knights" monster
 function s.atkfilter(c)
-    return c:IsSetCard(0x10db) and c:IsFaceup() and c:IsType(MONSTER)
+    return c:IsSetCard(0x10db) and c:IsFaceup()
 end
 function s.atkval(e,c)
     return Duel.GetMatchingGroupCount(s.atkfilter,c:GetControler(),LOCATION_REMOVED,0,nil)*200
