@@ -43,7 +43,7 @@ end
 
 --Determine possible options and handle targeting if needed
 function s.tgfilter(c)
-    return c:IsSetCard(0x10db) and c:IsAbleToDeck()
+    return c:IsSetCard(0xdb) and c:IsAbleToDeck()
 end
 function s.target(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     local b1=Duel.IsExistingMatchingCard(aux.TRUE,tp,0,LOCATION_MZONE,1,nil)
