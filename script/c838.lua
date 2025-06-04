@@ -1,34 +1,27 @@
 --The Phantom Knights of Arise Lance
 local s,id=GetID()
 function s.initial_effect(c)
-    --Activate
-    local e0=Effect.CreateEffect(c)
-    e0:SetType(EFFECT_TYPE_ACTIVATE)
-    e0:SetCode(EVENT_FREE_CHAIN)
-    c:RegisterEffect(e0)
-
-    --Continuous Effect: PK monsters with Levels can't be destroyed by battle
+    --Activate + Set PK Trap from Deck
     local e1=Effect.CreateEffect(c)
-    e1:SetType(EFFECT_TYPE_FIELD)
-    e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
-    e1:SetRange(LOCATION_SZONE)
-    e1:SetTargetRange(LOCATION_MZONE,0)
-    e1:SetTarget(function(e,c) return c:IsSetCard(0x10db) and c:GetLevel()>0 end)
-    e1:SetValue(1)
+    e1:SetDescription(aux.Stringid(id,0))
+    e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
+    e1:SetType(EFFECT_TYPE_ACTIVATE)
+    e1:SetCode(EVENT_FREE_CHAIN)
+    e1:SetCountLimit(1,{id,0})
+    e1:SetOperation(s.setop)
     c:RegisterEffect(e1)
 
-    --Set 1 "Phantom Knights" Trap when this card is activated
+    --Continuous Effect: PK Level monsters can't be destroyed by battle
     local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,0))
-    e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e2:SetProperty(EFFECT_FLAG_DELAY)
-    e2:SetCode(EVENT_FREE_CHAIN)
-    e2:SetCountLimit(1,{id,0})
-    e2:SetTarget(s.settg)
-    e2:SetOperation(s.setop)
+    e2:SetType(EFFECT_TYPE_FIELD)
+    e2:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+    e2:SetRange(LOCATION_SZONE)
+    e2:SetTargetRange(LOCATION_MZONE,0)
+    e2:SetTarget(function(e,c) return c:IsSetCard(0x10db) and c:GetLevel()>0 end)
+    e2:SetValue(1)
     c:RegisterEffect(e2)
 
-    --GY Quick Effect: Banish this; Target & SS 1 PK monster, banish when it leaves field
+    --GY Quick Effect: Banish this, target & revive PK monster
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -43,22 +36,21 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- Set a PK Trap directly from Deck
+--Filter for settable PK Trap
 function s.setfilter(c)
-    return c:IsSetCard(0xdb) and c:IsType(TYPE_TRAP) and not c:IsCode(id) and c:IsSSetable()
-end
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
+    return c:IsSetCard(0x10db) and c:IsType(TYPE_TRAP) and not c:IsCode(id) and c:IsSSetable()
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-    local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
-    if #g>0 then
-        Duel.SSet(tp,g:GetFirst())
+    if Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+        local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,1,1,nil)
+        if #g>0 then
+            Duel.SSet(tp,g:GetFirst())
+        end
     end
 end
 
--- GY Quick Effect: SS PK monster
+--Filter for GY revival
 function s.spfilter(c,e,tp)
     return c:IsSetCard(0x10db) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
