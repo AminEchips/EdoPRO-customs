@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
     --Xyz Summon: 2 Rank 7 Xyz Monsters
-    Xyz.AddProcedure(c,function(c) return c:IsRank(7) and c:IsType(TYPE_XYZ) end,7,2)
+    Xyz.AddProcedure(c,aux.FilterBoolFunction(Card.IsRank,7),nil,2)
     c:EnableReviveLimit()
 
     --Always treated as "The Phantom Knights"
