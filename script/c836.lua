@@ -69,7 +69,7 @@ end
 
 -- GY effect: return banished PK Spell/Trap
 function s.gyfilter(c)
-    return c:IsFaceup() and c:IsSetCard(0x10db) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToGrave()
+    return c:IsFaceup() and c:IsSetCard(0xdb) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToGrave()
 end
 function s.gytg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_REMOVED) and s.gyfilter(chkc) end
