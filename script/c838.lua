@@ -30,8 +30,8 @@ function s.initial_effect(c)
     e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
     e3:SetRange(LOCATION_GRAVE)
     e3:SetCountLimit(1,{id,1})
-    e3:SetHintTiming(0,TIMING_MAIN_END+TIMING_BATTLE_END)
-    e3:SetCost(aux.bfgcost)
+    e7:SetHintTiming(0,TIMING_END_PHASE)
+    e7:SetCost(Cost.SelfBanish)
     e3:SetTarget(s.sptg)
     e3:SetOperation(s.spop)
     c:RegisterEffect(e3)
@@ -39,7 +39,7 @@ end
 
 --Filter for settable PK Trap
 function s.setfilter(c)
-    return c:IsSetCard(0x10db) and c:IsType(TYPE_TRAP) and not c:IsCode(id) and c:IsSSetable()
+    return c:IsSetCard(0xdb) and c:IsType(TYPE_TRAP) and not c:IsCode(id) and c:IsSSetable()
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
     if Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
