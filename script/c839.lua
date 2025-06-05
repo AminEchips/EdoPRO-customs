@@ -59,7 +59,7 @@ function s.activate(e,tp,eg,ep,ev,re,r,rp)
     end
     if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
     if not c:IsRelateToEffect(e)
-        or not Duel.IsPlayerCanSpecialSummonMonster(tp,id,0x10db,TYPES_EFFECT+TYPE_TRAP,0,0,4,RACE_WARRIOR,ATTRIBUTE_DARK) then return end
+        or not Duel.IsPlayerCanSpecialSummonMonster(tp,id,0x10db,TYPE_EFFECT+TYPE_TRAP,0,0,4,RACE_WARRIOR,ATTRIBUTE_DARK) then return end
     c:AddMonsterAttribute(TYPE_EFFECT+TYPE_TRAP)
     Duel.SpecialSummonStep(c,1,tp,tp,true,false,POS_FACEUP_DEFENSE)
     c:AddMonsterAttributeComplete()
