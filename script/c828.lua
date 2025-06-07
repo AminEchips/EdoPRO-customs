@@ -33,8 +33,8 @@ s.listed_series={0x10db} -- The Phantom Knights
 
 -- Cost: detach 1 material
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
-    e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
+    if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,2,REASON_COST) end
+    e:GetHandler():RemoveOverlayCard(tp,2,2,REASON_COST)
 end
 
 -- Deck Special Summon filter
