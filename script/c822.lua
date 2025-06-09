@@ -67,7 +67,7 @@ end
 
 -- Filter for Phantom Knights Spell
 function s.setfilter(c)
-    return c:IsType(TYPE_SPELL) and c:IsSetCard(0x10db) and c:IsSSetable()
+    return (c:IsType(TYPE_SPELL) or c:IsType(TYPE_TRAP)) and c:IsSetCard(0x10db) and c:IsSSetable()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.setfilter(chkc) end
