@@ -1,8 +1,6 @@
 --Salamangreat Wyrm
 local s,id=GetID()
 function s.initial_effect(c)
-	s:EnableReviveLimit()
-	aux.EnableCheckReincarnation(c) -- Enables IsReincarnationSummoned() for all mechanics
 	s.listed_series={0x119}
 
 	-- Quick Effect: Special Summon from hand, destroy 1 you control, possibly destroy 1 opponent controls
@@ -75,13 +73,13 @@ function s.dfilter(c,atk)
 	return c:IsFaceup() and c:GetAttack()<atk
 end
 
--- ② Condition: Sent from hand or field
+-- ② GY Effect Condition
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_HAND+LOCATION_ONFIELD)
 end
 
--- ② Target
+-- ② GY Effect Target
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
 	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,0,LOCATION_MZONE,1,nil) end
@@ -89,10 +87,12 @@ function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	Duel.SelectTarget(tp,Card.IsFaceup,tp,0,LOCATION_MZONE,1,1,nil)
 end
 
--- ② Operation
+-- ② GY Effect Operation
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
+
+	-- Check if you control a Reincarnation Summoned monster (any mechanic)
 	local has_reincarnated = Duel.IsExistingMatchingCard(aux.FilterFaceup(Card.IsReincarnationSummoned),tp,LOCATION_MZONE,0,1,nil)
 	if has_reincarnated then
 		Duel.SendtoHand(tc,nil,REASON_EFFECT)
