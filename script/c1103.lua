@@ -33,7 +33,7 @@ end
 
 -- ① Quick Summon Condition: You have any Salamangreat in GY
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FilterFaceup(Card.IsSetCard),tp,LOCATION_GRAVE,0,1,nil,0x119)
+	return Duel.IsExistingMatchingCard(Card.IsSetCard,tp,LOCATION_GRAVE,0,1,nil,0x119)
 end
 
 -- ① Target
@@ -52,9 +52,11 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
+
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 	local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_ONFIELD,0,1,1,nil)
 	if #g==0 then return end
+
 	local dc=g:GetFirst()
 	if Duel.Destroy(dc,REASON_EFFECT)>0 and dc:IsMonster() then
 		if (dc:IsSetCard(0x119) and dc:IsType(TYPE_LINK)) or dc:IsLevelAbove(5) then
@@ -73,7 +75,7 @@ function s.dfilter(c,atk)
 	return c:IsFaceup() and c:GetAttack()<atk
 end
 
--- ② GY Effect Condition
+-- ② GY Trigger Condition
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_HAND+LOCATION_ONFIELD)
@@ -92,7 +94,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
 
-	-- Check if you control a Reincarnation Summoned monster (any mechanic)
+	-- Check for any Reincarnation Summoned monster on your field
 	local has_reincarnated = Duel.IsExistingMatchingCard(aux.FilterFaceup(Card.IsReincarnationSummoned),tp,LOCATION_MZONE,0,1,nil)
 	if has_reincarnated then
 		Duel.SendtoHand(tc,nil,REASON_EFFECT)
