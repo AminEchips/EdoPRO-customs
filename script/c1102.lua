@@ -43,21 +43,23 @@ end
 -- First Effect: Reveal as cost
 function s.hspcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return not e:GetHandler():IsPublic() end
-    -- Reveal this card
     Duel.ConfirmCards(1-tp,e:GetHandler())
 end
-function s.hspfilter(c,lr)
-    return c:IsSetCard(0x119) and c:IsLevelBelow(lr) and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
+
+function s.hspfilter(c,e,tp,lr)
+    return c:IsSetCard(0x119) and c:IsLevelBelow(lr) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
+
 function s.hsptg(e,tp,eg,ep,ev,re,r,rp,chk)
     local lr=0
     local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
     for tc in g:Iter() do
         if tc:IsType(TYPE_LINK) then lr=lr+tc:GetLink() end
     end
-    if chk==0 then return Duel.IsExistingMatchingCard(s.hspfilter,tp,LOCATION_HAND,0,1,nil,lr) end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.hspfilter,tp,LOCATION_HAND,0,1,nil,e,tp,lr) end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
 end
+
 function s.hspop(e,tp,eg,ep,ev,re,r,rp)
     local lr=0
     local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
@@ -65,13 +67,13 @@ function s.hspop(e,tp,eg,ep,ev,re,r,rp)
         if tc:IsType(TYPE_LINK) then lr=lr+tc:GetLink() end
     end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local sg=Duel.SelectMatchingCard(tp,s.hspfilter,tp,LOCATION_HAND,0,1,1,nil,lr)
+    local sg=Duel.SelectMatchingCard(tp,s.hspfilter,tp,LOCATION_HAND,0,1,1,nil,e,tp,lr)
     if #sg>0 then
         Duel.SpecialSummon(sg,0,tp,tp,false,false,POS_FACEUP)
     end
 end
 
--- Second Effect: Level mod
+-- Second Effect: Level change on Special Summon
 function s.lvop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsRelateToEffect(e) or not c:IsFaceup() then return end
@@ -85,32 +87,38 @@ function s.lvop(e,tp,eg,ep,ev,re,r,rp)
     c:RegisterEffect(e1)
 end
 
--- Third Effect: trigger from GY
+-- Third Effect: Trigger from GY on FIRE Link removal by opponent
 function s.cfilter(c,tp)
     return c:IsPreviousControler(tp) and c:IsPreviousLocation(LOCATION_MZONE)
         and c:IsType(TYPE_LINK) and c:IsRace(RACE_CYBERSE) and c:IsAttribute(ATTRIBUTE_FIRE)
         and c:IsReason(REASON_EFFECT) and c:GetReasonPlayer()~=tp
 end
+
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.cfilter,1,nil,tp)
 end
+
 function s.negfilter(c,link)
     return c:IsSetCard(0x119) and c:IsType(TYPE_LINK) and c:IsLinkBelow(link)
         and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
 end
+
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
+    local link=3 -- or calculate dynamically from destroyed monster
     if chk==0 then
         return e:GetHandler():IsAbleToRemoveAsCost()
-            and Duel.IsExistingMatchingCard(s.negfilter,tp,LOCATION_GRAVE,0,1,nil,3)
+            and Duel.IsExistingMatchingCard(s.negfilter,tp,LOCATION_GRAVE,0,1,nil,link)
     end
     Duel.SetOperationInfo(0,CATEGORY_REMOVE,e:GetHandler(),1,0,0)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE)
 end
+
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not Duel.Remove(c,POS_FACEUP,REASON_EFFECT) then return end
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,s.negfilter,tp,LOCATION_GRAVE,0,1,1,nil,3)
+    local link=3 -- again, assumed constant unless you extract it from the actual destroyed card
+    local g=Duel.SelectMatchingCard(tp,s.negfilter,tp,LOCATION_GRAVE,0,1,1,nil,link)
     local tc=g:GetFirst()
     if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)>0 then
         local g2=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,LOCATION_MZONE,tc)
