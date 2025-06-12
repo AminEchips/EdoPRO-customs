@@ -59,28 +59,26 @@ function s.placeop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Effect 2
-function s.cfilter(c,tp)
-	return c:IsAbleToHand() and c:IsPreviousControler(tp)
+function s.thcon(e,tp,eg,ep,ev,re,r,rp)
+    local c=e:GetHandler()
+    return c:IsSummonType(SUMMON_TYPE_RITUAL) and eg:IsExists(function(tc)
+        return tc:IsPreviousControler(tp) and tc:IsPreviousLocation(LOCATION_ONFIELD)
+    end,1,nil)
 end
-function s.addcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsFaceup() and c:IsReincarnationSummoned()
-		and eg:IsExists(s.cfilter,1,nil,tp)
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+    if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and chkc:IsAbleToHand() end
+    local g=eg:Filter(function(c) return c:IsPreviousControler(tp) and c:IsAbleToHand() end,nil)
+    if chk==0 then return #g>0 end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+    local sg=g:Select(tp,1,1,nil)
+    Duel.SetTargetCard(sg)
+    Duel.SetOperationInfo(0,CATEGORY_TOHAND,sg,1,0,0)
 end
-function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	local g=eg:Filter(s.cfilter,nil,tp)
-	if chkc then return g:IsContains(chkc) end
-	if chk==0 then return #g>0 end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local sg=g:Select(tp,1,1,nil)
-	Duel.SetTargetCard(sg)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,sg,1,0,0)
-end
-function s.addop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) then
-		Duel.SendtoHand(tc,nil,REASON_EFFECT)
-	end
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+    local tc=Duel.GetFirstTarget()
+    if tc and tc:IsRelateToEffect(e) then
+        Duel.SendtoHand(tc,nil,REASON_EFFECT)
+    end
 end
 
 -- Effect 3
