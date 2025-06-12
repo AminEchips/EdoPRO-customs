@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.atkop)
     c:RegisterEffect(e1)
 
-    -- Special Summon self from GY, then Xyz Summon copy using this
+    -- End Phase: revive self then rank-up into Extra Deck copy
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -30,7 +30,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0x119}
 
--- Cost for ATK effect
+-- Cost
 function s.atkcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
@@ -49,25 +49,25 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Was sent to GY this turn
+-- GY revival condition
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsReason(REASON_EFFECT+REASON_BATTLE)
+    return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsReason(REASON_BATTLE+REASON_EFFECT)
         and c:GetTurnID()==Duel.GetTurnCount()
 end
 
+-- Revival + rank-up target
 function s.retg(e,tp,eg,ep,ev,re,r,rp,chk)
+    local c=e:GetHandler()
     if chk==0 then
         return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+            and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
             and Duel.IsExistingMatchingCard(s.exfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp)
     end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,tp,LOCATION_GRAVE)
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,tp,LOCATION_GRAVE)
 end
 
-function s.exfilter(c,e,tp)
-    return c:IsCode(id) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_XYZ,tp,false,false)
-end
-
+-- Revival + rank-up execution
 function s.reop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
@@ -77,27 +77,27 @@ function s.reop(e,tp,eg,ep,ev,re,r,rp)
 
     Duel.BreakEffect()
 
-    -- Step 2: Select Xyz copy from Extra Deck
+    -- Step 2: Select a copy from the Extra Deck
     local sc=Duel.SelectMatchingCard(tp,s.exfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp):GetFirst()
     if not sc then return end
 
-    -- Step 3: Xyz Summon from Extra Deck using the revived copy as material
+    -- Step 3: Use the revived card as Xyz Material
     Duel.SpecialSummonStep(sc,SUMMON_TYPE_XYZ,tp,tp,false,false,POS_FACEUP)
     Duel.Overlay(sc,Group.FromCards(c))
     sc:CompleteProcedure()
     Duel.SpecialSummonComplete()
 
-    -- Apply ATK boost effect (300 per material)
+    -- Grant effect: +300 ATK per mat
     local e1=Effect.CreateEffect(sc)
     e1:SetType(EFFECT_TYPE_SINGLE)
     e1:SetCode(EFFECT_UPDATE_ATTACK)
     e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
     e1:SetRange(LOCATION_MZONE)
-    e1:SetValue(function(e) return e:GetHandler():GetOverlayCount() * 300 end)
+    e1:SetValue(function(e) return e:GetHandler():GetOverlayCount()*300 end)
     e1:SetReset(RESET_EVENT+RESETS_STANDARD)
     sc:RegisterEffect(e1)
 
-    -- Destroy all Spell/Traps
+    -- Grant effect: destroy all Spell/Trap
     local e2=Effect.CreateEffect(sc)
     e2:SetDescription(aux.Stringid(id,2))
     e2:SetCategory(CATEGORY_DESTROY)
@@ -116,4 +116,9 @@ function s.reop(e,tp,eg,ep,ev,re,r,rp)
     end)
     e2:SetReset(RESET_EVENT+RESETS_STANDARD)
     sc:RegisterEffect(e2)
+end
+
+-- Must match this card’s ID
+function s.exfilter(c,e,tp)
+    return c:IsCode(id) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_XYZ,tp,false,false)
 end
