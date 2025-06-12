@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.atkop)
     c:RegisterEffect(e1)
 
-    -- End Phase: Rank-Up this card from GY or field
+    -- End Phase: Rank-Up into another copy from GY
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -32,13 +32,13 @@ end
 
 s.listed_series={0x119}
 
--- Cost
+-- ATK Cost
 function s.atkcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
 
--- +1000 ATK to FIRE monsters
+-- FIRE monsters gain 1000 ATK
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(Card.IsAttribute,tp,LOCATION_MZONE,0,nil,ATTRIBUTE_FIRE)
     for tc in g:Iter() do
@@ -51,53 +51,44 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Was sent to GY this turn
+-- Check if sent to GY this turn
 function s.rkcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return c:IsPreviousLocation(LOCATION_ONFIELD) and c:GetTurnID()==Duel.GetTurnCount()
 end
 
--- Can target self in GY or another Sunrise Panther on field
-function s.xyzfilter(c,e,tp)
-    return c:IsCode(id) and c:IsType(TYPE_XYZ)
-        and Duel.IsExistingMatchingCard(s.rkfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,c)
-end
-
--- Can Rank-Up into another copy
-function s.rkfilter(c,e,tp,mc)
-    return c:IsCode(id) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_XYZ,tp,false,false)
-        and mc:IsCanBeXyzMaterial(c)
-end
-
-function s.rktg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+function s.rktg(e,tp,eg,ep,ev,re,r,rp,chk)
     local c=e:GetHandler()
-    if chk==0 then
-        return c:IsCanBeEffectTarget(e)
-            and s.xyzfilter(c,e,tp)
-    end
+    if chk==0 then return Duel.GetLocationCountFromEx(tp,tp,c)>0
+        and Duel.IsExistingMatchingCard(s.rkfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp,c) end
     Duel.SetTargetCard(c)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
 
+function s.rkfilter(c,e,tp,mc)
+    return c:IsCode(id) and mc:IsCanBeXyzMaterial(c)
+        and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_XYZ,tp,false,false)
+end
+
 function s.rkop(e,tp,eg,ep,ev,re,r,rp)
-    local tc=Duel.GetFirstTarget()
-    if not tc or not tc:IsRelateToEffect(e) then return end
-    if Duel.GetLocationCountFromEx(tp,tp,tc)<=0 then return end
+    local c=Duel.GetFirstTarget()
+    if not c or not c:IsRelateToEffect(e) or Duel.GetLocationCountFromEx(tp,tp,c)<=0 then return end
 
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local sc=Duel.SelectMatchingCard(tp,s.rkfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp,tc):GetFirst()
+    local sc=Duel.SelectMatchingCard(tp,s.rkfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp,c):GetFirst()
     if not sc then return end
 
-    local overlay=tc:GetOverlayGroup()
+    local overlay=c:GetOverlayGroup()
     if #overlay>0 then
         Duel.Overlay(sc,overlay)
     end
-    sc:SetMaterial(Group.FromCards(tc))
-    Duel.Overlay(sc,Group.FromCards(tc))
+
+    sc:SetMaterial(Group.FromCards(c))
+    Duel.Overlay(sc,Group.FromCards(c))
     if Duel.SpecialSummon(sc,SUMMON_TYPE_XYZ,tp,tp,false,false,POS_FACEUP)>0 then
         sc:CompleteProcedure()
 
-        -- ATK boost: 300 x materials
+        -- Gain +300 ATK per material
         local e1=Effect.CreateEffect(sc)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_UPDATE_ATTACK)
@@ -107,7 +98,7 @@ function s.rkop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetReset(RESET_EVENT+RESETS_STANDARD)
         sc:RegisterEffect(e1)
 
-        -- Backrow wipe
+        -- Gain effect: destroy all Spell/Trap cards
         local e2=Effect.CreateEffect(sc)
         e2:SetDescription(aux.Stringid(id,2))
         e2:SetCategory(CATEGORY_DESTROY)
