@@ -70,10 +70,11 @@ end
 function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return eg:IsContains(chkc) and s.cfilter(chkc,tp) end
 	if chk==0 then return eg:IsExists(s.cfilter,1,nil,tp) end
+	local g=eg:Filter(s.cfilter,nil,tp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=eg:FilterSelect(tp,s.cfilter,1,1,nil,tp)
-	Duel.SetTargetCard(g)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
+	local sg=g:Select(tp,1,1,nil)
+	Duel.SetTargetCard(sg)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,sg,1,0,0)
 end
 function s.addop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
