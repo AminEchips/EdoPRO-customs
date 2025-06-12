@@ -16,7 +16,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.placeop)
 	c:RegisterEffect(e1)
 
-	-- Effect 2: Add back any card you own sent to GY (including Damage Step)
+	-- Effect 2: Add back any card you controlled sent to GY (including Damage Step)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOHAND)
@@ -60,7 +60,7 @@ end
 
 -- Effect 2
 function s.cfilter(c,tp)
-	return c:IsAbleToHand()
+	return c:IsAbleToHand() and c:IsPreviousControler(tp)
 end
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
