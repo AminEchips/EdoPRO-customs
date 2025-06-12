@@ -32,7 +32,7 @@ end
 
 s.listed_series={0x119}
 
--- ATK Cost
+-- Cost: detach 1
 function s.atkcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
@@ -51,7 +51,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Check if sent to GY this turn
+-- If sent to GY this turn, allow Rank-Up
 function s.rkcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     return c:IsPreviousLocation(LOCATION_ONFIELD) and c:GetTurnID()==Duel.GetTurnCount()
@@ -79,16 +79,13 @@ function s.rkop(e,tp,eg,ep,ev,re,r,rp)
     if not sc then return end
 
     local overlay=c:GetOverlayGroup()
-    if #overlay>0 then
-        Duel.Overlay(sc,overlay)
-    end
-
+    if #overlay>0 then Duel.Overlay(sc,overlay) end
     sc:SetMaterial(Group.FromCards(c))
     Duel.Overlay(sc,Group.FromCards(c))
     if Duel.SpecialSummon(sc,SUMMON_TYPE_XYZ,tp,tp,false,false,POS_FACEUP)>0 then
         sc:CompleteProcedure()
 
-        -- Gain +300 ATK per material
+        -- Gain +300 ATK per overlay
         local e1=Effect.CreateEffect(sc)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_UPDATE_ATTACK)
@@ -98,14 +95,14 @@ function s.rkop(e,tp,eg,ep,ev,re,r,rp)
         e1:SetReset(RESET_EVENT+RESETS_STANDARD)
         sc:RegisterEffect(e1)
 
-        -- Gain effect: destroy all Spell/Trap cards
+        -- Once per turn, during your End Phase: destroy all Spell/Traps
         local e2=Effect.CreateEffect(sc)
         e2:SetDescription(aux.Stringid(id,2))
         e2:SetCategory(CATEGORY_DESTROY)
-        e2:SetType(EFFECT_TYPE_IGNITION)
+        e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+        e2:SetCode(EVENT_PHASE+PHASE_END)
         e2:SetRange(LOCATION_MZONE)
         e2:SetCountLimit(1,{id,2})
-        e2:SetCondition(function(e) return e:GetHandler():IsSummonType(SUMMON_TYPE_XYZ) end)
         e2:SetTarget(function(e,tp,eg,ep,ev,re,r,rp,chk)
             if chk==0 then return Duel.IsExistingMatchingCard(Card.IsSpellTrap,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
             local g=Duel.GetMatchingGroup(Card.IsSpellTrap,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
