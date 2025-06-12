@@ -3,8 +3,8 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	aux.EnableCheckReincarnation(c)
-	
-	-- Place Continuous Spell/Trap from hand or GY
+
+	-- Effect 1: Place 1 Salamangreat Continuous Spell/Trap
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_LEAVE_GRAVE)
@@ -16,7 +16,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.placeop)
 	c:RegisterEffect(e1)
 
-	-- Reincarnation Summoned: Add back card sent to GY
+	-- Effect 2: Add back 1 owned card sent to GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOHAND)
@@ -30,7 +30,7 @@ function s.initial_effect(c)
 	e2:SetCountLimit(1,id)
 	c:RegisterEffect(e2)
 
-	-- Battle target: once per turn indestructible unless opponent sends a card
+	-- Effect 3: Battle target protection unless opponent sends card
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_SINGLE)
@@ -41,7 +41,7 @@ end
 s.listed_series={0x119}
 s.listed_names={38784726,id}
 
--- Effect 1: Place Spell/Trap
+-- Effect 1
 function s.placon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_RITUAL)
 end
@@ -58,18 +58,21 @@ function s.placeop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 2: Add to hand a card you own sent to GY
+-- Effect 2
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return eg:IsExists(Card.IsControler,1,nil,tp)
-		and not Duel.IsDamageCalculated()
+	return eg:IsExists(s.ownablefilter,1,nil,tp)
 		and c:IsReincarnationSummoned()
 		and c:IsSummonType(SUMMON_TYPE_RITUAL)
+		and not Duel.IsDamageCalculated()
+end
+function s.ownablefilter(c,tp)
+	return c:IsAbleToHand() and c:GetOwner()==tp
 end
 function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return eg:IsContains(chkc) and chkc:IsControler(tp) and chkc:IsAbleToHand() end
-	if chk==0 then return eg:IsExists(Card.IsAbleToHand,1,nil) end
-	local g=eg:Filter(Card.IsControler,nil,tp):Filter(Card.IsAbleToHand,nil)
+	if chkc then return eg:IsContains(chkc) and chkc:GetOwner()==tp and chkc:IsAbleToHand() end
+	if chk==0 then return eg:IsExists(s.ownablefilter,1,nil,tp) end
+	local g=eg:Filter(s.ownablefilter,nil,tp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local tg=g:Select(tp,1,1,nil)
 	Duel.SetTargetCard(tg)
@@ -82,7 +85,7 @@ function s.addop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 3: Protection unless opponent sends card to GY
+-- Effect 3
 function s.battleop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:GetFlagEffect(id+100)==0 then
