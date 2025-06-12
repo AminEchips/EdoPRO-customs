@@ -86,8 +86,39 @@ function s.reop(e,tp,eg,ep,ev,re,r,rp)
         Duel.Overlay(sc,Group.FromCards(c))
         sc:CompleteProcedure()
         Duel.SpecialSummonComplete()
+
+        -- 🔥 Apply effect 1: +300 ATK per material
+        local e1=Effect.CreateEffect(sc)
+        e1:SetType(EFFECT_TYPE_SINGLE)
+        e1:SetCode(EFFECT_UPDATE_ATTACK)
+        e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+        e1:SetRange(LOCATION_MZONE)
+        e1:SetValue(function(e) return e:GetHandler():GetOverlayCount() * 300 end)
+        e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+        sc:RegisterEffect(e1)
+
+        -- 🔥 Apply effect 2: destroy all Spells/Traps
+        local e2=Effect.CreateEffect(sc)
+        e2:SetDescription(aux.Stringid(id,2))
+        e2:SetCategory(CATEGORY_DESTROY)
+        e2:SetType(EFFECT_TYPE_IGNITION)
+        e2:SetRange(LOCATION_MZONE)
+        e2:SetCountLimit(1,{id,2})
+        e2:SetCondition(function(e) return e:GetHandler():IsSummonType(SUMMON_TYPE_XYZ) end)
+        e2:SetTarget(function(e,tp,eg,ep,ev,re,r,rp,chk)
+            if chk==0 then return Duel.IsExistingMatchingCard(Card.IsSpellTrap,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
+            local g=Duel.GetMatchingGroup(Card.IsSpellTrap,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
+            Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,#g,0,0)
+        end)
+        e2:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
+            local g=Duel.GetMatchingGroup(Card.IsSpellTrap,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
+            Duel.Destroy(g,REASON_EFFECT)
+        end)
+        e2:SetReset(RESET_EVENT+RESETS_STANDARD)
+        sc:RegisterEffect(e2)
     end
 end
+
 
 -- Grant to Xyz monster
 function s.make_granted_effect(src)
