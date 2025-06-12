@@ -3,9 +3,9 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
     aux.EnableCheckReincarnation(c)
-    Xyz.AddProcedure(c,nil,8,2,nil,nil,99)
+    Xyz.AddProcedure(c,nil,8,2,nil,nil,Xyz.InfiniteMats)
 
-    -- Detach to boost all FIRE monsters
+    -- Detach to give all FIRE monsters +1000 ATK
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_ATKCHANGE)
@@ -16,7 +16,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.atkop)
     c:RegisterEffect(e1)
 
-    -- Reborn from GY if sent this turn
+    -- Special Summon from GY if sent there this turn
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -28,7 +28,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.reop)
     c:RegisterEffect(e2)
 
-    -- Grant effects to Xyz monsters that use this as material
+    -- Grant effects if used as Xyz Material
     local e3=Effect.CreateEffect(c)
     e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_GRANT)
     e3:SetRange(LOCATION_OVERLAY)
@@ -39,13 +39,13 @@ function s.initial_effect(c)
 end
 s.listed_series={0x119}
 
--- Cost: detach 1
+-- Cost for ATK boost
 function s.atkcost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
     e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
 
--- Effect: all FIRE monsters gain 1000 ATK
+-- Boost all FIRE monsters
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     local g=Duel.GetMatchingGroup(Card.IsAttribute,tp,LOCATION_MZONE,0,nil,ATTRIBUTE_FIRE)
     for tc in g:Iter() do
@@ -58,31 +58,29 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Condition: was sent to GY this turn
+-- GY revival if sent this turn
 function s.recon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsReason(REASON_DESTROY+REASON_EFFECT+REASON_BATTLE)
+    return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsReason(REASON_EFFECT+REASON_BATTLE)
         and c:GetTurnID()==Duel.GetTurnCount()
 end
 
 function s.retg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCountFromEx(tp)>0 and Duel.IsPlayerCanSpecialSummon(tp) end
+    if chk==0 then return Duel.GetLocationCountFromEx(tp)>0 end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,tp,LOCATION_EXTRA)
 end
 
--- Operation: Special Summon from Extra Deck using itself as material (treated as Xyz Summon)
 function s.reop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsRelateToEffect(e) then return end
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local tc=Duel.CreateToken(tp,id)
-    Duel.SpecialSummonStep(tc,SUMMON_TYPE_XYZ,tp,tp,false,false,POS_FACEUP)
-    Duel.Overlay(tc,Group.FromCards(c))
-    tc:CompleteProcedure()
+    local sc=Duel.CreateToken(tp,id)
+    Duel.SpecialSummonStep(sc,SUMMON_TYPE_XYZ,tp,tp,false,false,POS_FACEUP)
+    Duel.Overlay(sc,Group.FromCards(c))
+    sc:CompleteProcedure()
     Duel.SpecialSummonComplete()
 end
 
--- EFFECT: grant ATK + S/T wipe when used as material
+-- Grant effect to Xyz monsters using this as material
 function s.make_granted_effect(src)
     local e=Effect.CreateEffect(src)
     e:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_FIELD)
@@ -102,7 +100,7 @@ function s.make_granted_effect(src)
             e1:SetReset(RESET_EVENT+RESETS_STANDARD)
             c:RegisterEffect(e1)
 
-            -- Destroy all Spells/Traps
+            -- Destroy all Spell/Trap cards
             local e2=Effect.CreateEffect(c)
             e2:SetDescription(aux.Stringid(id,2))
             e2:SetCategory(CATEGORY_DESTROY)
