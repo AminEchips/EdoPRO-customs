@@ -62,7 +62,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		if (dc:IsSetCard(0x119) and dc:IsType(TYPE_LINK)) or dc:IsLevelAbove(5) then
 			local atk=dc:GetAttack()
 			local opp=Duel.GetMatchingGroup(s.dfilter,tp,0,LOCATION_MZONE,nil,atk)
-			if #opp>0 then
+			if #opp>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 				Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 				local sg=opp:Select(tp,1,1,nil)
 				Duel.Destroy(sg,REASON_EFFECT)
@@ -75,13 +75,13 @@ function s.dfilter(c,atk)
 	return c:IsFaceup() and c:GetAttack()<atk
 end
 
--- ② GY Trigger Condition
+-- ② Trigger if sent from hand or field
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_HAND+LOCATION_ONFIELD)
 end
 
--- ② GY Effect Target
+-- ② Target opponent's monster
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
 	if chk==0 then return Duel.IsExistingTarget(Card.IsFaceup,tp,0,LOCATION_MZONE,1,nil) end
@@ -89,13 +89,17 @@ function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	Duel.SelectTarget(tp,Card.IsFaceup,tp,0,LOCATION_MZONE,1,1,nil)
 end
 
--- ② GY Effect Operation
+-- ② Filter for face-up Reincarnation Summoned monster
+function s.faceup_reincarnation(c)
+	return c:IsFaceup() and c:IsReincarnationSummoned()
+end
+
+-- ② Operation
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
 
-	-- Check for any Reincarnation Summoned monster on your field
-	local has_reincarnated = Duel.IsExistingMatchingCard(aux.FilterFaceup(Card.IsReincarnationSummoned),tp,LOCATION_MZONE,0,1,nil)
+	local has_reincarnated = Duel.IsExistingMatchingCard(s.faceup_reincarnation,tp,LOCATION_MZONE,0,1,nil)
 	if has_reincarnated then
 		Duel.SendtoHand(tc,nil,REASON_EFFECT)
 	else
