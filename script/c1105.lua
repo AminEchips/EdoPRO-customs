@@ -64,7 +64,7 @@ function s.cfilter(c,tp)
 end
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsFaceup() and c:IsReincarnationSummoned() and c:IsSummonType(SUMMON_TYPE_RITUAL)
+	return c:IsFaceup() and c:IsReincarnationSummoned()
 		and eg:IsExists(s.cfilter,1,nil,tp)
 end
 function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
