@@ -62,15 +62,18 @@ end
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsFaceup() and c:IsReincarnationSummoned() and c:IsSummonType(SUMMON_TYPE_RITUAL)
-		and eg:IsExists(function(tc) return tc:IsAbleToHand() and tc:GetOwner()==tp end, 1, nil)
+		and eg:IsExists(s.cfilter,1,nil,tp)
+end
+function s.cfilter(c,tp)
+	return c:GetOwner()==tp and c:IsAbleToHand()
 end
 function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	local g=eg:Filter(function(c) return c:IsAbleToHand() and c:GetOwner()==tp end, nil)
-	if chk==0 then return #g>0 end
+	if chkc then return eg:IsContains(chkc) and s.cfilter(chkc,tp) end
+	if chk==0 then return eg:IsExists(s.cfilter,1,nil,tp) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local tg=g:Select(tp,1,1,nil)
-	Duel.SetTargetCard(tg)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,tg,1,0,0)
+	local g=eg:FilterSelect(tp,s.cfilter,1,1,nil,tp)
+	Duel.SetTargetCard(g)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
 end
 function s.addop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
