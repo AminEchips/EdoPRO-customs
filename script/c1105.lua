@@ -23,7 +23,7 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_TO_GRAVE)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP)
 	e2:SetCondition(s.addcon)
 	e2:SetTarget(s.addtg)
 	e2:SetOperation(s.addop)
@@ -68,9 +68,9 @@ function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 		and eg:IsExists(s.cfilter,1,nil,tp)
 end
 function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return eg:IsContains(chkc) and s.cfilter(chkc,tp) end
-	if chk==0 then return eg:IsExists(s.cfilter,1,nil,tp) end
 	local g=eg:Filter(s.cfilter,nil,tp)
+	if chkc then return g:IsContains(chkc) end
+	if chk==0 then return #g>0 end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local sg=g:Select(tp,1,1,nil)
 	Duel.SetTargetCard(sg)
