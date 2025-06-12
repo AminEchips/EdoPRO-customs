@@ -2,15 +2,13 @@
 local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
-    aux.EnableCheckReincarnation(c) -- For checking reincarnation summon
-    c:EnableReviveLimit()
-    aux.EnableCheckReincarnation(c) -- Enables c:IsReincarnationSummoned()
-    aux.AddFusionProcMix(c,true, aux.FilterBoolFunction(Card.IsSetCard,0x119), aux.FilterBoolFunction(Card.IsSetCard,0x119), s.fmlinkfilter)
+    aux.EnableCheckReincarnation(c)
 
-function s.fmlinkfilter(c)
-    return c:IsType(TYPE_FUSION+TYPE_LINK)
-end
-
+    -- Corrected Fusion Summon procedure
+    Fusion.AddProcMix(c,true,true,
+        aux.FilterBoolFunction(Card.IsSetCard,0x119),
+        aux.FilterBoolFunction(Card.IsSetCard,0x119),
+        s.fmlinkfilter)
 
     -- On Fusion Summon: Fusion Summon 1 FIRE Fusion from Extra Deck
     local e1=Effect.CreateEffect(c)
@@ -36,13 +34,14 @@ end
     e2:SetCountLimit(1,{id,1})
     c:RegisterEffect(e2)
 end
+
 s.listed_series={0x119}
 
 function s.fmlinkfilter(c)
     return c:IsType(TYPE_FUSION+TYPE_LINK)
 end
 
--- e1: Fusion Summon FIRE Fusion
+-- e1: Fusion Summon effect
 function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
 end
@@ -61,7 +60,7 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     local sc=g:GetFirst()
     if not sc then return end
 
-    local matct=sc.material_count or 2 -- fallback to 2 if unknown
+    local matct=sc.material_count or 2
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
     local mat=Duel.SelectMatchingCard(tp,Card.IsAbleToRemoveAsCost,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,matct,matct,nil)
     if #mat<matct then return end
@@ -71,7 +70,7 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
     sc:CompleteProcedure()
 end
 
--- e2: Reincarnation Summon condition
+-- e2: Reincarnation check
 function s.reinccon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsReincarnationSummoned()
 end
