@@ -43,7 +43,7 @@ s.listed_names={38784726,id}
 
 -- Effect 1
 function s.placon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():IsSummonType(SUMMON_TYPE_RITUAL)
+	return e:GetHandler():IsReincarnationSummoned() and e:GetHandler():IsSummonType(SUMMON_TYPE_RITUAL)
 end
 function s.placefilter(c)
 	return c:IsSetCard(0x119) and c:IsContinuousSpellTrap() and not c:IsForbidden()
@@ -59,13 +59,13 @@ function s.placeop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Effect 2
+function s.cfilter(c,tp)
+	return c:GetOwner()==tp and c:IsAbleToHand()
+end
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsFaceup() and c:IsReincarnationSummoned() and c:IsSummonType(SUMMON_TYPE_RITUAL)
 		and eg:IsExists(s.cfilter,1,nil,tp)
-end
-function s.cfilter(c,tp)
-	return c:GetOwner()==tp and c:IsAbleToHand()
 end
 function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return eg:IsContains(chkc) and s.cfilter(chkc,tp) end
