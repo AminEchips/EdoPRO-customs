@@ -3,6 +3,16 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	aux.EnableCheckReincarnation(c)
+	-- Fusion Summon or Tribute Summon from Extra Deck
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_FIELD)
+	e0:SetCode(EFFECT_SPSUMMON_PROC)
+	e0:SetProperty(EFFECT_FLAG_UNCOPYABLE)
+	e0:SetRange(LOCATION_EXTRA)
+	e0:SetCondition(s.spcon)
+	e0:SetOperation(s.spop)
+	c:RegisterEffect(e0)
+	-- Fusion Material
 	Fusion.AddProcMixRep(c,true,true,s.matfilter,2,99)
 
 	-- Search Fusion of Fire
@@ -35,6 +45,23 @@ s.listed_names={25800447,id} -- Fusion of Fire and itself
 
 function s.matfilter(c)
 	return c:IsSetCard(0x119) or c:IsAttribute(ATTRIBUTE_FIRE)
+end
+
+-- Special Summon procedure by tributing required monsters
+function s.spfilter(c)
+	return c:IsFaceup() and (c:IsSetCard(0x119) or c:IsAttribute(ATTRIBUTE_FIRE))
+end
+function s.spcon(e,c)
+	if c==nil then return true end
+	local tp=c:GetControler()
+	local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,nil)
+	return g:CheckSubGroup(aux.FilterBoolFunction(Card.IsFaceup),2,99)
+end
+function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
+	local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,nil)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
+	local sg=g:SelectSubGroup(tp,aux.FilterBoolFunction(Card.IsFaceup),false,2,99)
+	Duel.Release(sg,REASON_COST)
 end
 
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
