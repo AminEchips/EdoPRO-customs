@@ -4,7 +4,7 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	aux.EnableCheckReincarnation(c)
 
-	-- Effect 1: Place 1 Salamangreat Continuous Spell/Trap
+	-- Effect 1: Place 1 "Salamangreat" Continuous Spell/Trap from hand or GY
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_LEAVE_GRAVE)
@@ -16,7 +16,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.placeop)
 	c:RegisterEffect(e1)
 
-	-- Effect 2: Add back 1 owned card sent to GY
+	-- Effect 2: Add back card you own sent to GY
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TOHAND)
@@ -30,7 +30,7 @@ function s.initial_effect(c)
 	e2:SetCountLimit(1,id)
 	c:RegisterEffect(e2)
 
-	-- Effect 3: Battle target protection unless opponent sends card
+	-- Effect 3: Battle protection unless opponent sends 1 card
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_SINGLE)
@@ -61,18 +61,12 @@ end
 -- Effect 2
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return eg:IsExists(s.ownablefilter,1,nil,tp)
-		and c:IsReincarnationSummoned()
-		and c:IsSummonType(SUMMON_TYPE_RITUAL)
-		and not Duel.IsDamageCalculated()
-end
-function s.ownablefilter(c,tp)
-	return c:IsAbleToHand() and c:GetOwner()==tp
+	return c:IsFaceup() and c:IsReincarnationSummoned() and c:IsSummonType(SUMMON_TYPE_RITUAL)
+		and eg:IsExists(function(tc) return tc:IsAbleToHand() and tc:GetOwner()==tp end, 1, nil)
 end
 function s.addtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return eg:IsContains(chkc) and chkc:GetOwner()==tp and chkc:IsAbleToHand() end
-	if chk==0 then return eg:IsExists(s.ownablefilter,1,nil,tp) end
-	local g=eg:Filter(s.ownablefilter,nil,tp)
+	local g=eg:Filter(function(c) return c:IsAbleToHand() and c:GetOwner()==tp end, nil)
+	if chk==0 then return #g>0 end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local tg=g:Select(tp,1,1,nil)
 	Duel.SetTargetCard(tg)
