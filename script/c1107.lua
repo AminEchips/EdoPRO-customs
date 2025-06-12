@@ -4,13 +4,13 @@ function s.initial_effect(c)
     c:EnableReviveLimit()
     aux.EnableCheckReincarnation(c)
 
-    -- Corrected Fusion Summon procedure
+    -- Fusion materials: 2 Salamangreat + 1 Fusion/Link
     Fusion.AddProcMix(c,true,true,
         aux.FilterBoolFunction(Card.IsSetCard,0x119),
         aux.FilterBoolFunction(Card.IsSetCard,0x119),
         s.fmlinkfilter)
 
-    -- On Fusion Summon: Fusion Summon 1 FIRE Fusion from Extra Deck
+    -- On Fusion Summon: Proper Fusion Summon 1 FIRE Fusion from field/GY (banished)
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -22,7 +22,7 @@ function s.initial_effect(c)
     e1:SetCountLimit(1,id)
     c:RegisterEffect(e1)
 
-    -- Reincarnation Summon effect
+    -- Reincarnation effect: SS banished + add S/T
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOHAND)
@@ -34,52 +34,71 @@ function s.initial_effect(c)
     e2:SetCountLimit(1,{id,1})
     c:RegisterEffect(e2)
 end
-
 s.listed_series={0x119}
 
+-- Fusion material filter: must be Fusion or Link
 function s.fmlinkfilter(c)
     return c:IsType(TYPE_FUSION+TYPE_LINK)
 end
 
--- e1: Fusion Summon effect
+-- Condition: only if this was Fusion Summoned
 function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsSummonType(SUMMON_TYPE_FUSION)
 end
+
+-- Fusion Summon setup using FIRE + field/GY banish
 function s.fusfilter(c,e,tp)
     return c:IsType(TYPE_FUSION) and c:IsAttribute(ATTRIBUTE_FIRE)
         and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
-        and Duel.IsExistingMatchingCard(Card.IsAbleToRemoveAsCost,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,2,nil)
+        and Duel.CheckFusionMaterial(tp,c,nil,nil,s.fusmatfilter,chkf)
 end
+
+function s.fusmatfilter(c)
+    return c:IsAbleToRemoveAsCost() and (c:IsOnField() or c:IsLocation(LOCATION_GRAVE))
+end
+
 function s.fustg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.fusfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp) end
+    if chk==0 then
+        local g=Duel.GetMatchingGroup(s.fusmatfilter,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,nil)
+        return Duel.IsExistingMatchingCard(s.fusfilter,tp,LOCATION_EXTRA,0,1,nil,e,tp)
+            and #g>0
+    end
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA)
 end
+
 function s.fusop(e,tp,eg,ep,ev,re,r,rp)
+    local chkf=tp
+    local mg=Duel.GetMatchingGroup(s.fusmatfilter,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,nil)
+    local sg=Duel.GetMatchingGroup(s.fusfilter,tp,LOCATION_EXTRA,0,nil,e,tp)
+
+    local tg=Duel.SelectFusionMaterial(tp,nil,mg,nil,chkf)
+    if #tg==0 then return end
+
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-    local g=Duel.SelectMatchingCard(tp,s.fusfilter,tp,LOCATION_EXTRA,0,1,1,nil,e,tp)
-    local sc=g:GetFirst()
+    local sc=sg:Select(tp,1,1,nil):GetFirst()
     if not sc then return end
 
-    local matct=sc.material_count or 2
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-    local mat=Duel.SelectMatchingCard(tp,Card.IsAbleToRemoveAsCost,tp,LOCATION_ONFIELD+LOCATION_GRAVE,0,matct,matct,nil)
-    if #mat<matct then return end
+    local mat=Duel.SelectFusionMaterial(tp,sc,mg,nil,chkf)
+    if #mat==0 then return end
 
-    Duel.Remove(mat,POS_FACEUP,REASON_COST)
+    Duel.Remove(mat,POS_FACEUP,REASON_COST+REASON_MATERIAL)
     Duel.SpecialSummon(sc,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
     sc:CompleteProcedure()
 end
 
--- e2: Reincarnation check
+-- Reincarnation Summon check
 function s.reinccon(e,tp,eg,ep,ev,re,r,rp)
-    return e:GetHandler():IsReincarnationSummoned()
+    local c=e:GetHandler()
+    return c:IsFaceup() and c:IsReincarnationSummoned()
 end
+
 function s.reincfilter(c,e,tp)
     return c:IsSetCard(0x119) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.stfilter(c)
     return c:IsSetCard(0x119) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsAbleToHand()
 end
+
 function s.reinctg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then
         return Duel.IsExistingMatchingCard(s.reincfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp)
@@ -88,6 +107,7 @@ function s.reinctg(e,tp,eg,ep,ev,re,r,rp,chk)
     Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_REMOVED)
     Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
+
 function s.reincop(e,tp,eg,ep,ev,re,r,rp)
     Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
     local g1=Duel.SelectMatchingCard(tp,s.reincfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
