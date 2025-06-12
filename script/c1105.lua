@@ -60,7 +60,7 @@ end
 
 -- Effect 2
 function s.cfilter(c,tp)
-	return c:GetOwner()==tp and c:IsAbleToHand()
+	return c:IsAbleToHand()
 end
 function s.addcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
