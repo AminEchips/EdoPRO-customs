@@ -49,18 +49,18 @@ end
 
 -- Special Summon procedure by tributing required monsters
 function s.spfilter(c)
-	return c:IsFaceup() and (c:IsSetCard(0x119) or c:IsAttribute(ATTRIBUTE_FIRE))
+	return c:IsFaceup() and (c:IsSetCard(0x119) or c:IsAttribute(ATTRIBUTE_FIRE)) and c:IsReleasable()
 end
 function s.spcon(e,c)
 	if c==nil then return true end
 	local tp=c:GetControler()
 	local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,nil)
-	return g:CheckSubGroup(aux.FilterBoolFunction(Card.IsFaceup),2,99)
+	return g:GetClassCount(Card.GetCode)>=2
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp,c)
 	local g=Duel.GetMatchingGroup(s.spfilter,tp,LOCATION_MZONE,0,nil)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local sg=g:SelectSubGroup(tp,aux.FilterBoolFunction(Card.IsFaceup),false,2,99)
+	local sg=g:Select(tp,2,2,nil)
 	Duel.Release(sg,REASON_COST)
 end
 
