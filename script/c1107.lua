@@ -3,7 +3,14 @@ local s,id=GetID()
 function s.initial_effect(c)
     c:EnableReviveLimit()
     aux.EnableCheckReincarnation(c) -- For checking reincarnation summon
-    Fusion.AddProcMix(c,true,true,s.matfilter1,aux.FilterBoolFunction(Card.IsFusionType,TYPE_FUSION+TYPE_LINK))
+    c:EnableReviveLimit()
+    aux.EnableCheckReincarnation(c) -- Enables c:IsReincarnationSummoned()
+    aux.AddFusionProcMix(c,true, aux.FilterBoolFunction(Card.IsSetCard,0x119), aux.FilterBoolFunction(Card.IsSetCard,0x119), s.fmlinkfilter)
+
+function s.fmlinkfilter(c)
+    return c:IsType(TYPE_FUSION+TYPE_LINK)
+end
+
 
     -- On Fusion Summon: Fusion Summon 1 FIRE Fusion from Extra Deck
     local e1=Effect.CreateEffect(c)
@@ -31,9 +38,8 @@ function s.initial_effect(c)
 end
 s.listed_series={0x119}
 
--- Fusion materials: 2 Salamangreat monsters + 1 Fusion or Link monster
-function s.matfilter1(c)
-    return c:IsSetCard(0x119)
+function s.fmlinkfilter(c)
+    return c:IsType(TYPE_FUSION+TYPE_LINK)
 end
 
 -- e1: Fusion Summon FIRE Fusion
