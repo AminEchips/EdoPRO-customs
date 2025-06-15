@@ -14,27 +14,27 @@ function s.initial_effect(c)
     e1:SetValue(s.battletarget)
     c:RegisterEffect(e1)
 
-    -- Move to an unused adjacent zone (only if Reincarnation Summoned)
+    -- Move to an adjacent zone (Reincarnation only)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetType(EFFECT_TYPE_IGNITION)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,0})
-    e2:SetCondition(function(e) return e:GetHandler():IsReincarnationSummoned() end)
-    e2:SetCondition(aux.seqmovcon)
+    e2:SetCondition(function(e) return e:GetHandler():IsReincarnationSummoned() and aux.seqmovcon(e) end)
     e2:SetOperation(aux.seqmovop)
     c:RegisterEffect(e2)
 
-    -- EVENT_MOVE: Return all other monsters in same column + optionally 1 Salamangreat
+    -- Ignition: Column bounce + optional Salamangreat return (Reincarnation only)
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
-    e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
-    e3:SetCode(EVENT_MOVE)
+    e3:SetType(EFFECT_TYPE_IGNITION)
+    e3:SetRange(LOCATION_MZONE)
     e3:SetCountLimit(1,{id,1})
+    e3:SetCondition(function(e) return e:GetHandler():IsReincarnationSummoned() end)
     e3:SetOperation(s.colop)
     c:RegisterEffect(e3)
 
-    -- On destroy: shuffle up to opponent’s hand count of Salamangreats into Deck
+    -- On destroy: shuffle up to opponent's hand size of Salamangreats into Deck
     local e4=Effect.CreateEffect(c)
     e4:SetDescription(aux.Stringid(id,2))
     e4:SetCategory(CATEGORY_TODECK)
@@ -54,25 +54,25 @@ function s.matcheck(g,lc,sumtype,tp)
     return g:FilterCount(Card.IsType,nil,TYPE_EFFECT)==#g
 end
 
--- Protection: monsters Hare points to
+-- Protection effect: monsters Hare points to
 function s.battletarget(e,c)
     return e:GetHandler():GetLinkedGroup():IsContains(c)
 end
 
--- Column-based bounce on EVENT_MOVE
+-- Column bounce + optional Salamangreat return
 function s.colop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsRelateToEffect(e) or not c:IsLocation(LOCATION_MZONE) then return end
 
-    -- Return other monsters in same column
-    local colgrp=c:GetColumnGroup():Filter(aux.ExceptThisCard,nil)
+    -- Return all other monsters in same column
+    local colgrp=c:GetColumnGroup():Filter(function(tc) return tc~=c end,nil)
     if #colgrp>0 then
         Duel.SendtoHand(colgrp,nil,REASON_EFFECT)
     end
 
     -- Optional: return 1 Salamangreat you control
-    local g=Duel.GetMatchingGroup(function(c)
-        return c:IsSetCard(0x119) and c:IsAbleToHand()
+    local g=Duel.GetMatchingGroup(function(tc)
+        return tc:IsSetCard(0x119) and tc:IsAbleToHand()
     end,tp,LOCATION_MZONE,0,nil)
     if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
