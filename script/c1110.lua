@@ -1,7 +1,6 @@
 --Salamangreat Hare
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Link Summon
     c:EnableReviveLimit()
     Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_FIRE),2,2,s.matcheck)
 
@@ -14,17 +13,17 @@ function s.initial_effect(c)
     e1:SetValue(s.battletarget)
     c:RegisterEffect(e1)
 
-    -- Reincarnation effect: move, then bounce column, then optionally bounce Salamangreat
+    -- Reincarnation Ignition: move, bounce column, optional bounce
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetType(EFFECT_TYPE_IGNITION)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,0})
-    e2:SetCondition(function(e) return e:GetHandler():IsReincarnationSummoned() end)
+    e2:SetCondition(function(e) return e:GetHandler():IsReincarnationSummoned() and aux.seqmovcon(e) end)
     e2:SetOperation(s.move_bounce)
     c:RegisterEffect(e2)
 
-    -- On destroy: shuffle up to opponent's hand size of Salamangreats into Deck
+    -- If destroyed: shuffle up to opponent’s hand size of Salamangreats into Deck
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
     e3:SetCategory(CATEGORY_TODECK)
@@ -39,7 +38,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0x119}
 
--- Material: FIRE Effect monsters only
+-- Link Materials must be FIRE Effect
 function s.matcheck(g,lc,sumtype,tp)
     return g:FilterCount(Card.IsType,nil,TYPE_EFFECT)==#g
 end
@@ -49,19 +48,10 @@ function s.battletarget(e,c)
     return e:GetHandler():GetLinkedGroup():IsContains(c)
 end
 
--- Reincarnation: move self, bounce column, optionally bounce Salamangreat
+-- Main Effect: Move → bounce others in column → optional bounce Salamangreat
 function s.move_bounce(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if not c:IsRelateToEffect(e) or not c:IsControler(tp) or not c:IsLocation(LOCATION_MZONE) then return end
-
-    -- Select zone
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOZONE)
-    local zone=Duel.SelectDisableField(tp,1,LOCATION_MZONE,0,~(1<<c:GetSequence()))
-    if zone==0 then return end
-    local seq=math.log(zone,2)
-
-    -- Move the card
-    if Duel.MoveSequence(c,seq)==0 then return end
+    if not aux.seqmovop(e,tp,eg,ep,ev,re,r,rp) then return end -- Move using safe helper
 
     Duel.BreakEffect()
 
@@ -71,7 +61,7 @@ function s.move_bounce(e,tp,eg,ep,ev,re,r,rp)
         Duel.SendtoHand(colgrp,nil,REASON_EFFECT)
     end
 
-    -- Optional: bounce a "Salamangreat" monster you control
+    -- Optional: bounce 1 "Salamangreat" monster you control
     local g=Duel.GetMatchingGroup(function(tc)
         return tc:IsSetCard(0x119) and tc:IsAbleToHand()
     end,tp,LOCATION_MZONE,0,nil)
@@ -82,7 +72,7 @@ function s.move_bounce(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Destruction: shuffle Salamangreats into Deck
+-- Shuffle "Salamangreat" cards (up to hand size of opponent)
 function s.shfilter(c)
     return c:IsSetCard(0x119) and c:IsAbleToDeck() and (c:IsLocation(LOCATION_GRAVE) or c:IsFaceup())
 end
