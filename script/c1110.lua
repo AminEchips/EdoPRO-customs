@@ -1,6 +1,7 @@
 --Salamangreat Hare
 local s,id=GetID()
 function s.initial_effect(c)
+    -- Link Summon
     c:EnableReviveLimit()
     Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsAttribute,ATTRIBUTE_FIRE),2,2,s.matcheck)
 
@@ -13,77 +14,74 @@ function s.initial_effect(c)
     e1:SetValue(s.battletarget)
     c:RegisterEffect(e1)
 
-    -- Reincarnation: Move & Bounce
+    -- Move to an unused adjacent zone (only if Reincarnation Summoned)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,0))
     e2:SetType(EFFECT_TYPE_IGNITION)
     e2:SetRange(LOCATION_MZONE)
     e2:SetCountLimit(1,{id,0})
     e2:SetCondition(function(e) return e:GetHandler():IsReincarnationSummoned() end)
-    e2:SetTarget(s.movtg)
-    e2:SetOperation(s.movop)
+    e2:SetCondition(aux.seqmovcon)
+    e2:SetOperation(aux.seqmovop)
     c:RegisterEffect(e2)
 
-    -- If destroyed: Shuffle "Salamangreat" cards (GY/banished) up to opp hand count
+    -- EVENT_MOVE: Return all other monsters in same column + optionally 1 Salamangreat
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,1))
-    e3:SetCategory(CATEGORY_TODECK)
-    e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e3:SetProperty(EFFECT_FLAG_DELAY)
-    e3:SetCode(EVENT_DESTROYED)
+    e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
+    e3:SetCode(EVENT_MOVE)
     e3:SetCountLimit(1,{id,1})
-    e3:SetCondition(function(e) return e:GetHandler():IsReason(REASON_BATTLE+REASON_EFFECT) end)
-    e3:SetTarget(s.shtg)
-    e3:SetOperation(s.shop)
+    e3:SetOperation(s.colop)
     c:RegisterEffect(e3)
+
+    -- On destroy: shuffle up to opponent’s hand count of Salamangreats into Deck
+    local e4=Effect.CreateEffect(c)
+    e4:SetDescription(aux.Stringid(id,2))
+    e4:SetCategory(CATEGORY_TODECK)
+    e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+    e4:SetProperty(EFFECT_FLAG_DELAY)
+    e4:SetCode(EVENT_DESTROYED)
+    e4:SetCountLimit(1,{id,2})
+    e4:SetCondition(function(e) return e:GetHandler():IsReason(REASON_BATTLE+REASON_EFFECT) end)
+    e4:SetTarget(s.shtg)
+    e4:SetOperation(s.shop)
+    c:RegisterEffect(e4)
 end
 s.listed_series={0x119}
 
--- Material must be 2 FIRE Effect monsters
+-- Only FIRE Effect monsters
 function s.matcheck(g,lc,sumtype,tp)
     return g:FilterCount(Card.IsType,nil,TYPE_EFFECT)==#g
 end
 
--- Monsters pointed to by this card cannot be attacked
+-- Protection: monsters Hare points to
 function s.battletarget(e,c)
     return e:GetHandler():GetLinkedGroup():IsContains(c)
 end
 
--- Move this card to another MMZ
-function s.movtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then
-        local c=e:GetHandler()
-        for seq=0,4 do
-            if Duel.CheckLocation(tp,LOCATION_MZONE,seq) and Duel.GetSequencePosition(tp,c)~=seq then
-                return true
-            end
-        end
-        return false
-    end
-end
-
-function s.movop(e,tp,eg,ep,ev,re,r,rp)
+-- Column-based bounce on EVENT_MOVE
+function s.colop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOZONE)
-    local zone=Duel.SelectDisableField(tp,1,LOCATION_MZONE,0,0)
-    local seq=math.log(zone,2)
-    if Duel.MoveToZone(c,zone,0,0) then
-        -- Return all other monsters in the same column
-        local colGroup=c:GetColumnGroup():Filter(aux.ExceptThisCard,nil)
-        if #colGroup>0 then
-            Duel.SendtoHand(colGroup,nil,REASON_EFFECT)
-        end
-        -- Optional: Return 1 "Salamangreat" you control
-        local g=Duel.GetMatchingGroup(function(c) return c:IsSetCard(0x119) and c:IsAbleToHand() end,tp,LOCATION_MZONE,0,nil)
-        if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-            Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-            local sg=g:Select(tp,1,1,nil)
-            Duel.SendtoHand(sg,nil,REASON_EFFECT)
-        end
+    if not c:IsRelateToEffect(e) or not c:IsLocation(LOCATION_MZONE) then return end
+
+    -- Return other monsters in same column
+    local colgrp=c:GetColumnGroup():Filter(aux.ExceptThisCard,nil)
+    if #colgrp>0 then
+        Duel.SendtoHand(colgrp,nil,REASON_EFFECT)
+    end
+
+    -- Optional: return 1 Salamangreat you control
+    local g=Duel.GetMatchingGroup(function(c)
+        return c:IsSetCard(0x119) and c:IsAbleToHand()
+    end,tp,LOCATION_MZONE,0,nil)
+    if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+        Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
+        local sg=g:Select(tp,1,1,nil)
+        Duel.SendtoHand(sg,nil,REASON_EFFECT)
     end
 end
 
--- Shuffle up to opponent's hand count of "Salamangreat" from GY/banished
+-- Shuffle effect
 function s.shfilter(c)
     return c:IsSetCard(0x119) and c:IsAbleToDeck() and (c:IsLocation(LOCATION_GRAVE) or c:IsFaceup())
 end
