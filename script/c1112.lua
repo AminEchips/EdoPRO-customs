@@ -4,19 +4,19 @@ function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Link.AddProcedure(c,aux.FilterBoolFunction(Card.IsAttribute,ATTRIBUTE_FIRE),3,99)
 
-	-- Effect ①: On Link Summon - opponent cannot activate effects of face-up cards this turn
+	-- Effect ①: On Link Summon - opponent cannot activate face-up effects this turn (Spell Speed 4)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(0)
 	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e1:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DAMAGE_CAL+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_CANNOT_NEGATE+EFFECT_FLAG_UNCOPYABLE)
+	e1:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_CANNOT_NEGATE+EFFECT_FLAG_UNCOPYABLE)
 	e1:SetCondition(s.actcon)
 	e1:SetOperation(s.actop)
 	e1:SetCountLimit(1,id)
 	c:RegisterEffect(e1)
 
-	-- Effect ②: Shuffle Extra Deck monsters from GY, gain ATK for each FIRE
+	-- Effect ②: Shuffle up to 3 Extra Deck-type monsters from GY, gain 500 ATK per FIRE
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_TODECK+CATEGORY_ATKCHANGE)
@@ -27,7 +27,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.tdop)
 	c:RegisterEffect(e2)
 
-	-- Effect ③: Reincarnated - shuffle 1 card on the field into the Deck (non-targeting)
+	-- Effect ③: Reincarnated - Quick, non-targeting shuffle 1 field card into Deck
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TODECK)
@@ -35,41 +35,45 @@ function s.initial_effect(c)
 	e3:SetCode(EVENT_CHAINING)
 	e3:SetRange(LOCATION_MZONE)
 	e3:SetCountLimit(1,{id,2})
-	e3:SetCondition(function(e,tp,eg,ep,ev,re,r,rp) return e:GetHandler():IsReincarnationSummoned() end)
+	e3:SetCondition(function(e,tp,eg,ep,ev,re,r,rp)
+		return e:GetHandler():IsReincarnationSummoned()
+	end)
 	e3:SetOperation(s.reinop)
 	c:RegisterEffect(e3)
 end
 s.listed_series={0x119}
 
--- Effect ① Condition: Link Summon
+-- Effect ① Condition
 function s.actcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
 
--- Effect ① Operation: Prevent opponent’s face-up cards from activating this turn
+-- Effect ① Operation (Spell Speed 4 + Lock)
 function s.actop(e,tp,eg,ep,ev,re,r,rp)
+	-- Prevent face-up cards' effects this turn
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_CANNOT_ACTIVATE)
 	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
 	e1:SetTargetRange(0,1)
-	e1:SetValue(s.aclimit)
+	e1:SetValue(function(e,re,tp) return re:GetHandler():IsFaceup() end)
 	e1:SetReset(RESET_PHASE+PHASE_END)
 	Duel.RegisterEffect(e1,tp)
-end
-function s.aclimit(e,re,tp)
-	local rc=re:GetHandler()
-	return rc:IsFaceup()
+
+	-- Make this activation Spell Speed 4 (unrespondable)
+	Duel.SetChainLimitTillChainEnd(aux.FALSE)
 end
 
--- Effect ②: Shuffle 1–3 Extra Deck-type monsters from GY, gain 500 ATK per FIRE
+-- Effect ② - Filter for Extra-type monsters
 function s.tdfilter(c)
 	return c:IsType(TYPE_RITUAL+TYPE_FUSION+TYPE_SYNCHRO+TYPE_XYZ+TYPE_LINK) and c:IsAbleToDeck()
 end
+
 function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.tdfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
 end
+
 function s.tdop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.SelectMatchingCard(tp,s.tdfilter,tp,LOCATION_GRAVE,0,1,3,nil)
 	if #g>0 then
@@ -87,7 +91,7 @@ function s.tdop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect ③: Reincarnated - shuffle 1 card (non-targeting)
+-- Effect ③ - Reincarnated Quick Effect (non-targeting shuffle)
 function s.reinop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsAbleToDeck,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
 	if #g==0 then return end
