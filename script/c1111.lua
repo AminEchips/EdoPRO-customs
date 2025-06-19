@@ -18,19 +18,17 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- Quick: Become "Heatleo" by banishing from GY
+	-- Ignition: Become Heatleo for this turn
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetType(EFFECT_TYPE_QUICK_O)
-	e2:SetCode(EVENT_FREE_CHAIN)
+	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1,{id,1})
-	e2:SetHintTiming(0,TIMING_MAIN_END)
 	e2:SetCost(s.namecost)
 	e2:SetOperation(s.nameop)
 	c:RegisterEffect(e2)
 
-	-- Reincarnation effect: shuffle opponent's monster
+	-- Reincarnated: Shuffle 1 opponent's monster
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TODECK)
@@ -46,7 +44,7 @@ end
 s.listed_names={41463181,id} -- Heatleo, Leoblaze
 s.listed_series={0x119}
 
--- Link Materials: 2+ FIRE Effect OR 1 Link-3 Heatleo
+-- Link Materials: 2+ FIRE Effect OR Link-3 Heatleo
 function s.matfilter(c,scard,sumtype,tp)
 	return c:IsAttribute(ATTRIBUTE_FIRE) and c:IsType(TYPE_EFFECT)
 end
@@ -54,7 +52,7 @@ function s.lcheck(g,lc,sumtype,tp)
 	return #g>2 or g:IsExists(Card.IsCode,1,nil,41463181)
 end
 
--- Effect 1: Add 1 FIRE Cyberse on summon
+-- Effect ①: Add FIRE Cyberse on Link Summon
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_LINK)
 end
@@ -73,10 +71,9 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 2: Name becomes Heatleo
+-- Effect ②: Change name to Heatleo
 function s.namecost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsAbleToRemoveAsCost,tp,LOCATION_GRAVE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g=Duel.SelectMatchingCard(tp,Card.IsAbleToRemoveAsCost,tp,LOCATION_GRAVE,0,1,1,nil)
 	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
@@ -90,7 +87,7 @@ function s.nameop(e,tp,eg,ep,ev,re,r,rp)
 	c:RegisterEffect(e1)
 end
 
--- Effect 3: Reincarnated shuffle
+-- Effect ③: Reincarnated → Target & shuffle monster
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsAbleToDeck() end
 	if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToDeck,tp,0,LOCATION_MZONE,1,nil) end
