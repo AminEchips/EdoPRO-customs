@@ -59,7 +59,7 @@ end
 
 -- Effect 2: Reveal as cost, change name
 function s.namecostfilter(c)
-    return c:IsSetCard(0x119) and c:IsType(TYPE_MONSTER) and not c:IsPublic()
+    return c:IsSetCard(0x119) and c:IsType(TYPE_MONSTER) and not c:IsPublic() and not c:IsType(TYPE_LINK)
 end
 function s.namecost(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.namecostfilter,tp,LOCATION_HAND+LOCATION_EXTRA,0,1,nil) end
