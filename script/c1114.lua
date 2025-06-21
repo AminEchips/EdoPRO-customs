@@ -62,8 +62,12 @@ end
 function s.matfilter(c)
 	return c:IsAttribute(ATTRIBUTE_FIRE) and (c:IsLocation(LOCATION_HAND) or c:IsFaceup()) and c:IsReleasable()
 end
+function s.getRitValue(c)
+	if c:IsType(TYPE_LINK) then return c:GetLink() end
+	return c:GetLevel()
+end
 function s.checkmat(g,lv)
-	return g:GetSum(function(c) return (c:IsType(TYPE_LINK) and c:GetLink()) or c:GetLevel() end) >= lv
+	return g:GetSum(s.getRitValue) >= lv
 end
 function s.rittg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_HAND,0,1,nil,e,tp) end
