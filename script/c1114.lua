@@ -39,7 +39,7 @@ end
 
 --Effect 1: Optional search
 function s.thfilter(c)
-	return c:IsSetCard(0x119) and c:IsType(TYPE_MONSTER) and c:IsType(TYPE_RITUAL) and c:IsAbleToHand()
+	return c:IsSetCard(0x119) and c:IsType(TYPE_RITUAL) and c:IsAbleToHand()
 end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
@@ -63,15 +63,15 @@ end
 function s.matfilter(c)
 	return c:IsAttribute(ATTRIBUTE_FIRE) and (c:IsLocation(LOCATION_HAND) or c:IsFaceup())
 end
-function s.rittg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_HAND,0,1,nil,e,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
-end
-function s.CheckRitualMaterial(g,level)
+function s.checkmat(g,level)
 	return g:GetSum(function(c)
 		if c:IsType(TYPE_LINK) then return c:GetLink()
 		else return c:GetLevel() end
-	end)>=level
+	end) == level
+end
+function s.rittg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_HAND,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_HAND)
 end
 function s.ritop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(s.ritfilter,tp,LOCATION_HAND,0,nil,e,tp)
@@ -79,16 +79,13 @@ function s.ritop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local rc=g:Select(tp,1,1,nil):GetFirst()
 	if not rc then return end
-	local mat=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil)
 	local l=rc:GetLevel()
+	local mat=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	aux.GCheckAdditional=aux.RitualCheckAdditional(rc,l,"Equal")
-	local selected=mat:SelectSubGroup(tp,function(g) return s.CheckRitualMaterial(g,l) end,false,1,#mat)
-	aux.GCheckAdditional=nil
-	if not selected then return end
-	rc:SetMaterial(selected)
-	Duel.Release(selected,REASON_EFFECT+REASON_MATERIAL+REASON_RITUAL)
-	Duel.BreakEffect()
+	local sg=mat:SelectSubGroup(tp,function(g) return s.checkmat(g,l) end,false,1,#mat)
+	if not sg then return end
+	rc:SetMaterial(sg)
+	Duel.Release(sg,REASON_EFFECT+REASON_MATERIAL+REASON_RITUAL)
 	Duel.SpecialSummon(rc,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP)
 	rc:CompleteProcedure()
 end
