@@ -82,7 +82,6 @@ function s.ritop(e,tp,eg,ep,ev,re,r,rp)
 	if not sg then return end
 	rc:SetMaterial(sg)
 	Duel.Release(sg,REASON_EFFECT+REASON_MATERIAL+REASON_RITUAL)
-	Duel.BreakEffect()
 	Duel.SpecialSummon(rc,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP)
 	rc:CompleteProcedure()
 end
