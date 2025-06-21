@@ -57,13 +57,13 @@ function s.ritcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SendtoGrave(e:GetHandler(),REASON_COST)
 end
 function s.ritfilter(c,e,tp)
-	return c:IsType(TYPE_RITUAL) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_RITUAL,tp,false,true)
+	return c:IsSetCard(0x119) and c:IsType(TYPE_RITUAL) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_RITUAL,tp,false,true)
 end
 function s.matfilter(c)
 	return c:IsAttribute(ATTRIBUTE_FIRE) and (c:IsLocation(LOCATION_HAND) or c:IsFaceup()) and c:IsReleasable()
 end
 function s.checkmat(g,lv)
-	return g:GetSum(function(c) return c:IsType(TYPE_LINK) and c:GetLink() or c:GetLevel() end) >= lv
+	return g:GetSum(function(c) return (c:IsType(TYPE_LINK) and c:GetLink()) or c:GetLevel() end) >= lv
 end
 function s.rittg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.ritfilter,tp,LOCATION_HAND,0,1,nil,e,tp) end
@@ -78,7 +78,7 @@ function s.ritop(e,tp,eg,ep,ev,re,r,rp)
 	local mat=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil)
 	local lv=rc:GetLevel()
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local sg=aux.SelectUnselectGroup(mat,e,tp,1,#mat,function(g) return s.checkmat(g,lv) end,1,tp,HINTMSG_RELEASE,nil,true)
+	local sg=aux.SelectUnselectGroup(mat,e,tp,1,#mat,function(g) return s.checkmat(g,lv) end,1,tp,HINTMSG_RELEASE)
 	if not sg then return end
 	rc:SetMaterial(sg)
 	Duel.Release(sg,REASON_EFFECT+REASON_MATERIAL+REASON_RITUAL)
