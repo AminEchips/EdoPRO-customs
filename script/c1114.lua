@@ -76,19 +76,23 @@ function s.ritop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local rc=g:Select(tp,1,1,nil):GetFirst()
 	if not rc then return end
+
 	local lv=rc:GetLevel()
 	local mat=Duel.GetMatchingGroup(s.matfilter,tp,LOCATION_HAND+LOCATION_MZONE,0,nil)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local sg=aux.SelectUnselectGroup(mat,e,tp,1,#mat,function(g)
+
+	-- Generate all combinations of tribute candidates
+	local subg=aux.SelectUnselectGroup(mat,e,tp,1,#mat,function(g)
 		return g:GetSum(function(c) return c:IsType(TYPE_LINK) and c:GetLink() or c:GetLevel() end)==lv
-	end,1,tp,HINTMSG_RELEASE,nil,true)
-	if not sg then return end
-	rc:SetMaterial(sg)
-	Duel.Release(sg,REASON_EFFECT+REASON_MATERIAL+REASON_RITUAL)
+	end,1,tp,HINTMSG_RELEASE,nil,nil,true)
+
+	if not subg then return end
+	rc:SetMaterial(subg)
+	Duel.Release(subg,REASON_EFFECT+REASON_MATERIAL+REASON_RITUAL)
 	Duel.BreakEffect()
 	Duel.SpecialSummon(rc,SUMMON_TYPE_RITUAL,tp,tp,false,true,POS_FACEUP)
 	rc:CompleteProcedure()
 end
+
 
 
 --Effect 3: Special Summon if Link leaves field by opponent
