@@ -66,7 +66,7 @@ function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return (e:GetHandler():IsPreviousLocation(LOCATION_DECK) or e:GetHandler():IsPreviousLocation(LOCATION_HAND))
 end
 function s.setfilter(c)
-	return c:IsSetCard(0x119) and (c:IsLocation(LOCATION_MZONE) or c:IsFaceup())
+	return c:IsSetCard(0x119) and c:IsType(TYPE_MONSTER) and (c:IsLocation(LOCATION_MZONE) or c:IsFaceup())
 end
 function s.shuffilter(c,code)
 	return c:IsAbleToDeck() and c:IsCode(code)
