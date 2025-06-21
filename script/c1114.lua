@@ -39,7 +39,7 @@ end
 
 --Effect 1: Optional search
 function s.thfilter(c)
-	return c:IsSetCard(0x119) and c:IsType(TYPE_RITUAL) and c:IsAbleToHand()
+	return c:IsSetCard(0x119) and c:IsType(TYPE_MONSTER) and c:IsType(TYPE_RITUAL) and c:IsAbleToHand()
 end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,0)) then
