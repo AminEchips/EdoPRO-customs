@@ -22,11 +22,11 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_GRAVE)
 	e2:SetCountLimit(1,id)
-	e2:SetCost(aux.bfgcost)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
 	e2:SetTarget(s.thtg)
 	e2:SetOperation(s.thop)
-	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetCost(s.thcost)
 	c:RegisterEffect(e2)
 end
 
@@ -82,6 +82,13 @@ end
 
 function s.thfilter(c)
 	return c:IsAbleToHand() and c:IsType(TYPE_SPELL+TYPE_TRAP) and (c:IsSetCard(0x119) or c:IsSetCard(0x190))
+end
+
+function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return aux.bfgcost(e,tp,eg,ep,ev,re,r,rp,0) and e:GetHandler():IsAbleToRemoveAsCost() end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+	local g=Group.FromCards(e:GetHandler())
+	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
