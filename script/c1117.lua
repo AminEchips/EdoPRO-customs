@@ -80,7 +80,7 @@ function s.retop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.thfilter(c)
-	return c:IsAbleToHand() and (c:IsSetCard(0x119) or c:IsCode(5043010)) and c:IsType(TYPE_SPELL+TYPE_TRAP)
+	return c:IsAbleToHand() and (c:IsSetCard(0x119) or c:IsSetCard(0x190)) and c:IsType(TYPE_SPELL+TYPE_TRAP)
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
