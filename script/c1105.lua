@@ -14,7 +14,6 @@ function s.initial_effect(c)
 	e1:SetProperty(EFFECT_FLAG_DELAY)
 	e1:SetTarget(s.placetg)
 	e1:SetOperation(s.placeop)
-	e2:SetCountLimit(1,id)
 	c:RegisterEffect(e1)
 
 	-- Effect 2: Salvage any card sent to GY while Ritual Summoned and Reincarnated
