@@ -1,6 +1,7 @@
 --Salamangreat Firewall
 --Scripted by Meuh
 local s,id=GetID()
+
 function s.initial_effect(c)
 	--Activate: Banish opponent's monster, return or Special Summon later
 	local e1=Effect.CreateEffect(c)
@@ -58,6 +59,7 @@ function s.retcon(e,tp,eg,ep,ev,re,r,rp)
 	local tc=e:GetLabelObject()
 	return tc and tc:GetFlagEffect(id)>0
 end
+
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetLabelObject()
 	if not c then return end
@@ -73,19 +75,21 @@ function s.retop(e,tp,eg,ep,ev,re,r,rp)
 			local e2=e1:Clone()
 			e2:SetCode(EFFECT_DISABLE_EFFECT)
 			c:RegisterEffect(e2)
+		else
+			Duel.ReturnToField(c)
 		end
-	else
-		Duel.ReturnToField(c)
 	end
 end
 
 function s.thfilter(c)
-	return c:IsAbleToHand() and (c:IsSetCard(0x119) or c:IsSetCard(0x190)) and c:IsType(TYPE_SPELL+TYPE_TRAP)
+	return c:IsAbleToHand() and c:IsType(TYPE_SPELL+TYPE_TRAP) and (c:IsSetCard(0x119) or c:IsSetCard(0x190))
 end
+
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_GRAVE)
 end
+
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_GRAVE,0,1,1,nil)
