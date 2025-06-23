@@ -83,7 +83,7 @@ end
 
 --Special Summon this card from hand if you control a Level 4 monster (Doggy Diver logic)
 function s.cfilter(c)
-	return c:IsFaceup() and c:GetLevel()==4
+	return c:IsFaceup() and (c:GetLevel()==4 or c:GetRank()==4))
 end
 function s.spcon(e,c)
 	if c==nil then return true end
