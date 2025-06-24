@@ -1,4 +1,4 @@
-This repo contains Chips's custom cards for EdoPro
+This repo contains Chips's custom cards for EDOPro
 
 Includes:
 - Elemental HERO
