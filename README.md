@@ -26,3 +26,5 @@ Includes:
 - Supreme King Z-Arc/Dragon/Gate
 - Raidraptor
 - Phantom Knights
+- Salamangreat
+- Fire Fist
