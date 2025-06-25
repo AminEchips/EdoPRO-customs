@@ -39,7 +39,7 @@ end
 
 -- Check if a Fire Fist monster effect was activated
 function s.cfilter(c,tp)
-	return c:IsSetCard(0x79) and c:IsControler(tp)
+	return c:IsSetCard(0x79)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return re and s.cfilter(re:GetHandler(),tp) and not (Duel.GetCurrentPhase()==PHASE_DAMAGE and not Duel.IsDamageCalculated())
