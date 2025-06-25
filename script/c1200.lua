@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	--Change Level
+	--Change Level when Special Summoned by FIRE monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_LVCHANGE)
@@ -26,7 +26,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.lvop)
 	c:RegisterEffect(e2)
 
-	--Banish instead of destruction
+	--Banish to protect "Fire Fist" monsters from battle destruction
 	local e3=Effect.CreateEffect(c)
 	e3:SetType(EFFECT_TYPE_FIELD)
 	e3:SetCode(EFFECT_DESTROY_REPLACE)
@@ -37,12 +37,11 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Check if a Fire Fist monster effect was activated
-function s.cfilter(c,tp)
-	return c:IsSetCard(0x79)
-end
+-- Check if a "Fire Fist" monster effect was activated (not during Damage Calculation)
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return re and s.cfilter(re:GetHandler(),tp) and not (Duel.GetCurrentPhase()==PHASE_DAMAGE and not Duel.IsDamageCalculated())
+	local rc=re:GetHandler()
+	return rc:IsSetCard(0x79) and rc:IsType(TYPE_MONSTER) and ep==tp
+		and not (Duel.GetCurrentPhase()==PHASE_DAMAGE and not Duel.IsDamageCalculated())
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
@@ -56,7 +55,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Check if Special Summoned by FIRE monster's effect
+-- Level change on Special Summon by FIRE monster's effect
 function s.lvcon(e,tp,eg,ep,ev,re,r,rp)
 	return re and re:GetHandler():IsAttribute(ATTRIBUTE_FIRE)
 end
@@ -85,7 +84,7 @@ function s.lvop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Replace destruction with banish from GY
+-- Banish self from GY to prevent battle destruction
 function s.repfilter(c,tp)
 	return c:IsFaceup() and c:IsSetCard(0x79) and c:IsControler(tp) and c:IsOnField() and c:IsReason(REASON_BATTLE)
 end
