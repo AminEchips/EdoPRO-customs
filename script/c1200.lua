@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	--Change Level when Special Summoned by FIRE monster
+	--Change Level when Special Summoned by FIRE monster effect
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_LVCHANGE)
@@ -37,10 +37,10 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Check if a "Fire Fist" monster effect was activated (not during Damage Calculation)
+--Special Summon Condition: a "Fire Fist" monster effect was activated
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	local rc=re:GetHandler()
-	return rc:IsSetCard(0x79) and rc:IsType(TYPE_MONSTER) and ep==tp
+	return rc and rc:IsSetCard(0x79) and rc:IsType(TYPE_MONSTER)
 		and not (Duel.GetCurrentPhase()==PHASE_DAMAGE and not Duel.IsDamageCalculated())
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
@@ -55,7 +55,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Level change on Special Summon by FIRE monster's effect
+--Check if Special Summoned by a FIRE monster's effect
 function s.lvcon(e,tp,eg,ep,ev,re,r,rp)
 	return re and re:GetHandler():IsAttribute(ATTRIBUTE_FIRE)
 end
@@ -84,7 +84,7 @@ function s.lvop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Banish self from GY to prevent battle destruction
+--Banish from GY to prevent battle destruction of "Fire Fist" monster
 function s.repfilter(c,tp)
 	return c:IsFaceup() and c:IsSetCard(0x79) and c:IsControler(tp) and c:IsOnField() and c:IsReason(REASON_BATTLE)
 end
