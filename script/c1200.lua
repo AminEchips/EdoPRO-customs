@@ -42,7 +42,7 @@ function s.cfilter(c,tp)
 	return c:IsSetCard(0x79) and c:IsControler(tp)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return re and s.cfilter(re:GetHandler(),tp) and not Duel.IsDamageStep()
+	return re and s.cfilter(re:GetHandler(),tp) and not (Duel.GetCurrentPhase()==PHASE_DAMAGE and not Duel.IsDamageCalculated())
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
