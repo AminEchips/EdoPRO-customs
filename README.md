@@ -1,10 +1,8 @@
 This repo contains Chips's custom cards for EDOPro
 
 Includes:
-- Elemental HERO
-- Evil HERO
-- Neos
-- Neo-Spacian
+- HERO
+- Neos/Neo-Spacian
 - Darklord
 - Starry Knight
 - Altergeist
@@ -23,8 +21,9 @@ Includes:
 - Odd-Eyes
 - Performapal
 - "Magician" Pendulum
-- Supreme King Z-Arc/Dragon/Gate
+- Supreme King Z-Arc(including Supreme King Dragon/Gate)
 - Raidraptor
 - Phantom Knights
 - Salamangreat
-- Fire Fist
+- Nordic (including Ascendant/Beast/Alfar)
+- Aesir
