@@ -9,7 +9,7 @@ Includes:
 - Blackwing
 - Noble/Infernoble Knight/Noble Arms
 - Branded
-- Albaz
+- Fallen of Albaz
 - Dogmatika
 - Despia
 - Swordsoul
