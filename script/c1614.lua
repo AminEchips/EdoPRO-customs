@@ -1,6 +1,10 @@
 --Brunhilde of the Nordic Valkyries
 local s,id=GetID()
 function s.initial_effect(c)
+	-- Synchro Summon procedure
+	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x3042),1,1,Synchro.NonTuner(nil),1,99)
+	c:EnableReviveLimit()
+	
 	--Draw + Add Gotterdammerung if Spell was activated
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
