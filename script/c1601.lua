@@ -64,7 +64,7 @@ function s.costfilter(c)
     return c:IsSetCard(0x42) and c:IsAbleToGraveAsCost()
 end
 function s.spfilter(c,e,tp)
-    return c:IsLevel(2) and c:IsSetCard(0x42) and c:IsType(TYPE_MONSTER)
+    return c:IsLevel(2) and c:IsSetCard(0x3042) and c:IsType(TYPE_MONSTER)
         and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
