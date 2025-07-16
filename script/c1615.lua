@@ -34,7 +34,7 @@ end
 s.listed_series={0x5042,0x42}
 
 function s.thfilter(c,tp)
-    return (c:IsControler(1-tp) or (c:IsSetCard(0x42) and c:IsLocation(LOCATION_GRAVE))) and c:IsAbleToHand()
+    return (c:IsControler(1-tp) or (c:IsSetCard(0x42) and c:IsType(MONSTER) and c:IsLocation(LOCATION_GRAVE))) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsOnField() or (chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp)) end
