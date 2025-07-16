@@ -62,11 +62,12 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local g=Duel.GetMatchingGroup(s.atkfilter,tp,0,LOCATION_MZONE,nil)
 	for tc in g:Iter() do
-		if tc:IsFaceup() and tc:IsRelateToEffect(e) and tc:GetAttack()>0 then
+		if tc:IsFaceup() and tc:GetAttack()>0 then
+			local atk=tc:GetAttack()
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetCode(EFFECT_SET_ATTACK_FINAL)
-			e1:SetValue(0)
+			e1:SetCode(EFFECT_UPDATE_ATTACK)
+			e1:SetValue(-atk)
 			e1:SetReset(RESETS_STANDARD_PHASE_END)
 			tc:RegisterEffect(e1)
 			-- Optional send to GY
@@ -77,6 +78,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
+
 
 -- GY revival by banishing another Aesir
 function s.spcfilter(c)
