@@ -1,7 +1,7 @@
 --Dvallin of the Nordic Alfar
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Special Summon from hand + optionally banish from Deck
+	-- Special Summon from hand and optionally banish 1 "Nordic"
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -13,95 +13,99 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	-- Return banished Level 5+ monster and optionally destroy
+	-- Return 1 banished Level 5+ monster and optionally destroy
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_DESTROY)
+	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK+CATEGORY_DESTROY)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetProperty(EFFECT_FLAG_DELAY + EFFECT_FLAG_CARD_TARGET)
-	e2:SetCode(EVENT_REMOVE)
+	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+	e2:SetCode(EVENT_TO_GRAVE)
 	e2:SetCountLimit(1,{id,1})
-	e2:SetCost(s.retcost)
-	e2:SetTarget(s.rettg)
-	e2:SetOperation(s.rmop)
+	e2:SetCondition(s.thcon1)
+	e2:SetTarget(s.thtg)
+	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
 	local e3=e2:Clone()
-	e3:SetCode(EVENT_BE_MATERIAL)
-	e3:SetCondition(s.matcon)
+	e3:SetCode(EVENT_REMOVE)
+	e3:SetCondition(s.thcon2)
 	c:RegisterEffect(e3)
 end
 
--- Control no monsters or only "Nordic" monsters
+-- Special Summon condition
 function s.cfilter(c)
-	return not c:IsSetCard(0x42)
+	return c:IsFaceup() and not c:IsSetCard(0x42)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==0
 		or not Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 
--- Effect 1: Special Summon + optional banish from Deck
+-- Special Summon + optional banish
+function s.spfilter(c,e,tp)
+	return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+end
+function s.banfilter(c)
+	return c:IsSetCard(0x42) and c:IsAbleToRemove()
+end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
+		and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if c:IsRelateToEffect(e) and Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		local g=Duel.GetMatchingGroup(Card.IsAbleToRemove,tp,LOCATION_DECK,0,nil)
-		if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-			local rg=g:Select(tp,1,1,nil)
-			Duel.Remove(rg,POS_FACEUP,REASON_EFFECT)
+	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
+	-- Optional banish
+	if Duel.IsExistingMatchingCard(s.banfilter,tp,LOCATION_DECK,0,1,nil)
+		and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+		local g=Duel.SelectMatchingCard(tp,s.banfilter,tp,LOCATION_DECK,0,1,1,nil)
+		if #g>0 then
+			Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
 		end
 	end
 end
 
--- Effect 2 & 3: Synchro condition
-function s.matcon(e,tp,eg,ep,ev,re,r,rp)
-	local rc=e:GetHandler():GetReasonCard()
-	return r & REASON_SYNCHRO ~= 0 and rc:IsType(TYPE_SYNCHRO)
+-- Trigger conditions
+function s.thcon1(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	return c:IsReason(REASON_SYNCHRO)
+end
+function s.thcon2(e,tp,eg,ep,ev,re,r,rp)
+	return true -- any banishment triggers this
 end
 
--- Cost: select banished Level 5+ monster
-function s.retfilter(c)
+-- Target for return
+function s.thfilter(c)
 	return c:IsFaceup() and c:IsLevelAbove(5) and c:IsAbleToHand()
+		or (c:IsLocation(LOCATION_REMOVED) and c:IsFaceup() and c:IsLevelAbove(5) and c:IsAbleToExtra())
 end
-function s.retcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingTarget(s.retfilter,tp,LOCATION_REMOVED,0,1,nil) end
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsLocation(LOCATION_REMOVED) and s.thfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_REMOVED,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-	local g=Duel.SelectTarget(tp,s.retfilter,tp,LOCATION_REMOVED,0,1,1,nil)
-	e:SetLabelObject(g:GetFirst())
+	local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_REMOVED,0,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND+CATEGORY_TODECK,g,1,0,0)
 end
 
--- Targeting confirmation
-function s.rettg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local tc=e:GetLabelObject()
-	if chk==0 then return tc and tc:IsAbleToHand() end
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,tc,1,0,0)
-	Duel.SetPossibleOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_MZONE)
-end
-
--- Return to hand + optional destruction
-function s.rmop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=e:GetLabelObject()
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
 	local lv=tc:GetLevel()
-	if Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 then
-		Duel.ConfirmCards(1-tp,tc)
+	local success=false
+	if tc:IsType(TYPE_PENDULUM) and tc:IsLocation(LOCATION_REMOVED) and tc:IsAbleToExtra() then
+		success=Duel.SendtoExtraP(tc,tp,REASON_EFFECT)>0
+	else
+		success=Duel.SendtoHand(tc,nil,REASON_EFFECT)>0
 	end
-
-	-- If used as Synchro material: allow destroy
-	local rc=e:GetHandler():GetReasonCard()
-	if rc and rc:IsType(TYPE_SYNCHRO) and e:GetHandler():IsReason(REASON_MATERIAL) then
-		local dg=Duel.GetMatchingGroup(function(c) return c:IsFaceup() and c:IsLevel(lv) end,tp,0,LOCATION_MZONE,nil)
-		if #dg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-			local sg=dg:Select(tp,1,1,nil)
-			Duel.Destroy(sg,REASON_EFFECT)
+	if success and tc:IsLocation(LOCATION_HAND+LOCATION_EXTRA) and Duel.IsExistingMatchingCard(Card.IsFaceup,tp,0,LOCATION_MZONE,1,nil) 
+		and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+		local dg=Duel.SelectMatchingCard(tp,function(c)
+			return c:IsFaceup() and c:IsLevel(tc:GetLevel())
+		end,tp,0,LOCATION_MZONE,1,1,nil)
+		if #dg>0 then
+			Duel.Destroy(dg,REASON_EFFECT)
 		end
 	end
 end
