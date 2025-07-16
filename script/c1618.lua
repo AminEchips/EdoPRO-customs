@@ -65,21 +65,23 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	local sg=g:Select(tp,1,1,nil)
 	local tc=sg:GetFirst()
-	if not tc or not tc:IsFaceup() then return end
-	local atk=tc:GetAttack()
-	if atk>0 then
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_UPDATE_ATTACK)
-		e1:SetValue(-atk)
-		e1:SetReset(RESETS_STANDARD_PHASE_END)
-		tc:RegisterEffect(e1)
-	end
+	if not tc or not tc:IsFaceup() or not tc:IsRelateToEffect(e) then return end
+
+	-- Permanently set ATK to 0
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_SET_ATTACK_FINAL)
+	e1:SetValue(0)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE) -- PERMANENT
+	tc:RegisterEffect(e1)
+
+	-- Optional send to GY if Spellcaster was used
 	if c:GetFlagEffect(id)>0 and tc:IsAbleToGrave() and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
 		Duel.BreakEffect()
 		Duel.SendtoGrave(tc,REASON_EFFECT)
 	end
 end
+
 
 
 
