@@ -3,15 +3,15 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x42),1,1,Synchro.NonTuner(nil),1,99)
-	
-	-- Double Attack if Synchro Summoned using a "Nordic" Synchro
+
+	-- Double attack if Synchro Summoned using a "Nordic" Synchro
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_EXTRA_ATTACK)
 	e1:SetCondition(s.atkcon)
 	e1:SetValue(1)
 	c:RegisterEffect(e1)
-	
+
 	-- Inflict damage + optional destroy all
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
@@ -24,7 +24,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.damop)
 	c:RegisterEffect(e2)
 
-	-- Revive "Nordic" or "Aesir" monster
+	-- Revive a different "Nordic" or "Aesir" monster
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -38,7 +38,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Double attack condition
+-- Check if Synchro Summoned using a "Nordic" Synchro
 function s.matfilter(c)
 	return c:IsSetCard(0x42) and c:IsType(TYPE_SYNCHRO)
 end
@@ -47,11 +47,11 @@ function s.atkcon(e)
 	return c:IsSummonType(SUMMON_TYPE_SYNCHRO) and c:GetMaterial():IsExists(s.matfilter,1,nil)
 end
 
--- Damage and destroy
+-- Burn + optional destroy all
 function s.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local bc=e:GetHandler():GetBattleTarget()
 	if chk==0 then return bc and bc:IsMonster() end
-	local val=math.max(bc:GetBaseAttack(),bc:GetBaseDefense())
+	local val=math.max(bc:GetAttack(),bc:GetDefense())
 	if val<0 then val=0 end
 	Duel.SetTargetParam(val)
 	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,val)
@@ -60,7 +60,7 @@ end
 function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	local bc=e:GetHandler():GetBattleTarget()
 	if not bc or not bc:IsRelateToBattle() then return end
-	local val=math.max(bc:GetBaseAttack(),bc:GetBaseDefense())
+	local val=math.max(bc:GetAttack(),bc:GetDefense())
 	if val<0 then val=0 end
 	if Duel.Damage(1-tp,val,REASON_EFFECT)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 		local g=Duel.GetMatchingGroup(nil,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
@@ -71,10 +71,9 @@ function s.damop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Revival on destruction
+-- GY condition
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsReason(REASON_DESTROY)
+	return e:GetHandler():IsReason(REASON_DESTROY)
 end
 function s.spfilter(c,e,tp,id)
 	return (c:IsSetCard(0x42) or c:IsSetCard(0x4b)) and not c:IsCode(id) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
