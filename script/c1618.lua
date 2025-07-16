@@ -5,16 +5,24 @@ function s.initial_effect(c)
 	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x42),1,1,Synchro.NonTuner(nil),2,99)
 	c:EnableReviveLimit()
 
-	--ATK to 0 or send to GY (Quick Effect)
+	-- Flag if a Spellcaster was used for Synchro Summon
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_SINGLE)
+	e0:SetCode(EFFECT_MATERIAL_CHECK)
+	e0:SetValue(s.matcheck)
+	c:RegisterEffect(e0)
+
+	--ATK to 0 + optional send to GY
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_ATKCHANGE + CATEGORY_TOGRAVE)
+	e1:SetCategory(CATEGORY_ATKCHANGE+CATEGORY_TOGRAVE)
 	e1:SetType(EFFECT_TYPE_QUICK_O)
 	e1:SetCode(EVENT_FREE_CHAIN)
 	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1,id)
 	e1:SetHintTiming(0,TIMING_MAIN_END)
+	e1:SetCountLimit(1,id)
 	e1:SetCondition(function(e,tp) return Duel.IsMainPhase() end)
+	e1:SetTarget(s.atktg)
 	e1:SetOperation(s.atkop)
 	c:RegisterEffect(e1)
 
@@ -33,9 +41,20 @@ function s.initial_effect(c)
 end
 s.listed_series={0x42,0x4b}
 
---e1: ATK to 0 or send to GY instead
+-- Store flag if Spellcaster was used
+function s.matcheck(e,c)
+	local g=c:GetMaterial()
+	if g:IsExists(Card.IsRace,1,nil,RACE_SPELLCASTER) then
+		c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD&~RESET_TOFIELD,0,1)
+	end
+end
+
+-- ATK to 0 + optional send
 function s.atkfilter(c)
-	return c:IsFaceup() and c:IsMonster()
+	return c:IsFaceup() and c:IsMonster() and c:GetAttack()>0
+end
+function s.atktg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.atkfilter,tp,0,LOCATION_MZONE,1,nil) end
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
@@ -44,29 +63,26 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=g:GetFirst()
 	if not tc then return end
 
-	local usingSpellcaster=c:IsSummonType(SUMMON_TYPE_SYNCHRO) and c:GetMaterial():IsExists(Card.IsRace,1,nil,RACE_SPELLCASTER)
-	local opt=0
-
-	if usingSpellcaster and tc:IsAbleToGrave() then
-		opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 0 = reduce to 0, 1 = send
-		if opt==1 then
-			if Duel.SendtoGrave(tc,REASON_EFFECT)>0 then return end
-		end
-	end
-
-	-- If not sent, reduce ATK to 0
-	if tc:IsFaceup() and tc:IsRelateToEffect(e) then
+	-- Always reduce ATK to 0
+	if tc:IsFaceup() and tc:IsRelateToEffect(e) and tc:GetAttack()>0 then
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_SET_ATTACK_FINAL)
 		e1:SetValue(0)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
+		e1:SetReset(RESETS_STANDARD_PHASE_END)
 		tc:RegisterEffect(e1)
+	end
+
+	-- If Spellcaster was used, optional send
+	if c:GetFlagEffect(id)>0 and tc:IsAbleToGrave() and tc:IsRelateToEffect(e) then
+		if Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+			Duel.BreakEffect()
+			Duel.SendtoGrave(tc,REASON_EFFECT)
+		end
 	end
 end
 
-
---e2: Special Summon from GY
+-- Special Summon from GY by banishing an Aesir
 function s.spcfilter(c)
 	return c:IsSetCard(0x4b) and c:IsMonster() and c:IsAbleToRemoveAsCost()
 end
