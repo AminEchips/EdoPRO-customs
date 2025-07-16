@@ -45,14 +45,16 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	if not tc then return end
 
 	local usingSpellcaster=c:IsSummonType(SUMMON_TYPE_SYNCHRO) and c:GetMaterial():IsExists(Card.IsRace,1,nil,RACE_SPELLCASTER)
+	local opt=0
+
 	if usingSpellcaster and tc:IsAbleToGrave() then
-		local opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 0 = reduce, 1 = send
+		opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 0 = reduce to 0, 1 = send
 		if opt==1 then
 			if Duel.SendtoGrave(tc,REASON_EFFECT)>0 then return end
 		end
 	end
 
-	-- apply ATK to 0 after resolution
+	-- If not sent, reduce ATK to 0
 	if tc:IsFaceup() and tc:IsRelateToEffect(e) then
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
@@ -62,6 +64,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 		tc:RegisterEffect(e1)
 	end
 end
+
 
 --e2: Special Summon from GY
 function s.spcfilter(c)
