@@ -16,6 +16,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e1)
     local e2=e1:Clone()
     e2:SetCode(EVENT_DESTROYED)
+    e2:SetCondition(s.spcon)
     c:RegisterEffect(e2)
 
     -- e3/e4: Search a Nordic monster (on Normal or Special Summon)
