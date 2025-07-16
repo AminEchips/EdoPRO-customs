@@ -32,7 +32,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.drop)
 	c:RegisterEffect(e2)
 end
-s.listed_names={3659803} -- Loki, Lord of the Aesir
+s.listed_names={67098114} -- Loki, Lord of the Aesir
 s.listed_series={0xa042, 0x42} -- Nordic Alfar, Nordic
 
 -- Must be Synchro Summoned
@@ -71,7 +71,7 @@ end
 
 -- If Loki is Special Summoned while this is in GY
 function s.lokifilter(c,tp)
-	return c:IsFaceup() and c:IsCode(3659803) and c:IsSummonPlayer(tp)
+	return c:IsFaceup() and c:IsCode(67098114) and c:IsSummonPlayer(tp)
 end
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.lokifilter,1,nil,tp)
