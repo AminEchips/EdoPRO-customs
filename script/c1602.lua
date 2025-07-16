@@ -1,7 +1,7 @@
 --Fafnir of the Nordic Beasts
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Special Summon from hand if any "Nordic" or "Aesir" monster is sent to your GY
+    -- Special Summon from hand when a Nordic or Aesir monster is sent to your GY
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -14,7 +14,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.spop)
     c:RegisterEffect(e1)
 
-    -- If Normal or Special Summoned: Add 1 "Nordic" monster from Deck to hand (except itself)
+    -- On Normal or Special Summon: Search a Nordic monster (except itself)
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -29,10 +29,11 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- e1: Special Summon if any other "Nordic" or "Aesir" monster is sent to your GY
+-- e1 condition: a "Nordic" or "Aesir" monster (except this) sent to your GY from anywhere
 function s.cfilter(c,tp)
     return c:IsType(TYPE_MONSTER)
-        and c:IsControler(tp)
+        and c:IsLocation(LOCATION_GRAVE)
+        and c:IsPreviousControler(tp)
         and (c:IsSetCard(0x42) or c:IsSetCard(0x4b))
         and not c:IsCode(id)
 end
@@ -52,10 +53,9 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- e2/e3: On Normal/Special Summon, search 1 "Nordic" monster (except itself)
+-- e2: Search a "Nordic" monster from Deck to hand on Summon
 function s.thfilter(c)
-    return c:IsSetCard(0x42) and c:IsType(TYPE_MONSTER)
-        and not c:IsCode(id) and c:IsAbleToHand()
+    return c:IsSetCard(0x42) and c:IsType(TYPE_MONSTER) and not c:IsCode(id) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
