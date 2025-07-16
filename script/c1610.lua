@@ -55,7 +55,7 @@ function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT)
 			and Duel.GetLocationCount(tp,LOCATION_MZONE)>1
-			and Duel.IsPlayerCanSpecialSummonMonster(tp,,0,TYPES_TOKEN,1000,1000,2,RACE_WARRIOR,ATTRIBUTE_LIGHT)
+			and Duel.IsPlayerCanSpecialSummonMonster(tp,40844553,0,TYPES_TOKEN,1000,1000,2,RACE_WARRIOR,ATTRIBUTE_LIGHT)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_TOKEN,nil,2,0,0)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,2,tp,0)
