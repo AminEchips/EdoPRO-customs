@@ -13,26 +13,36 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	--Return 1 banished Level 5+ monster to hand and optionally destroy
+	--Register if sent to GY as Synchro Material
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_DESTROY)
-	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_REMOVE)
-	e2:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
-	e2:SetCountLimit(1,{id,1})
-	e2:SetCost(s.retcost)
-	e2:SetTarget(s.rettg)
-	e2:SetOperation(s.rmop)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e2:SetCode(EVENT_TO_GRAVE)
+	e2:SetCondition(s.regcon_gy)
+	e2:SetOperation(s.regop)
 	c:RegisterEffect(e2)
 
-	local e3=e2:Clone()
-	e3:SetCode(EVENT_TO_GRAVE)
-	e3:SetCondition(s.grcon)
+	--Register if banished
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_REMOVE)
+	e3:SetOperation(s.regop)
 	c:RegisterEffect(e3)
+
+	--Trigger to return banished monster to hand + optional destroy
+	local e4=Effect.CreateEffect(c)
+	e4:SetDescription(aux.Stringid(id,1))
+	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_DESTROY)
+	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e4:SetProperty(EFFECT_FLAG_DELAY+EFFECT_FLAG_CARD_TARGET)
+	e4:SetCode(EVENT_CUSTOM+id)
+	e4:SetCountLimit(1,{id,1})
+	e4:SetCost(s.retcost)
+	e4:SetTarget(s.rettg)
+	e4:SetOperation(s.rmop)
+	c:RegisterEffect(e4)
 end
 
--- Effect 1: Special Summon if you control only Nordic or no monsters
+-- Effect 1: Special Summon condition
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetFieldGroup(tp,LOCATION_MZONE,0)
 	return #g==0 or g:FilterCount(function(c) return c:IsSetCard(0x42) end,nil)==#g
@@ -49,7 +59,7 @@ end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		-- Optional: Banish 1 Nordic card from Deck
+		-- Optional: Banish 1 "Nordic" card from Deck
 		if Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK,0,1,nil)
 			and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
@@ -61,7 +71,16 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 2/3 Cost: target 1 banished Level 5+ monster (must target as cost)
+-- Register trigger if used as Synchro Material
+function s.regcon_gy(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	return c:IsReason(REASON_MATERIAL) and c:IsReason(REASON_SYNCHRO)
+end
+function s.regop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.RaiseSingleEvent(e:GetHandler(),EVENT_CUSTOM+id,e,0,tp,0,0)
+end
+
+-- Cost: target banished Level 5+ monster
 function s.retfilter(c)
 	return c:IsFaceup() and c:IsLevelAbove(5) and c:IsAbleToHand()
 end
@@ -71,15 +90,13 @@ function s.retcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.SelectTarget(tp,s.retfilter,tp,LOCATION_REMOVED,0,1,1,nil)
 	e:SetLabelObject(g:GetFirst())
 end
+
+-- Return to hand and maybe destroy
 function s.rettg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local tc=e:GetLabelObject()
 	if chk==0 then return tc and tc:IsAbleToHand() end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,tc,1,0,0)
 	Duel.SetPossibleOperationInfo(0,CATEGORY_DESTROY,nil,1,1-tp,LOCATION_MZONE)
-end
-function s.grcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return r&(REASON_MATERIAL|REASON_SYNCHRO)==(REASON_MATERIAL|REASON_SYNCHRO)
 end
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=e:GetLabelObject()
@@ -89,16 +106,14 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.ConfirmCards(1-tp,tc)
 	end
 
-	-- Destroy opponent's monster with same Level, only if banished as cost for Synchro effect
-	if e:GetHandler():IsReason(REASON_MATERIAL) then
-		local rc=e:GetHandler():GetReasonCard()
-		if rc and rc:IsType(TYPE_SYNCHRO) then
-			local g=Duel.GetMatchingGroup(function(c) return c:IsFaceup() and c:IsLevel(lv) end,tp,0,LOCATION_MZONE,nil)
-			if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-				Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-				local sg=g:Select(tp,1,1,nil)
-				Duel.Destroy(sg,REASON_EFFECT)
-			end
+	-- If this card was banished for Synchro, allow optional destroy
+	local c=e:GetHandler()
+	if c:IsLocation(LOCATION_REMOVED) or (c:IsLocation(LOCATION_GRAVE) and c:IsReason(REASON_MATERIAL|REASON_SYNCHRO)) then
+		local g=Duel.GetMatchingGroup(function(c) return c:IsFaceup() and c:IsLevel(lv) end,tp,0,LOCATION_MZONE,nil)
+		if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+			local sg=g:Select(tp,1,1,nil)
+			Duel.Destroy(sg,REASON_EFFECT)
 		end
 	end
 end
