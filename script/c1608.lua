@@ -74,12 +74,7 @@ function s.bpcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SendtoGrave(e:GetHandler(),REASON_COST+REASON_DISCARD)
 end
 function s.nordicfilter(c)
-	return c:IsAbleToDeck() and (
-		c:IsSetCard(0x3042) or -- Nordic Ascendant
-		c:IsSetCard(0x6042) or -- Nordic Beast
-		c:IsSetCard(0xa042) or -- Nordic Alfar
-		c:IsSetCard(0x5042)    -- Nordic Relic
-	)
+	return c:IsAbleToDeck() and c:IsSetCard(0x42)
 end
 function s.aesirfilter2(c)
 	return c:IsSetCard(0x4b) and c:IsType(TYPE_SYNCHRO) and c:IsAbleToExtra()
@@ -106,8 +101,7 @@ end
 -- 3rd effect
 function s.spfilter(c,e,tp)
 	return (
-		c:IsSetCard(0x3042) or c:IsSetCard(0x6042) or c:IsSetCard(0xa042) or c:IsSetCard(0x5042)
-	) and not c:IsRace(RACE_WARRIOR) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		c:IsSetCard(0x42) and not c:IsRace(RACE_WARRIOR) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp) end
