@@ -1,7 +1,7 @@
 --Pferd of the Nordic Beasts
 local s,id=GetID()
 function s.initial_effect(c)
-    -- If added to hand (except by drawing): Special Summon
+    -- e1: If added to hand (except by drawing), Special Summon
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -14,7 +14,7 @@ function s.initial_effect(c)
     e1:SetOperation(s.spop_hand)
     c:RegisterEffect(e1)
 
-    -- If used for Aesir Synchro: Special Summon from GY
+    -- e2: If used for Synchro Summon of an Aesir, Special Summon from GY
     local e2=Effect.CreateEffect(c)
     e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -27,7 +27,7 @@ function s.initial_effect(c)
     e2:SetOperation(s.spop_gy)
     c:RegisterEffect(e2)
 
-    -- End of Damage Step effect: reduce opponent’s monster ATK
+    -- e3: If it battled a monster with equal or higher Level, reduce its ATK
     local e3=Effect.CreateEffect(c)
     e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_ATKCHANGE)
@@ -40,7 +40,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- e1: If added to hand other than by drawing
+-- e1 condition: added to hand, but not drawn
 function s.spcon_hand(e,tp,eg,ep,ev,re,r,rp)
     return not e:GetHandler():IsReason(REASON_DRAW)
 end
@@ -56,7 +56,7 @@ function s.spop_hand(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- e2: If used as material for an Aesir Synchro
+-- e2 condition: used for Aesir Synchro
 function s.spcon_gy(e,tp,eg,ep,ev,re,r,rp)
     return r==REASON_SYNCHRO and e:GetHandler():GetReasonCard():IsSetCard(0x4b)
 end
@@ -72,17 +72,18 @@ function s.spop_gy(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- e3: If this battled a monster with equal or higher Level, reduce its ATK
+-- e3 condition: battled a monster with equal or higher Level
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
-    local tc=c:GetBattleTarget()
-    return tc and tc:IsRelateToBattle() and tc:IsLevelAbove(e:GetHandler():GetLevel())
+    local c = e:GetHandler()
+    local tc = c:GetBattleTarget()
+    return tc and tc:IsRelateToBattle() and tc:IsLevelAbove(c:GetLevel())
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
-    local c=e:GetHandler()
-    local tc=c:GetBattleTarget()
+    local c = e:GetHandler()
+    local tc = c:GetBattleTarget()
     if tc and tc:IsRelateToBattle() and tc:IsFaceup() and tc:IsLevelAbove(1) then
-        local atkdrop=tc:GetLevel()*100
-        local e1=Effect.CreateEffect(c)
+        local atkdrop = tc:GetLevel() * 100
+        local e1 = Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_UPDATE_ATTACK)
         e1:SetValue(-atkdrop)
