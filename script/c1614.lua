@@ -1,0 +1,100 @@
+--Brunhilde of the Nordic Valkyries
+local s,id=GetID()
+function s.initial_effect(c)
+	--Draw + Add Gotterdammerung if Spell was activated
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetCategory(CATEGORY_DRAW+CATEGORY_TOHAND)
+	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e1:SetCondition(s.drcon)
+	e1:SetTarget(s.drtg)
+	e1:SetOperation(s.drop)
+	e1:SetCountLimit(1,id)
+	c:RegisterEffect(e1)
+
+	--Destroy S/T and apply/set if applicable
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_DESTROY)
+	e2:SetType(EFFECT_TYPE_IGNITION)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e2:SetRange(LOCATION_MZONE)
+	e2:SetCountLimit(1,{id,1})
+	e2:SetCondition(s.descon)
+	e2:SetTarget(s.destg)
+	e2:SetOperation(s.desop)
+	c:RegisterEffect(e2)
+end
+s.listed_series={0x42,0x4b}
+s.listed_names={91148083}
+
+-- e1
+function s.drcon(e,tp,eg,ep,ev,re,r,rp)
+	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
+end
+function s.drtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsPlayerCanDraw(tp,1) end
+	Duel.SetOperationInfo(0,CATEGORY_DRAW,nil,0,tp,1)
+end
+function s.drop(e,tp,eg,ep,ev,re,r,rp)
+	if Duel.Draw(tp,1,REASON_EFFECT)==0 then return end
+	if Duel.GetTurnPlayer()==tp and Duel.IsExistingMatchingCard(aux.FilterFaceupFunction(Card.IsType,TYPE_SPELL),tp,LOCATION_ONFIELD,0,1,nil)
+		and Duel.IsExistingMatchingCard(s.gotfilter,tp,LOCATION_GRAVE,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+		local g=Duel.SelectMatchingCard(tp,s.gotfilter,tp,LOCATION_GRAVE,0,1,1,nil)
+		if #g>0 then
+			Duel.SendtoHand(g,nil,REASON_EFFECT)
+			Duel.ConfirmCards(1-tp,g)
+			-- Restrict activation of cards with the same name
+			local code=g:GetFirst():GetCode()
+			local e1=Effect.CreateEffect(e:GetHandler())
+			e1:SetType(EFFECT_TYPE_FIELD)
+			e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
+			e1:SetCode(EFFECT_CANNOT_ACTIVATE)
+			e1:SetTargetRange(1,0)
+			e1:SetValue(function(e,re,tp) return re:GetHandler():IsCode(code) end)
+			e1:SetReset(RESET_PHASE+PHASE_END)
+			Duel.RegisterEffect(e1,tp)
+		end
+	end
+end
+function s.gotfilter(c)
+	return c:IsCode(91148083) and c:IsAbleToHand()
+end
+
+-- e2
+function s.descon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.IsExistingMatchingCard(Card.IsSetCard,tp,LOCATION_MZONE,0,1,nil,0x4b)
+end
+function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsOnField() and chkc:IsType(TYPE_SPELL+TYPE_TRAP) end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsType,tp,0,LOCATION_ONFIELD,1,nil,TYPE_SPELL+TYPE_TRAP) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectTarget(tp,Card.IsType,tp,0,LOCATION_ONFIELD,1,1,nil,TYPE_SPELL+TYPE_TRAP)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
+end
+function s.desop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if not tc or Duel.Destroy(tc,REASON_EFFECT)==0 then return end
+	if tc:IsType(TYPE_SPELL) and (tc:IsType(TYPE_QUICKPLAY) or tc:IsType(TYPE_NORMAL)) 
+		and tc:IsAbleToHand() and Duel.IsPlayerCanActivateEffect(tp) and tc:CheckActivateEffect(false,true,false)~=nil then
+		local te=tc:CheckActivateEffect(false,true,true)
+		if te and te:GetOperation() and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+			local op=te:GetOperation()
+			op(te,tp,eg,ep,ev,re,r,rp)
+		end
+	end
+	if tc:IsType(TYPE_TRAP) and Duel.IsExistingMatchingCard(s.lokifilter,tp,LOCATION_MZONE,0,1,nil) 
+		and Duel.GetLocationCount(tp,LOCATION_SZONE)>0 and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
+		local dg=Duel.GetMatchingGroup(Card.IsType,tp,LOCATION_DECK,0,nil,TYPE_TRAP)
+		if #dg>0 then
+			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
+			local sg=dg:Select(tp,1,1,nil)
+			Duel.SSet(tp,sg)
+		end
+	end
+end
+function s.lokifilter(c)
+	return c:IsFaceup() and c:IsCode(67098114,1620)
+end
