@@ -2,7 +2,7 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	-- Synchro Summon procedure
-	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x3042),1,1,Synchro.NonTuner(nil),1,99)
+	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x42),1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
 
 	-- Effect on Synchro Summon: shuffle 1 Nordic Ascendant; summon 2 tokens
