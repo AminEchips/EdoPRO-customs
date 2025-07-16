@@ -39,26 +39,26 @@ function s.atkfilter(c)
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if not Duel.IsExistingMatchingCard(s.atkfilter,tp,0,LOCATION_MZONE,1,nil) then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	local g=Duel.SelectMatchingCard(tp,s.atkfilter,tp,0,LOCATION_MZONE,1,1,nil)
 	local tc=g:GetFirst()
 	if not tc then return end
 
-	if c:IsSummonType(SUMMON_TYPE_SYNCHRO) and c:GetMaterial():IsExists(Card.IsRace,1,nil,RACE_SPELLCASTER) then
-		local opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 0 = reduce ATK, 1 = send
-		if opt==1 and tc:IsAbleToGrave() then
-			Duel.SendtoGrave(tc,REASON_EFFECT)
-			return
+	local usingSpellcaster=c:IsSummonType(SUMMON_TYPE_SYNCHRO) and c:GetMaterial():IsExists(Card.IsRace,1,nil,RACE_SPELLCASTER)
+	if usingSpellcaster and tc:IsAbleToGrave() then
+		local opt=Duel.SelectOption(tp,aux.Stringid(id,2),aux.Stringid(id,3)) -- 0 = reduce, 1 = send
+		if opt==1 then
+			if Duel.SendtoGrave(tc,REASON_EFFECT)>0 then return end
 		end
 	end
 
+	-- apply ATK to 0 after resolution
 	if tc:IsFaceup() and tc:IsRelateToEffect(e) then
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_SET_ATTACK_FINAL)
 		e1:SetValue(0)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
 		tc:RegisterEffect(e1)
 	end
 end
