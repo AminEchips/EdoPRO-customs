@@ -5,7 +5,7 @@ function s.initial_effect(c)
 	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x3042),1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
 
-	-- Effect on Synchro Summon: shuffle 1 Nordic Ascendant from GY; summon 2 tokens
+	-- Effect on Synchro Summon: shuffle 1 Nordic Ascendant; summon 2 tokens
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOKEN)
@@ -34,12 +34,12 @@ end
 s.listed_names={93483212}
 s.listed_series={0x3042} -- Nordic Ascendant
 
--- e1 condition: must be Synchro Summoned
+-- Must be Synchro Summoned
 function s.tkcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
 
--- Shuffle 1 "Nordic Ascendant" from GY into Deck as cost
+-- Cost: shuffle 1 Nordic Ascendant from GY
 function s.costfilter(c)
 	return c:IsSetCard(0x3042) and c:IsAbleToDeckAsCost()
 end
@@ -50,7 +50,7 @@ function s.tkcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_COST)
 end
 
--- Create 2 Valhalla Tokens (Level 2, LIGHT, Warrior)
+-- Target: Summon 2 Valhalla Tokens
 function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return not Duel.IsPlayerAffectedByEffect(tp,CARD_BLUEEYES_SPIRIT)
@@ -71,9 +71,9 @@ function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.SpecialSummonComplete()
 end
 
--- GY Quick Effect: shuffle all Spells/Traps if you control Odin
+-- Odin condition (Quick Effect from GY)
 function s.stcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(aux.FilterFaceupFunction(Card.IsCode,93483212),tp,LOCATION_MZONE,0,1,nil)
+	return Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,93483212),tp,LOCATION_MZONE,0,1,nil)
 end
 function s.sttg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.GetMatchingGroup(Card.IsSpellTrap,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,nil)
