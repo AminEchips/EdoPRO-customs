@@ -1,7 +1,7 @@
 --Fafnir of the Nordic Beasts
 local s,id=GetID()
 function s.initial_effect(c)
-    -- Special Summon from hand if a "Nordic" or "Aesir" monster is sent to your GY
+    -- Special Summon from hand if any "Nordic" or "Aesir" monster is sent to your GY
     local e1=Effect.CreateEffect(c)
     e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -29,11 +29,10 @@ function s.initial_effect(c)
     c:RegisterEffect(e3)
 end
 
--- Special Summon trigger: if another "Nordic" or "Aesir" monster is sent to your GY
+-- e1: Special Summon if any other "Nordic" or "Aesir" monster is sent to your GY
 function s.cfilter(c,tp)
     return c:IsType(TYPE_MONSTER)
-        and c:IsPreviousControler(tp)
-        and c:IsLocation(LOCATION_GRAVE)
+        and c:IsControler(tp)
         and (c:IsSetCard(0x42) or c:IsSetCard(0x4b))
         and not c:IsCode(id)
 end
@@ -41,9 +40,10 @@ function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.cfilter,1,nil,tp)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+    local c=e:GetHandler()
     if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-        and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
+        and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
@@ -52,9 +52,10 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Search effect: Add 1 "Nordic" monster from Deck to hand (except itself)
+-- e2/e3: On Normal/Special Summon, search 1 "Nordic" monster (except itself)
 function s.thfilter(c)
-    return c:IsSetCard(0x42) and c:IsType(TYPE_MONSTER) and not c:IsCode(id) and c:IsAbleToHand()
+    return c:IsSetCard(0x42) and c:IsType(TYPE_MONSTER)
+        and not c:IsCode(id) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil) end
