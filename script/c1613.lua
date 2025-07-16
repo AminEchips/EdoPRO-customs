@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	e1:SetValue(1)
 	c:RegisterEffect(e1)
 
-	-- 2. Redirect attack and negate this card's effects (Quick Effect)
+	-- 2. Redirect attack and negate Sleipnir permanently (Quick Effect)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
 	e2:SetCategory(CATEGORY_DISABLE)
@@ -25,7 +25,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.atkop)
 	c:RegisterEffect(e2)
 
-	-- 3. On destruction, equip to "Odin" monster you control
+	-- 3. Equip to Odin if destroyed
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_EQUIP)
@@ -38,12 +38,12 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Odin card IDs (only listed when "Odin" is explicitly referenced)
+-- Odin monster codes (explicit only)
 local odin_ids = {
 	[93483212]=true, [1621]=true, [1647]=true
 }
 
--- 1. Battle protection condition: must be Synchro Summoned with a Nordic Beast Tuner
+-- 1. Check if Synchro Summoned with Nordic Beast Tuner
 function s.indcon(e)
 	local c=e:GetHandler()
 	local mg=c:GetMaterial()
@@ -51,30 +51,31 @@ function s.indcon(e)
 		and mg:IsExists(function(mc) return mc:IsSetCard(0x6042) and mc:IsType(TYPE_TUNER) end,1,nil)
 end
 
--- 2. Aesir monster check for redirection
+-- 2. Check if opponent declares attack and you control an Aesir monster
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local at=Duel.GetAttacker()
-	return at and at:IsControler(1-tp)
-		and Duel.IsExistingMatchingCard(Card.IsSetCard,tp,LOCATION_MZONE,0,1,nil,0x4b)
+	return at and at:IsControler(1-tp) and Duel.IsExistingMatchingCard(Card.IsSetCard,tp,LOCATION_MZONE,0,1,nil,0x4b)
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local at=Duel.GetAttacker()
-	if not c:IsRelateToEffect(e) or not at or at:IsImmuneToEffect(e) then return end
-	-- Make this card the new target
+	if not c:IsRelateToEffect(e) or not at then return end
+	-- Change attack target to Sleipnir
 	Duel.ChangeAttackTarget(c)
-	-- Negate this card's effects
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_DISABLE)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-	c:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EFFECT_DISABLE_EFFECT)
-	c:RegisterEffect(e2)
+	-- Immediately and permanently negate Sleipnir
+	if c:IsFaceup() then
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_DISABLE)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		c:RegisterEffect(e1)
+		local e2=e1:Clone()
+		e2:SetCode(EFFECT_DISABLE_EFFECT)
+		c:RegisterEffect(e2)
+	end
 end
 
--- 3. Equip to Odin if destroyed
+-- 3. Equip to Odin monster after destruction
 function s.eqcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_MZONE) and c:IsFaceup()
@@ -101,7 +102,7 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 	e1:SetValue(function(e,c) return c==tc end)
 	c:RegisterEffect(e1)
-	-- If equipped monster attacks another monster: lock both from leaving by card effect
+	-- If the equipped monster attacks a monster: lock both from leaving field by card effect
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetCode(EFFECT_CANNOT_REMOVE)
@@ -112,6 +113,7 @@ function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetCondition(s.battlecon)
 	c:RegisterEffect(e2)
 end
+
 function s.battlecon(e)
 	local tc=e:GetHandler():GetEquipTarget()
 	return tc and Duel.GetAttacker()==tc and Duel.GetAttackTarget()
