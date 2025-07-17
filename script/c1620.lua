@@ -12,6 +12,7 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e1:SetCondition(s.setcon)
+	e1:SetCost(s.setcost)
 	e1:SetTarget(s.settg)
 	e1:SetOperation(s.setop)
 	c:RegisterEffect(e1)
@@ -72,28 +73,34 @@ function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
 
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_GRAVE,0,1,nil)
-		and Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_GRAVE)
+function s.costfilter(c)
+	return c:IsSetCard(0x42) and c:IsAbleToRemoveAsCost()
+end
+
+function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_GRAVE,0,nil)
+	if chk==0 then return g:GetClassCount(Card.GetCode)>=1 end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+	local rg=aux.SelectUnselectGroup(g,e,tp,1,3,aux.dncheck,1,tp,HINTMSG_REMOVE,nil,true)
+	if not rg then return false end
+	e:SetLabel(#rg)
+	Duel.Remove(rg,POS_FACEUP,REASON_COST)
 end
 
 function s.setfilter(c)
 	return c:IsSetCard(0x5042) and c:IsSpellTrap() and c:IsSSetable()
 end
 
+function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
+end
+
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_GRAVE,0,nil)
-	if g:GetClassCount(Card.GetCode)<1 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local rg=g:SelectSubGroup(tp,aux.dncheck,false,1,3)
-	if not rg then return end
-	if Duel.Remove(rg,POS_FACEUP,REASON_COST)==0 then return end
-	local ct=#rg
+	local ct=e:GetLabel()
 	local sg=Duel.GetMatchingGroup(s.setfilter,tp,LOCATION_DECK,0,nil)
 	if #sg<ct then ct=#sg end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-	local setg=sg:SelectSubGroup(tp,aux.dncheck,false,ct,ct)
+	local setg=aux.SelectUnselectGroup(sg,e,tp,ct,ct,aux.dncheck,1,tp,HINTMSG_SET,nil,true)
 	if not setg then return end
 	for tc in aux.Next(setg) do
 		Duel.SSet(tp,tc)
@@ -107,10 +114,6 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 		e2:SetCode(EFFECT_QP_ACT_IN_SET_TURN)
 		tc:RegisterEffect(e2)
 	end
-end
-
-function s.costfilter(c)
-	return c:IsSetCard(0x42) and c:IsAbleToRemoveAsCost()
 end
 
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
