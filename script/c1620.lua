@@ -79,12 +79,12 @@ end
 
 function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_GRAVE,0,nil)
-	if chk==0 then return g:GetClassCount(Card.GetCode)>=1 end
+	if chk==0 then return #g>0 end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local rg=aux.SelectUnselectGroup(g,e,tp,1,3,aux.dncheck,1,tp,HINTMSG_REMOVE,nil,true)
-	if not rg then return false end
-	e:SetLabel(#rg)
+	local rg=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_GRAVE,0,1,3,nil)
+	if #rg==0 then return false end
 	Duel.Remove(rg,POS_FACEUP,REASON_COST)
+	e:SetLabel(#rg)
 end
 
 function s.setfilter(c)
@@ -100,8 +100,8 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	local sg=Duel.GetMatchingGroup(s.setfilter,tp,LOCATION_DECK,0,nil)
 	if #sg<ct then ct=#sg end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
-	local setg=aux.SelectUnselectGroup(sg,e,tp,ct,ct,aux.dncheck,1,tp,HINTMSG_SET,nil,true)
-	if not setg then return end
+	local setg=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK,0,ct,ct,nil)
+	if #setg==0 then return end
 	for tc in aux.Next(setg) do
 		Duel.SSet(tp,tc)
 		local e1=Effect.CreateEffect(e:GetHandler())
