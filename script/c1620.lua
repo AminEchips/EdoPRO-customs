@@ -121,39 +121,38 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
-function s.regop(e,tp,eg,ep,ev,re,r,rp)
+-- Float from GY: triggers, banish as cost
+function s.spcon_gy(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local pos=c:GetPreviousPosition()
-	if c:IsReason(REASON_BATTLE) then pos=c:GetBattlePosition() end
-	if rp~=tp and c:IsPreviousControler(tp) and c:IsReason(REASON_DESTROY)
-		and c:IsPreviousLocation(LOCATION_ONFIELD) and (pos&POS_FACEUP)~=0 then
-		c:RegisterFlagEffect(id,RESETS_STANDARD_PHASE_END,0,1)
-	end
+	return rp~=tp and c:IsReason(REASON_EFFECT+REASON_DESTROY) and c:IsPreviousControler(tp)
+end
+function s.spcost_gy(e,tp,eg,ep,ev,re,r,rp,chk)
+	local c=e:GetHandler()
+	if chk==0 then return c:IsAbleToRemoveAsCost() end
+	Duel.Remove(c,POS_FACEUP,REASON_COST)
 end
 
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():GetFlagEffect(id)>0
+-- Float from banish: just condition
+function s.spcon_rm(e,tp,eg,ep,ev,re,r,rp)
+	return rp~=tp
 end
 
+-- Shared target and operation
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
-		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil,e,tp) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA+LOCATION_GRAVE)
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA|LOCATION_GRAVE,0,1,nil,e,tp) end
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA|LOCATION_GRAVE)
 end
-
 function s.spfilter(c,e,tp)
-	return c:IsCode(67098114) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_SYNCHRO,tp,false,false)
+	return c:IsCode(30604579) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_SYNCHRO,tp,false,false)
 end
-
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	local c=e:GetHandler()
-	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil,e,tp)
-	if #g>0 then
-		Duel.SpecialSummon(g,SUMMON_TYPE_SYNCHRO,tp,tp,false,false,POS_FACEUP)
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_EXTRA|LOCATION_GRAVE,0,1,1,nil,e,tp)
+	local sc=g:GetFirst()
+	if sc then
+		Duel.SpecialSummon(sc,SUMMON_TYPE_SYNCHRO,tp,tp,false,false,POS_FACEUP)
+		sc:CompleteProcedure()
 	end
-end
-
-function s.bancon(e,tp,eg,ep,ev,re,r,rp)
-	return rp==1-tp and e:GetHandler():IsPreviousControler(tp)
 end
