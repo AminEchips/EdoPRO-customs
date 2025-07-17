@@ -4,7 +4,7 @@ local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
 	--Synchro Summon procedure
-	Synchro.AddProcedure(c, aux.FilterBoolFunction(Card.IsSetCard,0x6042),1,1, aux.FilterBoolFunction(Card.IsCode,30604579),1,99)
+	Synchro.AddProcedure(c, aux.FilterBoolFunction(Card.IsSetCard,0x42),1,1, aux.FilterBoolFunction(Card.IsCode,30604579),1,99)
 	
 	--Add 1 Aesir/Nordic Relic Spell/Trap
 	local e1=Effect.CreateEffect(c)
