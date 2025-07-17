@@ -1,16 +1,16 @@
 --Dvallin of the Nordic Alfar
 local s,id=GetID()
 function s.initial_effect(c)
-	-- Special Summon from hand and optionally banish 1 "Nordic"
+	-- Normal Summon itself and optionally banish 1 "Nordic"
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e1:SetCategory(CATEGORY_SUMMON)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_HAND)
 	e1:SetCountLimit(1,id)
-	e1:SetCondition(s.spcon)
-	e1:SetTarget(s.sptg)
-	e1:SetOperation(s.spop)
+	e1:SetCondition(s.nscon)
+	e1:SetTarget(s.nstg)
+	e1:SetOperation(s.nsop)
 	c:RegisterEffect(e1)
 
 	-- Return 1 banished Level 5+ monster and optionally destroy
@@ -31,30 +31,30 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
--- Special Summon condition
+-- Normal Summon condition
 function s.cfilter(c)
 	return c:IsFaceup() and not c:IsSetCard(0x42)
 end
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+function s.nscon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFieldGroupCount(tp,LOCATION_MZONE,0)==0
 		or not Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 
--- Special Summon + optional banish
-function s.spfilter(c,e,tp)
-	return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+-- Normal Summon + optional banish
+function s.nsfilter(c)
+	return c:IsSummonable(true,nil)
 end
 function s.banfilter(c)
 	return c:IsSetCard(0x42) and c:IsAbleToRemove()
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
+function s.nstg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
-		and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false) end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
+		and e:GetHandler():IsSummonable(true,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_SUMMON,e:GetHandler(),1,0,0)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
+function s.nsop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
+	if Duel.Summon(tp,c,true,nil)==0 then return end
 	-- Optional banish
 	if Duel.IsExistingMatchingCard(s.banfilter,tp,LOCATION_DECK,0,1,nil)
 		and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
