@@ -2,9 +2,9 @@
 --Custom script by Amine
 local s,id=GetID()
 function s.initial_effect(c)
+	-- Synchro Summon procedure: 1 "Nordic Beast" Tuner or substitute + 1+ non-Tuners
+	Synchro.AddProcedure(c,s.tfilter,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
-	-- Synchro Summon: 1 Nordic Tuner + 1+ non-Tuners
-	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x42),1,1,Synchro.NonTuner(nil),1,99)
 
 	-- Must first be Synchro Summoned
 	local e0=Effect.CreateEffect(c)
@@ -26,20 +26,20 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	-- Quick Effect: Non-targeting negate 1 Effect Monster + optionally destroy all opponent monsters
+	-- Quick Effect: Non-targeting negate 1 monster + optionally destroy all opponent monsters
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_MZONE)
-	e2:SetCountLimit(1)
 	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
+	e2:SetCountLimit(1)
 	e2:SetTarget(s.negtg)
 	e2:SetOperation(s.negop)
 	c:RegisterEffect(e2)
 
-	-- Float when sent to GY by opponent: banish it, then summon Thor
+	-- Floating effect when sent to GY by opponent: banish this card, then summon "Thor, Lord of the Aesir"
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_REMOVE+CATEGORY_SPECIAL_SUMMON)
@@ -51,23 +51,27 @@ function s.initial_effect(c)
 	e3:SetOperation(s.spop_gy)
 	c:RegisterEffect(e3)
 
-	-- Float when banished: summon Thor
+	-- Floating effect when banished: summon "Thor, Lord of the Aesir"
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,3))
 	e4:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e4:SetCode(EVENT_REMOVE)
 	e4:SetProperty(EFFECT_FLAG_DELAY)
-	e4:SetCondition(s.spcon_rm)
 	e4:SetTarget(s.sptg_rm)
 	e4:SetOperation(s.spop_rm)
 	c:RegisterEffect(e4)
 end
 
-s.listed_series={0x42,0x5042,0x4b} -- Nordic, Nordic Relic, Aesir
+s.listed_series={0x6042,0x5042,0x4b} -- Nordic Beast, Nordic Relic, Aesir
 s.listed_names={30604579} -- Thor, Lord of the Aesir
 
--- On Synchro Summon → Search
+-- Tuner filter: Nordic Beast or substitute
+function s.tfilter(c,scard,sumtype,tp)
+	return c:IsSetCard(0x6042,scard,sumtype,tp) or c:IsHasEffect(EFFECT_SYNSUB_NORDIC)
+end
+
+-- Search on Synchro Summon
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
@@ -86,7 +90,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Quick negate
+-- Negate + destroy
 function s.negfilter(c)
 	return c:IsFaceup() and c:IsType(TYPE_EFFECT) and not c:IsDisabled()
 end
@@ -119,7 +123,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Float (GY): Sent by opponent → banish → summon Thor
+-- GY float
 function s.spcon_gy(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return rp==1-tp and c:IsReason(REASON_EFFECT+REASON_BATTLE) and c:IsPreviousControler(tp)
@@ -142,10 +146,7 @@ function s.spop_gy(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Float (banished): summon Thor
-function s.spcon_rm(e,tp,eg,ep,ev,re,r,rp)
-	return true
-end
+-- Banished float
 function s.sptg_rm(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_EXTRA+LOCATION_GRAVE)
@@ -158,8 +159,6 @@ function s.spop_rm(e,tp,eg,ep,ev,re,r,rp)
 		tc:CompleteProcedure()
 	end
 end
-
--- Thor filter
 function s.spfilter(c,e,tp)
 	return c:IsCode(30604579) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_SYNCHRO,tp,false,false)
 end
