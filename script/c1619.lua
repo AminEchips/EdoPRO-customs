@@ -2,11 +2,11 @@
 --Custom script by Amine
 local s,id=GetID()
 function s.initial_effect(c)
+	-- Synchro Summon procedure (1 "Nordic Beast" or substitute Tuner + 1+ non-Tuners)
+	Synchro.AddProcedure(c,s.tfilter,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
-	-- Synchro Summon: 1 "Nordic Beast" Tuner + 1+ non-Tuners (must include Thor manually by deck build)
-	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x6042),1,1,Synchro.NonTuner(nil),1,99)
 
-	--Add 1 Aesir or Nordic Relic Spell/Trap from Deck or GY
+	-- On Synchro Summon: Add 1 "Aesir" or "Nordic Relic" Spell/Trap
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -18,7 +18,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
 
-	--Quick Effect: Negate 1 Effect Monster + optional board wipe
+	-- Quick Effect: Non-targeting negate + optional destroy all opponent monsters
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DISABLE+CATEGORY_DESTROY)
@@ -31,7 +31,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.negop)
 	c:RegisterEffect(e2)
 
-	--If Synchro Summoned and leaves field due to opponent's card: banish & Special Summon 1 "Thor, Lord of the Aesir"
+	-- On leave field by opponent: Banish this and revive "Thor, Lord of the Aesir"
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -47,7 +47,12 @@ end
 s.listed_series={0x6042,0x5042,0x4b} -- Nordic Beast, Nordic Relic, Aesir
 s.listed_names={30604579} -- Thor, Lord of the Aesir
 
--- Search on Synchro Summon
+-- Allow substitute Tuners (e.g., Mimir)
+function s.tfilter(c,scard,sumtype,tp)
+	return c:IsSetCard(0x6042,scard,sumtype,tp) or c:IsHasEffect(EFFECT_SYNSUB_NORDIC)
+end
+
+-- On Synchro Summon → Search
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
@@ -66,7 +71,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Non-targeting permanent negate while on field + optional destroy all
+-- Negate 1 monster + optionally destroy all opponent monsters
 function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(aux.NegateAnyFilter,tp,0,LOCATION_MZONE,1,nil) end
 end
@@ -74,7 +79,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local g=Duel.GetMatchingGroup(aux.NegateAnyFilter,tp,0,LOCATION_MZONE,nil)
 	if #g==0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DISABLE)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	local tc=g:Select(tp,1,1,nil):GetFirst()
 	if tc and not tc:IsImmuneToEffect(e) and not tc:IsDisabled() then
 		Duel.NegateRelatedChain(tc,RESET_TURN_SET)
@@ -89,14 +94,15 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 		e2:SetReset(RESET_EVENT+RESETS_STANDARD_EX)
 		tc:RegisterEffect(e2)
 
-		local g2=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_MZONE,nil)
-		if #g2>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-			Duel.Destroy(g2,REASON_EFFECT)
+		-- Optional: destroy all opponent monsters
+		local dg=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_MZONE,nil)
+		if #dg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+			Duel.Destroy(dg,REASON_EFFECT)
 		end
 	end
 end
 
--- Banish self and revive Thor if it was Synchro Summoned and removed by opponent
+-- Revive "Thor, Lord of the Aesir" when destroyed by opponent
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsSummonType(SUMMON_TYPE_SYNCHRO) and rp==1-tp and c:IsPreviousControler(tp)
