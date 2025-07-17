@@ -77,9 +77,10 @@ end
 
 -- Target for return
 function s.thfilter(c)
-	return c:IsFaceup() and c:IsLevelAbove(5) and c:IsAbleToHand()
+	return (c:IsFaceup() and c:IsLevelAbove(5) and c:IsAbleToHand())
 		or (c:IsLocation(LOCATION_REMOVED) and c:IsFaceup() and c:IsLevelAbove(5) and c:IsAbleToExtra())
 end
+
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_REMOVED) and s.thfilter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_REMOVED,0,1,nil) end
