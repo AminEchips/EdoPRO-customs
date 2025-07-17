@@ -2,9 +2,8 @@
 local s,id=GetID()
 function s.initial_effect(c)
 	c:EnableReviveLimit()
-	--Synchro Summon procedure
-	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x6042),1,1,s.matfilter,1,99)
-	c:EnableReviveLimit()
+	Synchro.AddProcedure(c, aux.FilterBoolFunction(Card.IsSetCard,0x6042),1,1, aux.FilterBoolFunction(Card.IsCode,30604579),1,99)
+	c:SetSPSummonOnce(id)
 	
 	--Add 1 "Aesir" or "Nordic Relic" from Deck or GY
 	local e1=Effect.CreateEffect(c)
