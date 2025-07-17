@@ -75,18 +75,12 @@ end
 
 function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_GRAVE,0,nil)
-	if chk==0 then return #g>0 end
-	local rg=Group.CreateGroup()
-	while #rg<3 and #g>0 do
-		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-		local tc=g:Select(tp,1,1,nil):GetFirst()
-		if not tc then break end
-		rg:AddCard(tc)
-		g:Remove(Card.IsCode,nil,tc:GetCode())
-		if #g==0 or not Duel.SelectYesNo(tp,aux.Stringid(id,3)) then break end
-	end
-	Duel.Remove(rg,POS_FACEUP,REASON_COST)
-	e:SetLabel(#rg)
+	if chk==0 then return g:GetClassCount(Card.GetCode)>=1 end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+	local sg=g:SelectSubGroup(tp,aux.dncheck,false,1,3)
+	if not sg then return false end
+	Duel.Remove(sg,POS_FACEUP,REASON_COST)
+	e:SetLabel(#sg)
 end
 
 function s.costfilter(c)
