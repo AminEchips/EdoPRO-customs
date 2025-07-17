@@ -17,7 +17,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.setop)
 	c:RegisterEffect(e1)
 
-	--Negate Spell/Trap on resolution
+	--Negate Spell/Trap on resolution (once per turn and optional)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DISABLE+CATEGORY_DAMAGE)
@@ -79,7 +79,7 @@ function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_GRAVE,0,nil)
 	if chk==0 then return #g>0 end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local rg=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_GRAVE,0,1,3,nil)
+	local rg=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_GRAVE,0,1,5,nil)
 	if #rg==0 then return false end
 	Duel.Remove(rg,POS_FACEUP,REASON_COST)
 	e:SetLabel(#rg)
@@ -115,12 +115,14 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-	return rp==1-tp and re:IsHasType(EFFECT_TYPE_ACTIVATE) and Duel.IsChainDisablable(ev)
+	return rp==1-tp and re:IsHasType(EFFECT_TYPE_ACTIVATE) and Duel.IsChainDisablable(ev) and e:GetHandler():GetFlagEffect(id)==0
 end
 
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	local stc=Duel.GetMatchingGroupCount(Card.IsSpellTrap,tp,LOCATION_SZONE,LOCATION_SZONE,nil)
-	if Duel.NegateEffect(ev) then
+	if Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
+		e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
+		Duel.NegateEffect(ev)
 		Duel.Damage(1-tp,stc*800,REASON_EFFECT)
 	end
 end
