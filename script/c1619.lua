@@ -24,8 +24,8 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1)
 	e2:SetHintTiming(0,TIMINGS_CHECK_MONSTER_E)
-	e2:SetTarget(s.distg)
-	e2:SetOperation(s.disop)
+	e2:SetTarget(s.negtg)
+	e2:SetOperation(s.negop)
 	c:RegisterEffect(e2)
 	--Float if sent to GY
 	local e3=Effect.CreateEffect(c)
@@ -79,32 +79,36 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Negate effect
-function s.disfilter(c)
-	return c:IsFaceup() and not c:IsDisabled()
+-- Negate + destroy
+function s.negfilter(c)
+	return c:IsFaceup() and c:IsType(TYPE_EFFECT) and not c:IsDisabled()
 end
-function s.distg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.disfilter,tp,0,LOCATION_MZONE,1,nil) end
+function s.negtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.negfilter,tp,0,LOCATION_MZONE,1,nil) end
 end
-function s.disop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(s.disfilter,tp,0,LOCATION_MZONE,nil)
-	if #g==0 then return end
+function s.negop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	local tc=g:Select(tp,1,1,nil):GetFirst()
-	if not tc or tc:IsImmuneToEffect(e) then return end
-	Duel.NegateRelatedChain(tc,RESET_TURN_SET)
-	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_DISABLE)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-	tc:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EFFECT_DISABLE_EFFECT)
-	tc:RegisterEffect(e2)
-	--Optional mass destruction
-	if Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
-		local dg=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_MZONE,tc)
-		Duel.Destroy(dg,REASON_EFFECT)
+	local g=Duel.SelectMatchingCard(tp,s.negfilter,tp,0,LOCATION_MZONE,1,1,nil)
+	local tc=g:GetFirst()
+	if tc then
+		Duel.HintSelection(g)
+		Duel.NegateRelatedChain(tc,RESET_TURN_SET)
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_DISABLE)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+		tc:RegisterEffect(e1)
+		local e2=e1:Clone()
+		e2:SetCode(EFFECT_DISABLE_EFFECT)
+		e2:SetValue(RESET_TURN_SET)
+		tc:RegisterEffect(e2)
+
+		-- Optional: destroy all opponent monsters
+		local dg=Duel.GetMatchingGroup(aux.TRUE,tp,0,LOCATION_MZONE,nil)
+		if #dg>0 and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
+			Duel.Destroy(dg,REASON_EFFECT)
+		end
 	end
 end
 
