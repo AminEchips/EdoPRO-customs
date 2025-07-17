@@ -1,6 +1,13 @@
 --Nordic Relic Sacred Tree Yggdrasil
 local s,id=GetID()
 function s.initial_effect(c)
+	
+	-- Activate (Continuous Spell)
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_ACTIVATE)
+	e0:SetCode(EVENT_FREE_CHAIN)
+	c:RegisterEffect(e0)
+	
 	--Additional Normal Summon
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
