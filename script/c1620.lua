@@ -12,6 +12,7 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e1:SetCondition(s.setcon)
+	e1:SetCost(s.setcost)
 	e1:SetTarget(s.settg)
 	e1:SetOperation(s.setop)
 	c:RegisterEffect(e1)
@@ -72,19 +73,9 @@ function s.setcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
 
-function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local g=Duel.GetMatchingGroup(Card.IsAbleToRemoveAsCost,tp,LOCATION_GRAVE,0,nil)
-	if chk==0 then return #g>0 and Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,1,nil) end
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_GRAVE)
-end
-
-function s.setfilter(c)
-	return c:IsSetCard(0x5042) and c:IsSpellTrap() and c:IsSSetable()
-end
-
-function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(Card.IsAbleToRemoveAsCost,tp,LOCATION_GRAVE,0,nil)
-	if #g==0 then return end
+function s.setcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	local g=Duel.GetMatchingGroup(s.costfilter,tp,LOCATION_GRAVE,0,nil)
+	if chk==0 then return #g>0 end
 	local rg=Group.CreateGroup()
 	while #rg<3 and #g>0 do
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
@@ -94,8 +85,26 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 		g:Remove(Card.IsCode,nil,tc:GetCode())
 		if #g==0 or not Duel.SelectYesNo(tp,aux.Stringid(id,3)) then break end
 	end
-	if #rg==0 or Duel.Remove(rg,POS_FACEUP,REASON_COST)==0 then return end
-	local ct=#rg
+	Duel.Remove(rg,POS_FACEUP,REASON_COST)
+	e:SetLabel(#rg)
+end
+
+function s.costfilter(c)
+	return c:IsSetCard(0x42) and c:IsAbleToRemoveAsCost()
+end
+
+function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
+	local ct=e:GetLabel()
+	if chk==0 then return ct>0 and Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK,0,ct,nil) end
+	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,0,tp,LOCATION_GRAVE)
+end
+
+function s.setfilter(c)
+	return c:IsSetCard(0x5042) and c:IsSpellTrap() and c:IsSSetable()
+end
+
+function s.setop(e,tp,eg,ep,ev,re,r,rp)
+	local ct=e:GetLabel()
 	local sg=Duel.GetMatchingGroup(s.setfilter,tp,LOCATION_DECK,0,nil)
 	if #sg<ct then ct=#sg end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SET)
