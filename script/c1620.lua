@@ -74,10 +74,14 @@ function s.setfilter(c)
 end
 
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(Card.IsAbleToRemoveAsCost,tp,LOCATION_GRAVE,0,nil)
+	local g=Duel.GetMatchingGroup(function(c)
+		return c:IsSetCard(0x42) and c:IsAbleToRemoveAsCost()
+	end,tp,LOCATION_GRAVE,0,nil)
 	if #g==0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local rg=Duel.SelectMatchingCard(tp,Card.IsAbleToRemoveAsCost,tp,LOCATION_GRAVE,0,1,3,nil)
+	local rg=Duel.SelectMatchingCard(tp,function(c)
+		return c:IsSetCard(0x42) and c:IsAbleToRemoveAsCost()
+	end,tp,LOCATION_GRAVE,0,1,3,nil)
 	if #rg==0 then return end
 	local ct=Duel.Remove(rg,POS_FACEUP,REASON_COST)
 	if ct==0 then return end
@@ -101,6 +105,7 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
+
 
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	return re:IsHasType(EFFECT_TYPE_ACTIVATE) and rp==1-tp and Duel.IsChainDisablable(ev)
