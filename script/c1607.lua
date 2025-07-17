@@ -41,9 +41,6 @@ function s.nscon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- Normal Summon + optional banish
-function s.nsfilter(c)
-	return c:IsSummonable(true,nil)
-end
 function s.banfilter(c)
 	return c:IsSetCard(0x42) and c:IsAbleToRemove()
 end
