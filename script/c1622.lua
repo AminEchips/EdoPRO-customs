@@ -1,12 +1,12 @@
 --Freya, Mother of the Aesir
 local s,id=GetID()
--- Initial Effects
+
 function s.initial_effect(c)
-	-- THIS IS THE SYNCHRO PROCEDURE YOU ASKED FOR (EXACTLY LIKE ODIN)
+	-- 1 "Nordic Ascendant" Tuner + 1+ non-Tuners
 	Synchro.AddProcedure(c,s.tfilter,1,1,Synchro.NonTuner(nil),1,99)
 	c:EnableReviveLimit()
 
-	-- Quick Effect: Negate during your turn
+	-- Negate during your turn
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_NEGATE)
@@ -20,7 +20,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.negop)
 	c:RegisterEffect(e1)
 
-	-- Float during End Phase
+	-- Revive during End Phase if your card was sent to GY by opponent
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_TOGRAVE)
@@ -36,12 +36,12 @@ function s.initial_effect(c)
 end
 s.listed_series={0x3042}
 
--- Tuner must be "Nordic Ascendant"
+-- Synchro material filter
 function s.tfilter(c,scard,sumtype,tp)
 	return c:IsSetCard(0x3042,scard,sumtype,tp) or c:IsHasEffect(EFFECT_SYNSUB_NORDIC)
 end
 
--- Negate activation during your turn
+-- Negate condition: opponent activates during your turn
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
 	return tp==Duel.GetTurnPlayer() and ep~=tp and Duel.IsChainNegatable(ev)
 end
@@ -60,7 +60,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.NegateActivation(ev)
 end
 
--- Revive if something you controlled was sent to GY this turn by opponent
+-- Revival: if face-up card you controlled was sent to GY by opponent this turn
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetFlagEffect(tp,id)>0
 end
@@ -89,13 +89,13 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Global GY Tracker
+-- Global check for face-up cards sent to GY by opponent
 if not s.global_check then
 	s.global_check=true
-	local ge1=Effect.CreateEffect(nil)
+	local ge1=Effect.GlobalEffect()
 	ge1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 	ge1:SetCode(EVENT_TO_GRAVE)
-	ge1:SetOperation(function(_,tp,eg,ep,ev,re,r,rp)
+	ge1:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
 		for tc in eg:Iter() do
 			if tc:IsPreviousControler(tp) and tc:IsPreviousPosition(POS_FACEUP)
 				and tc:IsPreviousLocation(LOCATION_ONFIELD) and rp~=tp then
