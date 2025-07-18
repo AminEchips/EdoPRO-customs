@@ -8,21 +8,18 @@ function s.initial_effect(c)
 	e0:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e0)
 
-	--Shuffle 1 monster to draw 1 (turn player only)
+	--Ignition shuffle and draw (usable by each player on their own turn)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_TODECK+CATEGORY_DRAW)
-	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e1:SetProperty(EFFECT_FLAG_DELAY)
-	e1:SetCode(EVENT_PHASE+PHASE_MAIN1)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_FZONE)
 	e1:SetCountLimit(1,{id,0})
-	e1:SetCondition(function(e,tp) return Duel.GetTurnPlayer()==tp end)
 	e1:SetTarget(s.drtg)
 	e1:SetOperation(s.drop)
 	c:RegisterEffect(e1)
 
-	--If a non-Synchro "Nordic" monster leaves field or destroyed: Special Summon 1 different name
+	--Trigger on non-Synchro "Nordic" leaving field due to opponent's effect
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -38,7 +35,6 @@ function s.initial_effect(c)
 end
 s.listed_series={0x42}
 
--- Draw effect
 function s.dfilter(c)
 	return c:IsMonster() and c:IsAbleToDeck() and c:IsLocation(LOCATION_MZONE)
 end
@@ -56,11 +52,9 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Special Summon condition
 function s.cfilter(c,tp)
 	return c:IsPreviousControler(tp) and c:IsSetCard(0x42) and not c:IsType(TYPE_SYNCHRO)
-		and c:IsReason(REASON_EFFECT|REASON_BATTLE) and c:IsPreviousLocation(LOCATION_MZONE)
-		and (c:IsReason(REASON_EFFECT) and rp~=tp or c:IsReason(REASON_BATTLE))
+		and c:IsReason(REASON_EFFECT) and rp~=tp
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.cfilter,1,nil,tp)
