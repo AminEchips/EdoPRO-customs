@@ -86,7 +86,7 @@ end
 function s.fldop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_FZONE)<=0 then
 		local fc=Duel.GetFieldCard(tp,LOCATION_FZONE,0)
-		if Duel.Destroy(fc,REASON_RULE)==0 then return end
+		if fc and Duel.Destroy(fc,REASON_RULE)==0 then return end
 	end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
 	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.fldfilter),tp,LOCATION_DECK|LOCATION_GRAVE,0,1,1,nil,tp)
@@ -95,4 +95,5 @@ function s.fldop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.MoveToField(tc,tp,tp,LOCATION_FZONE,POS_FACEUP,true)
 	end
 end
+
 
