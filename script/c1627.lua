@@ -57,20 +57,36 @@ function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local lv,atk,def = e:GetLabel()
+	local tc=e:GetLabelObject()
+	if not tc then return end
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN|TYPE_TUNER,atk,def,lv,RACE_ZOMBIE,ATTRIBUTE_DARK) then return end
+	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN|TYPE_TUNER,tc:GetAttack(),tc:GetDefense(),tc:GetLevel(),RACE_ZOMBIE,ATTRIBUTE_DARK) then return end
 	local token=Duel.CreateToken(tp,1648)
-	if Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)>0 then
-		-- Substitute for Nordic Tuner
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_SYNSUB_NORDIC)
-		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		token:RegisterEffect(e1,true)
-	end
+	-- Set token's stats
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_CHANGE_LEVEL)
+	e1:SetValue(tc:GetLevel())
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+	token:RegisterEffect(e1,true)
+	local e2=e1:Clone()
+	e2:SetCode(EFFECT_SET_BASE_ATTACK)
+	e2:SetValue(tc:GetAttack())
+	token:RegisterEffect(e2,true)
+	local e3=e1:Clone()
+	e3:SetCode(EFFECT_SET_BASE_DEFENSE)
+	e3:SetValue(tc:GetDefense())
+	token:RegisterEffect(e3,true)
+	-- Nordic Tuner substitute
+	local e4=Effect.CreateEffect(c)
+	e4:SetType(EFFECT_TYPE_SINGLE)
+	e4:SetCode(EFFECT_SYNSUB_NORDIC)
+	e4:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+	e4:SetReset(RESET_EVENT+RESETS_STANDARD)
+	token:RegisterEffect(e4,true)
+	Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
 end
+
 
 -- 2nd Effect helpers
 function s.revcost(e,tp,eg,ep,ev,re,r,rp,chk)
