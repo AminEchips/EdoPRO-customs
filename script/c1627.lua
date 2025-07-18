@@ -59,7 +59,7 @@ function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local lv,atk,def = e:GetLabel()
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,atk,def,lv,RACE_ZOMBIE,ATTRIBUTE_DARK) then return end
+	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN|TYPE_TUNER,atk,def,lv,RACE_ZOMBIE,ATTRIBUTE_DARK) then return end
 	local token=Duel.CreateToken(tp,1648)
 	if Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)>0 then
 		-- Substitute for Nordic Tuner
