@@ -78,7 +78,7 @@ function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 	token:RegisterEffect(e1,true)
-	Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
+	Duel.SpecialSummon(token,SUMMON_TYPE_SPECIAL,tp,tp,false,false,POS_FACEUP)
 end
 
 -- 2nd Effect helpers
