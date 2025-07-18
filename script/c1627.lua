@@ -35,7 +35,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0x42,0x4b}
 
--- 1st Effect helpers
+-- 1st Effect
 function s.tkfilter(c)
 	return c:IsMonster() and (c:IsSetCard(0x42) or c:IsSetCard(0x4b)) and c:IsAbleToRemoveAsCost()
 end
@@ -63,7 +63,7 @@ function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
 end
 
--- 2nd Effect helpers
+-- 2nd Effect
 function s.revcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.CheckLPCost(tp,1000) end
 	Duel.PayLPCost(tp,1000)
