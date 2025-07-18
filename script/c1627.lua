@@ -47,34 +47,39 @@ function s.tkcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
+	local tc=e:GetLabelObject()
+	if chk==0 then return tc and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
+			and Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN|TYPE_TUNER,math.max(0,tc:GetTextAttack()),math.max(0,tc:GetTextDefense()),tc:GetOriginalLevel(),tc:GetOriginalRace(),tc:GetOriginalAttribute()) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,0)
 end
 function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=e:GetLabelObject()
-	if not tc or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN|TYPE_TUNER,
-		math.max(0,tc:GetTextAttack()),math.max(0,tc:GetTextDefense()),
-		tc:GetOriginalLevel(),tc:GetOriginalRace(),tc:GetOriginalAttribute()) then return end
-
+	if not tc then return end
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN|TYPE_TUNER,math.max(0,tc:GetTextAttack()),math.max(0,tc:GetTextDefense()),tc:GetOriginalLevel(),tc:GetOriginalRace(),tc:GetOriginalAttribute()) then return end
 	local token=Duel.CreateToken(tp,1648)
 	token:Attack(math.max(0,tc:GetTextAttack()))
 	token:Defense(math.max(0,tc:GetTextDefense()))
 	token:Level(tc:GetOriginalLevel())
 	token:Race(tc:GetOriginalRace())
 	token:Attribute(tc:GetOriginalAttribute())
-
+	-- Make it a Tuner
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_SINGLE)
+	e0:SetCode(EFFECT_ADD_TYPE)
+	e0:SetValue(TYPE_TUNER)
+	e0:SetReset(RESET_EVENT+RESETS_STANDARD)
+	token:RegisterEffect(e0,true)
+	-- Synchro Substitute
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_SYNSUB_NORDIC)
 	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 	token:RegisterEffect(e1,true)
-
 	Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
 end
-
 
 -- 2nd Effect helpers
 function s.revcost(e,tp,eg,ep,ev,re,r,rp,chk)
