@@ -48,15 +48,14 @@ function s.tkcost(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
-			and Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,0,0,1,RACE_BEAST,ATTRIBUTE_EARTH) end
+			and Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,0,0,1,RACE_ZOMBIE,ATTRIBUTE_DARK) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,0)
 end
 function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	local mc=e:GetLabelObject()
-	if not mc or not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,mc:GetAttack(),mc:GetDefense(),mc:GetLevel(),RACE_BEAST,ATTRIBUTE_EARTH) then return end
+	if not mc or not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,mc:GetAttack(),mc:GetDefense(),mc:GetLevel(),RACE_ZOMBIE,ATTRIBUTE_DARK) then return end
 	local token=Duel.CreateToken(tp,1648)
-	token:CopyEffect(mc:GetOriginalCode(),RESET_EVENT+RESETS_STANDARD)
 	-- manually assign copied stats
 	token:Level(mc:GetLevel())
 	token:Attack(mc:GetAttack())
