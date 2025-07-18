@@ -49,7 +49,7 @@ end
 function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local tc=e:GetLabelObject()
 	if chk==0 then return tc and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
-			and Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN|TYPE_TUNER,math.max(0,tc:GetTextAttack()),math.max(0,tc:GetTextDefense()),tc:GetOriginalLevel(),tc:GetOriginalRace(),tc:GetOriginalAttribute()) end
+			and Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,math.max(0,tc:GetTextAttack()),math.max(0,tc:GetTextDefense()),tc:GetOriginalLevel(),tc:GetOriginalRace(),tc:GetOriginalAttribute()) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,0)
 end
 function s.tkop(e,tp,eg,ep,ev,re,r,rp)
@@ -57,7 +57,7 @@ function s.tkop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=e:GetLabelObject()
 	if not tc then return end
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN|TYPE_TUNER,math.max(0,tc:GetTextAttack()),math.max(0,tc:GetTextDefense()),tc:GetOriginalLevel(),tc:GetOriginalRace(),tc:GetOriginalAttribute()) then return end
+	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,math.max(0,tc:GetTextAttack()),math.max(0,tc:GetTextDefense()),tc:GetOriginalLevel(),tc:GetOriginalRace(),tc:GetOriginalAttribute()) then return end
 	local token=Duel.CreateToken(tp,1648)
 	token:Attack(math.max(0,tc:GetTextAttack()))
 	token:Defense(math.max(0,tc:GetTextDefense()))
