@@ -43,33 +43,25 @@ function s.tkcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.tkfilter,tp,LOCATION_GRAVE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g=Duel.SelectMatchingCard(tp,s.tkfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	local tc=g:GetFirst()
-	if tc then
-		e:SetLabel(tc:GetLevel(), tc:GetAttack(), tc:GetDefense())
-		Duel.Remove(tc,POS_FACEUP,REASON_COST)
-	end
+	e:SetLabelObject(g:GetFirst())
+	Duel.Remove(g,POS_FACEUP,REASON_COST)
 end
 function s.tktg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local lv,atk,def = e:GetLabel()
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,atk,def,lv,RACE_ZOMBIE,ATTRIBUTE_DARK) end
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 
+			and Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,0,0,1,RACE_BEAST,ATTRIBUTE_EARTH) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,0)
 end
 function s.tkop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	local lv,atk,def = e:GetLabel()
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,atk,def,lv,RACE_ZOMBIE,ATTRIBUTE_DARK) then return end
+	local mc=e:GetLabelObject()
+	if not mc or not Duel.IsPlayerCanSpecialSummonMonster(tp,1648,0,TYPES_TOKEN,mc:GetAttack(),mc:GetDefense(),mc:GetLevel(),RACE_BEAST,ATTRIBUTE_EARTH) then return end
 	local token=Duel.CreateToken(tp,1648)
-	if Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)>0 then
-		-- Substitute for Nordic Tuner
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_SYNSUB_NORDIC)
-		e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		token:RegisterEffect(e1,true)
-	end
+	token:CopyEffect(mc:GetOriginalCode(),RESET_EVENT+RESETS_STANDARD)
+	-- manually assign copied stats
+	token:Level(mc:GetLevel())
+	token:Attack(mc:GetAttack())
+	token:Defense(mc:GetDefense())
+	Duel.SpecialSummon(token,0,tp,tp,false,false,POS_FACEUP)
 end
 
 -- 2nd Effect helpers
@@ -82,15 +74,15 @@ function s.revfilter(c,e,tp)
 end
 function s.revtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_REMOVED) and s.revfilter(chkc,e,tp) end
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingTarget(s.revfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp) end
+	if chk==0 then return Duel.IsExistingTarget(s.revfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp)
+		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 	local g=Duel.SelectTarget(tp,s.revfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,tp,LOCATION_REMOVED)
+	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,g,1,0,0)
 end
 function s.revop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) then
-		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
+	if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)>0 then
+		-- No additional effect
 	end
 end
