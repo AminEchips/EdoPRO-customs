@@ -6,6 +6,7 @@ function s.initial_effect(c)
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e0)
+
 	--1st Effect: Turn player can shuffle 1 monster into Deck, draw 1
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
@@ -13,17 +14,18 @@ function s.initial_effect(c)
 	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_FZONE)
 	e1:SetCountLimit(1,id)
-	e1:SetTargetRange(1,1) -- Both players can use
-	e1:SetCondition(s.shufflecon)
+	e1:SetTargetRange(1,1)
+	e1:SetCondition(function(e,tp) return Duel.GetTurnPlayer()==tp end)
 	e1:SetTarget(s.shuffletg)
 	e1:SetOperation(s.shuffleop)
 	c:RegisterEffect(e1)
+
 	--2nd Effect: If non-Synchro "Nordic" leaves field by battle or opponent effect
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetProperty(EFFECT_FLAG_DELAY)
+	e2:SetProperty(EFFECT_FLAG_DAMAGE_STEP+EFFECT_FLAG_DELAY)
 	e2:SetCode(EVENT_LEAVE_FIELD)
 	e2:SetRange(LOCATION_FZONE)
 	e2:SetCountLimit(1,{id,1})
@@ -34,10 +36,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0x42}
 
--- 1st Effect: Shuffle into Deck and draw
-function s.shufflecon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()==tp
-end
+-- 1st Effect helpers
 function s.shufffilter(c)
 	return c:IsAbleToDeck() and c:IsMonster() and c:IsLocation(LOCATION_MZONE)
 end
@@ -54,23 +53,24 @@ function s.shuffleop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- 2nd Effect
-function s.cfilter(c,tp)
-	return c:IsPreviousControler(tp)
+-- 2nd Effect helpers
+function s.cfilter(c,tp,rp)
+	return c:IsPreviousPosition(POS_FACEUP) and c:IsPreviousControler(tp)
 		and c:IsPreviousSetCard(0x42)
-		and bit.band(c:GetPreviousTypeOnField(),TYPE_SYNCHRO)==0
+		and (c:GetPreviousTypeOnField()&TYPE_SYNCHRO)==0
 		and c:IsPreviousLocation(LOCATION_MZONE)
-		and ((c:IsReason(REASON_EFFECT) and c:GetReasonPlayer()==1-tp) or c:IsReason(REASON_BATTLE))
+		and (c:IsReason(REASON_BATTLE) or (rp==1-tp and c:IsReason(REASON_EFFECT)))
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(s.cfilter,1,nil,tp)
+	return eg:IsExists(s.cfilter,1,nil,tp,rp)
 end
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(0x42) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 		and (not c:IsLocation(LOCATION_EXTRA) or Duel.GetLocationCountFromEx(tp)>0)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK+LOCATION_EXTRA,0,1,nil,e,tp) end
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
+		and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_DECK+LOCATION_EXTRA,0,1,nil,e,tp) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_DECK+LOCATION_EXTRA)
 end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
@@ -78,6 +78,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_DECK+LOCATION_EXTRA,0,1,1,nil,e,tp)
 	local tc=g:GetFirst()
 	if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)>0 and tc:IsLocation(LOCATION_MZONE) and tc:IsLocation(LOCATION_EXTRA) then
+		-- Negate its effects this turn
 		local e1=Effect.CreateEffect(e:GetHandler())
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_DISABLE)
