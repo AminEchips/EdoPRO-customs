@@ -26,19 +26,17 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e2:SetRange(LOCATION_SZONE)
-	e2:SetCountLimit(1,{id,1})
 	e2:SetCondition(s.lpcon)
 	e2:SetOperation(s.lpop)
 	c:RegisterEffect(e2)
 
-	-- Place a Field Spell from Deck or GY if a Spell/Trap leaves the field
+	-- Place a Field Spell from Deck or GY when ANY Spell/Trap leaves the field
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_LEAVE_FIELD)
 	e3:SetProperty(EFFECT_FLAG_DELAY)
 	e3:SetRange(LOCATION_SZONE)
-	e3:SetCountLimit(1,{id,2})
 	e3:SetCondition(s.fldcon)
 	e3:SetTarget(s.fldtg)
 	e3:SetOperation(s.fldop)
@@ -46,12 +44,12 @@ function s.initial_effect(c)
 end
 s.listed_series={0x42,0x4b}
 
--- Effect 1: Additional Normal Summon during Main Phase
+-- Extra Normal Summon: only during Main Phase
 function s.nscon(e)
 	return Duel.IsMainPhase()
 end
 
--- Effect 2: LP Gain condition – Opponent Special Summons + You control an "Aesir"
+-- LP Gain: opponent Special Summons, and you control an Aesir
 function s.lpcon(e,tp,eg,ep,ev,re,r,rp)
 	return rp==1-tp and Duel.IsExistingMatchingCard(Card.IsSetCard,tp,LOCATION_MZONE,0,1,nil,0x4b)
 end
@@ -68,20 +66,24 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 3: Trigger if a Spell/Trap leaves the field from SZONE or FZONE
-function s.fldcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(function(c)
-		return c:IsType(TYPE_SPELL+TYPE_TRAP)
-			and c:IsPreviousLocation(LOCATION_SZONE|LOCATION_FZONE)
-	end,1,nil)
+-- Trigger if ANY Spell/Trap card (from either side) leaves SZONE or FZONE
+function s.fldcfilter(c)
+	return c:IsType(TYPE_SPELL+TYPE_TRAP)
+		and (c:IsPreviousLocation(LOCATION_SZONE) or c:IsPreviousLocation(LOCATION_FZONE))
 end
+function s.fldcon(e,tp,eg,ep,ev,re,r,rp)
+	return eg:IsExists(s.fldcfilter,1,nil)
+end
+
 function s.fldfilter(c,tp)
 	return c:IsType(TYPE_FIELD)
 end
+
 function s.fldtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_FZONE)>0
 		and Duel.IsExistingMatchingCard(s.fldfilter,tp,LOCATION_DECK|LOCATION_GRAVE,0,1,nil,tp) end
 end
+
 function s.fldop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_FZONE)<=0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
