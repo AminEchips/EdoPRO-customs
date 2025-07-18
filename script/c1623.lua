@@ -1,14 +1,13 @@
 --Nordic Relic Sacred Tree Yggdrasil
 local s,id=GetID()
 function s.initial_effect(c)
-	
 	-- Activate (Continuous Spell)
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e0)
-	
-	--Additional Normal Summon
+
+	-- Additional Normal Summon of a "Nordic" monster
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD)
@@ -20,7 +19,7 @@ function s.initial_effect(c)
 	e1:SetCountLimit(1,id)
 	c:RegisterEffect(e1)
 
-	--Gain LP if opponent Special Summons while you control an Aesir monster
+	-- Gain LP when opponent Special Summons while you control an "Aesir" monster
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_RECOVER)
@@ -32,7 +31,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.lpop)
 	c:RegisterEffect(e2)
 
-	--Place Field Spell from Deck or GY when a Spell/Trap leaves the field
+	-- Place a Field Spell from Deck or GY if a Spell/Trap leaves the field
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -47,14 +46,14 @@ function s.initial_effect(c)
 end
 s.listed_series={0x42,0x4b}
 
--- Effect 1: Extra Normal Summon condition (Main Phase)
+-- Effect 1: Additional Normal Summon during Main Phase
 function s.nscon(e)
 	return Duel.IsMainPhase()
 end
 
--- Effect 2: Gain LP if opponent Special Summons while you control Aesir
+-- Effect 2: LP Gain condition – Opponent Special Summons + You control an "Aesir"
 function s.lpcon(e,tp,eg,ep,ev,re,r,rp)
-	return rp==1-tp and Duel.IsExistingMatchingCard(Card.IsSetCard,tp,LOCATION_MZONE,0,1,nil,0x4b) -- Aesir
+	return rp==1-tp and Duel.IsExistingMatchingCard(Card.IsSetCard,tp,LOCATION_MZONE,0,1,nil,0x4b)
 end
 function s.lpop(e,tp,eg,ep,ev,re,r,rp)
 	local g=eg:Filter(Card.IsFaceup,nil)
@@ -69,15 +68,19 @@ function s.lpop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Effect 3: If Spell/Trap leaves field, place a Field Spell from Deck or GY
+-- Effect 3: Trigger if a Spell/Trap leaves the field from SZONE or FZONE
 function s.fldcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(function(c) return c:IsType(TYPE_SPELL+TYPE_TRAP) end,1,nil)
+	return eg:IsExists(function(c)
+		return c:IsType(TYPE_SPELL+TYPE_TRAP)
+			and c:IsPreviousLocation(LOCATION_SZONE|LOCATION_FZONE)
+	end,1,nil)
 end
 function s.fldfilter(c,tp)
-	return c:IsType(TYPE_FIELD) and c:IsAbleToRemove() and Duel.GetLocationCount(tp,LOCATION_FZONE)>0
+	return c:IsType(TYPE_FIELD)
 end
 function s.fldtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.fldfilter,tp,LOCATION_DECK|LOCATION_GRAVE,0,1,nil,tp) end
+	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_FZONE)>0
+		and Duel.IsExistingMatchingCard(s.fldfilter,tp,LOCATION_DECK|LOCATION_GRAVE,0,1,nil,tp) end
 end
 function s.fldop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.GetLocationCount(tp,LOCATION_FZONE)<=0 then return end
