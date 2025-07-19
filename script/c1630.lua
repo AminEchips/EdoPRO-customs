@@ -78,7 +78,7 @@ function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
 		local e3=Effect.CreateEffect(e:GetHandler())
 		e3:SetType(EFFECT_TYPE_SINGLE)
 		e3:SetCode(EFFECT_CANNOT_ATTACK)
-		e3:SetCondition(function(e) return Duel.GetCurrentPhase()~=PHASE_BATTLE end)
+		e3:SetCondition(function(e) return not Duel.GetCurrentPhase()~=PHASE_BATTLE end)
 		e3:SetReset(RESET_EVENT+RESETS_STANDARD)
 		tc:RegisterEffect(e3)
 	end
