@@ -18,7 +18,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.protop)
 	c:RegisterEffect(e1)
 
-	--Float into Baldur
+	--Float into Baldur (optional trigger)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_SPECIAL_SUMMON)
@@ -31,6 +31,13 @@ function s.initial_effect(c)
 	e2:SetTarget(s.baldtg)
 	e2:SetOperation(s.baldop)
 	c:RegisterEffect(e2)
+
+	-- Track face-up before leaving field for float
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_LEAVE_FIELD_P)
+	e3:SetOperation(function(e) e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1) end)
+	c:RegisterEffect(e3)
 end
 
 -- Freya protection target
@@ -68,7 +75,7 @@ function s.baldfilter(c)
 		or (c:IsType(TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsFaceup())
 end
 function s.baldcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():IsPreviousLocation(LOCATION_ONFIELD) and e:GetHandler():IsPreviousPosition(POS_FACEUP)
+	return e:GetHandler():GetFlagEffect(id)>0
 end
 function s.baldtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsOnField() and s.baldfilter(chkc) end
