@@ -40,7 +40,7 @@ function s.prottg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingTarget(s.freya_filter,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	local g=Duel.SelectTarget(tp,s.freya_filter,tp,LOCATION_MZONE,0,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_LEAVE_FIELD,g,1,0,0)
+	Duel.SetOperationInfo(0,0,g,1,0,0)
 end
 function s.protop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
@@ -69,7 +69,7 @@ function s.baldtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsOnField() and s.baldfilter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.baldfilter,tp,LOCATION_ONFIELD,0,1,nil)
 		and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and Duel.IsExistingMatchingCard(aux.FilterFaceupFunction(Card.IsCode,1616),tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil) end
+		and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,1616),tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
 	local g=Duel.SelectTarget(tp,s.baldfilter,tp,LOCATION_ONFIELD,0,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
@@ -79,7 +79,7 @@ function s.baldop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetFirstTarget()
 	if g and g:IsRelateToEffect(e) and Duel.Destroy(g,REASON_EFFECT)>0 then
 		if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-		local sc=Duel.SelectMatchingCard(tp,aux.FilterFaceupFunction(Card.IsCode,1616),tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil):GetFirst()
+		local sc=Duel.SelectMatchingCard(tp,aux.FaceupFilter(Card.IsCode,1616),tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil):GetFirst()
 		if sc then
 			Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
 		end
