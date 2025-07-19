@@ -40,6 +40,7 @@ function s.prottg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chk==0 then return Duel.IsExistingTarget(s.freya_filter,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
 	local g=Duel.SelectTarget(tp,s.freya_filter,tp,LOCATION_MZONE,0,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_LEAVE_FIELD,g,1,0,0)
 end
 function s.protop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
@@ -62,7 +63,7 @@ end
 -- Destroy and summon Baldur
 function s.baldfilter(c)
 	return (c:IsType(TYPE_FIELD) and c:IsLocation(LOCATION_FZONE))
-		or (c:IsType(TYPE_TRAP) and c:IsContinuous() and c:IsFaceup())
+		or (c:IsType(TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsFaceup())
 end
 function s.baldtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsOnField() and s.baldfilter(chkc) end
