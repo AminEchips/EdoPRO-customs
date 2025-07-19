@@ -1,106 +1,85 @@
---Baldur, the Aesir Might of Valhalla
+--Vanaheim, Birth of Freya
+--Scripted by Meuh
 local s,id=GetID()
 function s.initial_effect(c)
-	c:EnableReviveLimit()
-	Synchro.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x42),1,1,Synchro.NonTuner(nil),1,99)
-	
-	--Destroy and gain ATK
+	--Protect Freya
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
-	e1:SetCategory(CATEGORY_DESTROY)
+	e1:SetCategory(CATEGORY_PROTECT)
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e1:SetRange(LOCATION_MZONE)
-	e1:SetCountLimit(1)
-	e1:SetTarget(s.destg)
-	e1:SetOperation(s.desop)
+	e1:SetRange(LOCATION_SZONE)
+	e1:SetCountLimit(1,id)
+	e1:SetTarget(s.prottg)
+	e1:SetOperation(s.protop)
 	c:RegisterEffect(e1)
-
-	--Revive and copy name/level
+	--Leave field: destroy + Summon Baldur
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e2:SetCode(EVENT_PHASE+PHASE_END)
-	e2:SetRange(LOCATION_GRAVE)
+	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_SPECIAL_SUMMON)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e2:SetCode(EVENT_LEAVE_FIELD)
 	e2:SetProperty(EFFECT_FLAG_DELAY)
-	e2:SetCountLimit(1,id)
-	e2:SetCondition(s.spcon)
-	e2:SetTarget(s.sptg)
-	e2:SetOperation(s.spop)
+	e2:SetCountLimit(1,{id,1})
+	e2:SetOperation(s.leaveop)
 	c:RegisterEffect(e2)
 end
 
---1st effect: destroy target and gain ATK
-function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) end
-	if chk==0 then return Duel.IsExistingTarget(nil,tp,0,LOCATION_MZONE,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
-	local g=Duel.SelectTarget(tp,nil,tp,0,LOCATION_MZONE,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
+-- Target "Freya, Mother of the Aesir"
+function s.protfilter(c)
+	return c:IsFaceup() and c:IsCode(1622)
 end
-function s.desop(e,tp,eg,ep,ev,re,r,rp)
+function s.prottg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and s.protfilter(chkc) end
+	if chk==0 then return Duel.IsExistingTarget(s.protfilter,tp,LOCATION_MZONE,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	Duel.SelectTarget(tp,s.protfilter,tp,LOCATION_MZONE,0,1,1,nil)
+end
+function s.protop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) and tc:IsFaceup() then
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
+		e1:SetValue(1)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END+RESET_OPPO_TURN)
+		tc:RegisterEffect(e1)
+		local e2=e1:Clone()
+		e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
+		tc:RegisterEffect(e2)
+		local e3=e1:Clone()
+		e3:SetCode(EFFECT_CANNOT_BE_EFFECT_TARGET)
+		e3:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
+		e3:SetRange(LOCATION_MZONE)
+		e3:SetValue(aux.tgoval)
+		tc:RegisterEffect(e3)
+		local e4=e1:Clone()
+		e4:SetCode(EFFECT_CANNOT_BE_REMOVED)
+		tc:RegisterEffect(e4)
+	end
+end
+
+-- When this card leaves the field
+function s.desfilter(c)
+	return (c:IsLocation(LOCATION_FZONE) or (c:IsFaceup() and c:IsType(TYPE_CONTINUOUS) and c:IsType(TYPE_TRAP)))
+end
+function s.leaveop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if tc:IsRelateToEffect(e) and Duel.Destroy(tc,REASON_EFFECT)==1 and c:IsRelateToEffect(e) and c:IsFaceup() then
-		local atk=tc:GetAttack()
-		if atk>0 then
-			local e1=Effect.CreateEffect(c)
-			e1:SetType(EFFECT_TYPE_SINGLE)
-			e1:SetCode(EFFECT_UPDATE_ATTACK)
-			e1:SetValue(atk)
-			e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
-			c:RegisterEffect(e1)
+	if not c:IsPreviousPosition(POS_FACEUP) then return end
+	-- Destroy 1 valid card you control (FZONE or face-up Continuous Trap)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectMatchingCard(tp,s.desfilter,tp,LOCATION_ONFIELD,0,1,1,nil)
+	if #g>0 and Duel.Destroy(g,REASON_EFFECT)>0 then
+		-- Try to Special Summon Baldur
+		if Duel.GetLocationCountFromEx(tp,tp,nil,TYPE_SYNCHRO)>0 then
+			local sc=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil,e,tp):GetFirst()
+			if sc then
+				Duel.SpecialSummon(sc,SUMMON_TYPE_SYNCHRO,tp,tp,false,true,POS_FACEUP)
+				sc:CompleteProcedure()
+			end
 		end
 	end
 end
-
---2nd effect: revive if sent to GY this turn by opponent
-function s.spcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsPreviousControler(tp) and c:IsReason(REASON_EFFECT+REASON_BATTLE) and rp~=tp and c:GetTurnID()==Duel.GetTurnCount()
-end
-function s.tunerfilter(c)
-	return c:IsSetCard(0x42) and c:IsType(TYPE_TUNER) and c:IsAbleToRemove()
-end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then
-		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-			and Duel.IsExistingMatchingCard(s.tunerfilter,tp,LOCATION_GRAVE,0,1,nil)
-			and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false)
-	end
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,nil,1,tp,LOCATION_GRAVE)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
-end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectMatchingCard(tp,s.tunerfilter,tp,LOCATION_GRAVE,0,1,1,nil)
-	local tc=g:GetFirst()
-	if not tc or Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)==0 then return end
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
-	--Becomes a Tuner
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_ADD_TYPE)
-	e1:SetValue(TYPE_TUNER)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-	c:RegisterEffect(e1)
-	--Change name
-	local e2=Effect.CreateEffect(c)
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetCode(EFFECT_CHANGE_CODE)
-	e2:SetValue(tc:GetOriginalCode())
-	e2:SetReset(RESET_EVENT+RESETS_STANDARD)
-	c:RegisterEffect(e2)
-	--Change level
-	local lv=tc:GetOriginalLevel()
-	if lv>0 then
-		local e3=Effect.CreateEffect(c)
-		e3:SetType(EFFECT_TYPE_SINGLE)
-		e3:SetCode(EFFECT_CHANGE_LEVEL)
-		e3:SetValue(lv)
-		e3:SetReset(RESET_EVENT+RESETS_STANDARD)
-		c:RegisterEffect(e3)
-	end
+function s.spfilter(c,e,tp)
+	return c:IsCode(1616) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_SYNCHRO,tp,false,true)
 end
