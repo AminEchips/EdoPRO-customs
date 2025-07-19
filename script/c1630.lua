@@ -30,7 +30,7 @@ end
 
 --Effect 1: End Phase tribute or damage
 function s.attackedfilter(c)
-	return c:GetAttackAnnouncedCount()>0 and c:IsAttackable()
+	return c:GetAttackAnnouncedCount()>0
 end
 function s.endop(e,tp,eg,ep,ev,re,r,rp)
 	local p=Duel.GetTurnPlayer()
