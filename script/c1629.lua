@@ -18,7 +18,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.protop)
 	c:RegisterEffect(e1)
 
-	--Float into Baldur (optional trigger)
+	--Float into Baldur
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_SPECIAL_SUMMON)
