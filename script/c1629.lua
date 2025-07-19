@@ -31,13 +31,6 @@ function s.initial_effect(c)
 	e2:SetTarget(s.baldtg)
 	e2:SetOperation(s.baldop)
 	c:RegisterEffect(e2)
-
-	-- Track face-up before leaving field for float
-	local e3=Effect.CreateEffect(c)
-	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
-	e3:SetCode(EVENT_LEAVE_FIELD_P)
-	e3:SetOperation(function(e) e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1) end)
-	c:RegisterEffect(e3)
 end
 
 -- Freya protection target
@@ -75,7 +68,8 @@ function s.baldfilter(c)
 		or (c:IsType(TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsFaceup())
 end
 function s.baldcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():GetFlagEffect(id)>0
+	local c=e:GetHandler()
+	return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsPreviousPosition(POS_FACEUP)
 end
 function s.baldtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsOnField() and s.baldfilter(chkc) end
