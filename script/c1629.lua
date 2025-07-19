@@ -22,7 +22,7 @@ function s.initial_effect(c)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_SPECIAL_SUMMON)
-	e2:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_FIELD)
+	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_LEAVE_FIELD)
 	e2:SetRange(LOCATION_FZONE)
 	e2:SetCountLimit(1,{id,1})
@@ -65,13 +65,16 @@ function s.baldfilter(c)
 	return (c:IsType(TYPE_FIELD) and c:IsLocation(LOCATION_FZONE))
 		or (c:IsType(TYPE_TRAP) and c:IsType(TYPE_CONTINUOUS) and c:IsFaceup())
 end
+function s.baldfilter2(c)
+	return c:IsCode(1616) and ((c:IsLocation(LOCATION_EXTRA) and not c:IsFacedown()) or c:IsLocation(LOCATION_GRAVE))
+end
 function s.baldcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
 		return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsPreviousPosition(POS_FACEUP) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsControler(tp)
 	end,1,nil)
 	and Duel.IsExistingMatchingCard(s.baldfilter,tp,LOCATION_ONFIELD,0,1,nil)
 	and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-	and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsCode,1616),tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil)
+	and Duel.IsExistingMatchingCard(s.baldfilter2,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil)
 end
 function s.baldop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
@@ -79,8 +82,9 @@ function s.baldop(e,tp,eg,ep,ev,re,r,rp)
 		local g=Duel.SelectMatchingCard(tp,s.baldfilter,tp,LOCATION_ONFIELD,0,1,1,nil)
 		if #g>0 and Duel.Destroy(g,REASON_EFFECT)>0 then
 			if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-			local sc=Duel.SelectMatchingCard(tp,aux.FaceupFilter(Card.IsCode,1616),tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil):GetFirst()
+			local sc=Duel.SelectMatchingCard(tp,s.baldfilter2,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil):GetFirst()
 			if sc then
+				sc:SetMaterial(nil)
 				Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
 			end
 		end
