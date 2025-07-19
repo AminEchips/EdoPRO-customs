@@ -70,12 +70,15 @@ function s.baldfilter2(c)
 end
 function s.baldcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
-		return c:IsPreviousLocation(LOCATION_ONFIELD) and c:IsPreviousPosition(POS_FACEUP) and c:IsType(TYPE_SPELL+TYPE_TRAP) and c:IsControler(tp)
+		return c:IsPreviousLocation(LOCATION_ONFIELD)
+			and (c:GetPreviousTypeOnField() & (TYPE_SPELL+TYPE_TRAP)) ~= 0
+			and c:GetPreviousControler() == tp
 	end,1,nil)
 	and Duel.IsExistingMatchingCard(s.baldfilter,tp,LOCATION_ONFIELD,0,1,nil)
 	and Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 	and Duel.IsExistingMatchingCard(s.baldfilter2,tp,LOCATION_EXTRA+LOCATION_GRAVE,0,1,nil)
 end
+
 function s.baldop(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.SelectYesNo(tp,aux.Stringid(id,1)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
