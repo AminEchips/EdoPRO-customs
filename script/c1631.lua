@@ -2,26 +2,25 @@
 --Scripted by Meuh
 local s,id=GetID()
 function s.initial_effect(c)
-	--Activate
+	--Activate this card
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
 	c:RegisterEffect(e0)
 
-	--Choose 1 of 2 effects
+	--Ignition effect: choose 1 of 2 options
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
-	e1:SetType(EFFECT_TYPE_ACTIVATE)
-	e1:SetCode(EVENT_FREE_CHAIN)
+	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetRange(LOCATION_SZONE)
 	e1:SetCountLimit(1,id)
-	e1:SetHintTiming(0,TIMINGS_CHECK_MONSTER+TIMING_MAIN_END)
 	e1:SetTarget(s.target)
 	e1:SetOperation(s.activate)
 	c:RegisterEffect(e1)
 end
 
---Option selection
+--Check options
 function s.spfilter(c,e,tp)
 	return c:IsSetCard(0xa042) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 		and (c:IsLocation(LOCATION_HAND) or c:IsFaceup())
@@ -53,23 +52,25 @@ end
 function s.activate(e,tp,eg,ep,ev,re,r,rp)
 	local op=e:GetLabel()
 	if op==0 then
+		-- Special Summon "Nordic Alfar"
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
 		local g=Duel.SelectMatchingCard(tp,s.spfilter,tp,LOCATION_HAND+LOCATION_REMOVED,0,1,1,nil,e,tp)
 		if #g>0 then
 			Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
 		end
 	else
+		-- Transform "Nordic Ascendant"
 		Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,2))
 		local tc=Duel.SelectMatchingCard(tp,s.chfilter,tp,LOCATION_MZONE,0,1,1,nil):GetFirst()
 		if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
-			-- Gains "Nordic Alfar" archetype
+			-- Gain "Nordic Alfar" archetype
 			local e1=Effect.CreateEffect(e:GetHandler())
 			e1:SetType(EFFECT_TYPE_SINGLE)
 			e1:SetCode(EFFECT_ADD_SETCODE)
 			e1:SetValue(0xa042)
 			e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
 			tc:RegisterEffect(e1)
-			-- Becomes DARK
+			-- Become DARK
 			local e2=Effect.CreateEffect(e:GetHandler())
 			e2:SetType(EFFECT_TYPE_SINGLE)
 			e2:SetCode(EFFECT_CHANGE_ATTRIBUTE)
