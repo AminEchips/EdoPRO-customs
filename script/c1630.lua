@@ -17,14 +17,17 @@ function s.initial_effect(c)
 	e1:SetOperation(s.endop)
 	c:RegisterEffect(e1)
 
-	-- Store the phase when leaving the field
+	-- Store phase when leaving the field
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_CONTINUOUS+EFFECT_TYPE_SINGLE)
 	e2:SetCode(EVENT_LEAVE_FIELD_P)
 	e2:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
-		e:GetHandler():RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1,Duel.GetCurrentPhase())
-	end)
+		local c=e:GetHandler()
+		c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
+		c:SetFlagEffectLabel(id,Duel.GetCurrentPhase())
+	end)	
 	c:RegisterEffect(e2)
+
 
 	-- If destroyed by a monster effect, activate effect to gain control
 	local e3=Effect.CreateEffect(c)
