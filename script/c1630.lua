@@ -38,7 +38,7 @@ end
 
 --Filter monsters that attacked this turn
 function s.attackedfilter(c)
-	return c:GetAttackAnnouncedCount()>0 and c:IsAttackable() and c:IsReleasable()
+	return c:GetAttackAnnouncedCount()>0 and c:IsReleasable()
 end
 
 --End Phase: Tribute or take damage
