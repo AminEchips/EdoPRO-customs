@@ -20,7 +20,7 @@ function s.initial_effect(c)
 	e3:SetCode(EFFECT_CANNOT_DISEFFECT)
 	c:RegisterEffect(e3)
 
-	--Effect 1: If you Synchro Summon an "Aesir" monster, add 1 "Aesir" card
+	--Effect 1: If you Synchro Summon an "Aesir" monster, add 1 "Aesir" card from Deck to hand
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,0))
 	e4:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -34,7 +34,7 @@ function s.initial_effect(c)
 	e4:SetOperation(s.thop)
 	c:RegisterEffect(e4)
 
-	--Effect 2: If a monster(s) is banished from either GY, return 1 to hand (3x per turn)
+	--Effect 2: If monster(s) are banished from either GY, return 1 of them to hand (3x per turn)
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,1))
 	e5:SetCategory(CATEGORY_TOHAND)
@@ -49,7 +49,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 
---Effect 1: Synchro Summon of "Aesir" monster
+--Effect 1: Synchro Summon of "Aesir"
 function s.thfilter(c,tp)
 	return c:IsSummonType(SUMMON_TYPE_SYNCHRO) and c:IsSetCard(0x4b) and c:IsControler(tp)
 end
@@ -72,24 +72,25 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Effect 2: Monster(s) banished from GY → return 1 to hand
+--Effect 2: Return banished monster (if banished from GY)
 function s.retcon(e,tp,eg,ep,ev,re,r,rp)
-	return eg:IsExists(Card.IsType,1,nil,TYPE_MONSTER)
+	return eg:IsExists(s.retfilter,1,nil)
 end
-function s.retfilter(c,e)
-	return c:IsType(TYPE_MONSTER) and c:IsAbleToHand() and c:IsRelateToEffect(e)
+function s.retfilter(c)
+	return c:IsType(TYPE_MONSTER) and c:IsFaceup() and c:IsAbleToHand() and c:IsPreviousLocation(LOCATION_GRAVE)
 end
 function s.rettg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_REMOVED) and s.retfilter(chkc,e) end
-	if chk==0 then return eg:IsExists(s.retfilter,1,nil,e) end
+	if chkc then return chkc:IsLocation(LOCATION_REMOVED) and s.retfilter(chkc) end
+	local g=eg:Filter(s.retfilter,nil)
+	if chk==0 then return #g>0 end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
-	local g=eg:Filter(s.retfilter,nil,e):Select(tp,1,1,nil)
-	Duel.SetTargetCard(g)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
+	local sg=g:Select(tp,1,1,nil)
+	Duel.SetTargetCard(sg)
+	Duel.SetOperationInfo(0,CATEGORY_TOHAND,sg,1,0,0)
 end
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsRelateToEffect(e) and tc:IsAbleToHand() then
+	if tc and tc:IsFaceup() and tc:IsAbleToHand() and tc:IsLocation(LOCATION_REMOVED) then
 		Duel.SendtoHand(tc,nil,REASON_EFFECT)
 	end
 end
