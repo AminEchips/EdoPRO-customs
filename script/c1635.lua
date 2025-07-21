@@ -2,15 +2,13 @@
 --Scripted by Meuh
 local s,id=GetID()
 function s.initial_effect(c)
-	--Activate and target 1 "Aesir" monster you control
+	--Activate, select 1 "Aesir" monster at resolution
 	local e0=Effect.CreateEffect(c)
 	e0:SetType(EFFECT_TYPE_ACTIVATE)
 	e0:SetCode(EVENT_FREE_CHAIN)
-	e0:SetProperty(EFFECT_FLAG_CARD_TARGET)
-	e0:SetTarget(s.acttg)
 	e0:SetOperation(s.actop)
 	c:RegisterEffect(e0)
-	--That monster cannot be destroyed by battle
+	--Selected monster cannot be destroyed by battle
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_FIELD)
 	e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
@@ -19,8 +17,7 @@ function s.initial_effect(c)
 	e1:SetTarget(s.battletg)
 	e1:SetValue(1)
 	c:RegisterEffect(e1)
-	--While you control that monster
-	--Face-up "Nordic Relic" cards cannot be destroyed
+	--Face-up "Nordic Relic" cards cannot be destroyed by effects
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_FIELD)
 	e2:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
@@ -38,7 +35,7 @@ function s.initial_effect(c)
 	e3:SetTarget(s.nordictg)
 	e3:SetValue(1)
 	c:RegisterEffect(e3)
-	--Opponent’s monster cannot attack next turn
+	--If opponent's monster attacks your Aesir or Nordic monster, it cannot attack next turn
 	local e4=Effect.CreateEffect(c)
 	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e4:SetCode(EVENT_ATTACK_ANNOUNCE)
@@ -46,49 +43,48 @@ function s.initial_effect(c)
 	e4:SetCondition(s.atkcon)
 	e4:SetOperation(s.atkop)
 	c:RegisterEffect(e4)
-	--Draw if your "Aesir" monster attacks
+	--Draw 1 if your "Aesir" monster attacks (once per turn)
 	local e5=Effect.CreateEffect(c)
 	e5:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e5:SetCode(EVENT_ATTACK_ANNOUNCE)
 	e5:SetRange(LOCATION_SZONE)
-	e5:SetCountLimit(1,{id,1}) -- Hard OPT only for draw
+	e5:SetCountLimit(1,{id,1})
 	e5:SetCondition(s.drcon)
 	e5:SetTarget(s.drtg)
 	e5:SetOperation(s.drop)
 	c:RegisterEffect(e5)
 end
 
--- Target an "Aesir" monster on activation
+-- At resolution, select 1 Aesir monster to grant protection
 function s.aesirfilter(c)
 	return c:IsFaceup() and c:IsSetCard(0x4b)
 end
-function s.acttg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(tp) and s.aesirfilter(chkc) end
-	if chk==0 then return Duel.IsExistingTarget(s.aesirfilter,tp,LOCATION_MZONE,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-	Duel.SelectTarget(tp,s.aesirfilter,tp,LOCATION_MZONE,0,1,1,nil)
-end
 function s.actop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if tc and tc:IsFaceup() and tc:IsRelateToEffect(e) then
-		e:GetHandler():SetCardTarget(tc)
+	local g=Duel.GetMatchingGroup(s.aesirfilter,tp,LOCATION_MZONE,0,nil)
+	if #g==0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,aux.Stringid(id,0))
+	local sg=g:Select(tp,1,1,nil)
+	if #sg>0 then
+		e:GetHandler():SetCardTarget(sg:GetFirst())
 	end
 end
 
--- The targeted Aesir monster
+-- Effect 1: Protection applies to selected monster
 function s.battletg(e,c)
 	return e:GetHandler():IsHasCardTarget(c)
 end
--- Face-up "Nordic Relic" cards cannot be destroyed
+
+-- Effect 2: Face-up "Nordic Relic" cards cannot be destroyed
 function s.relictg(e,c)
 	return c:IsFaceup() and c:IsSetCard(0x5042)
 end
--- Avoid battle damage involving "Nordic" monsters
+
+-- Effect 3: No battle damage from battles involving "Nordic" monsters
 function s.nordictg(e,c)
 	return c:IsSetCard(0x42)
 end
 
--- If opponent's monster attacks your "Aesir" or "Nordic" monster
+-- Effect 4: Opponent’s monster cannot attack next turn
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local d=Duel.GetAttackTarget()
 	return d and d:IsControler(tp) and d:IsFaceup() and (d:IsSetCard(0x42) or d:IsSetCard(0x4b))
@@ -103,7 +99,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	a:RegisterEffect(e1)
 end
 
--- Draw 1 if your "Aesir" attacks
+-- Effect 5: Draw if your Aesir monster attacks
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	return a:IsControler(tp) and a:IsSetCard(0x4b)
