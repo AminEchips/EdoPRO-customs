@@ -102,7 +102,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	e1:SetProperty(EFFECT_FLAG_CLIENT_HINT)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_ATTACK)
-	e1:SetReset(RESETS_STANDARD_PHASE_END,2)
+	e1:SetReset(RESETS_STANDARD_PHASE_END,3)
 	a:RegisterEffect(e1)
 end
 
