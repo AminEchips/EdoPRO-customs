@@ -92,18 +92,19 @@ end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	if not a:IsRelateToBattle() or not a:IsFaceup() then return end
-
+	local c=e:GetHandler()
+	
+	-- Store turn ID to check later
 	local turn_id=Duel.GetTurnCount()
-	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetType(EFFECT_TYPE_FIELD)
+	local e1=Effect.CreateEffect(c)
+	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_ATTACK)
-	e1:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
-	e1:SetTargetRange(LOCATION_MZONE,0)
-	e1:SetTarget(function(e,c)
-		return c==a and Duel.GetTurnCount()~=turn_id
+	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_IGNORE_IMMUNE)
+	e1:SetCondition(function(e)
+		return Duel.GetTurnCount()~=turn_id
 	end)
-	e1:SetReset(RESET_PHASE+PHASE_END+RESET_OPPO_TURN)
-	Duel.RegisterEffect(e1,tp)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END+RESET_OPPO_TURN)
+	a:RegisterEffect(e1)
 end
 
 -- Effect 5: Draw if your Aesir monster attacks
