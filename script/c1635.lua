@@ -98,11 +98,11 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local a=Duel.GetAttacker()
 	if not a:IsRelateToBattle() or not a:IsFaceup() then return end
 	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetDescription(3206) -- Optional hint for the client
+	e1:SetDescription(3206)
+	e1:SetProperty(EFFECT_FLAG_CLIENT_HINT)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_ATTACK)
-	e1:SetProperty(EFFECT_FLAG_CLIENT_HINT)
-	e1:SetReset(RESETS_STANDARD_PHASE_END, Duel.IsTurnPlayer(tp) and 2 or 1)
+	e1:SetReset(RESETS_STANDARD_PHASE_END,2)
 	a:RegisterEffect(e1)
 end
 
