@@ -13,7 +13,7 @@ function s.initial_effect(c)
 	e0:SetValue(1)
 	c:RegisterEffect(e0)
 
-	--Indestructible by card effects in DEF Position
+	--Indestructible by card effects while in Defense Position
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_INDESTRUCTABLE_EFFECT)
@@ -32,16 +32,19 @@ function s.initial_effect(c)
 	e2:SetValue(s.efilter)
 	c:RegisterEffect(e2)
 
-	--Mandatory switch control at Battle Phase
+	--Mandatory control switch at start of Battle Phase
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,0))
+	e3:SetCategory(CATEGORY_CONTROL)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
 	e3:SetCode(EVENT_PHASE+PHASE_BATTLE_START)
 	e3:SetRange(LOCATION_MZONE)
+	e3:SetCountLimit(1)
+	e3:SetCondition(s.ctrlcon)
 	e3:SetOperation(s.ctrlop)
 	c:RegisterEffect(e3)
 
-	--ATK loss on attack (mandatory), opponent draws 1
+	--Mandatory: ATK reduction and opponent draws when this attacks
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_DRAW)
@@ -52,24 +55,31 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
+--Effect immunity from controller's other effects
 function s.efilter(e,te)
 	return te:GetOwnerPlayer()==e:GetHandlerPlayer()
 end
 
---Control switch operation (no target, no check)
+--Control switch condition: in Attack Position and controlled by you
+function s.ctrlcon(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	return Duel.GetTurnPlayer()==tp and c:IsAttackPos() and c:IsControler(tp)
+end
+
+--Control switch operation
 function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if not c:IsFaceup() or not c:IsControler(tp) then return end
+	if not c:IsFaceup() or not c:IsRelateToEffect(e) then return end
 	if Duel.GetControl(c,1-tp)==0 then return end
 
-	--Lock position
+	--Cannot change position
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_CHANGE_POSITION)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 	c:RegisterEffect(e1)
 
-	--Must attack
+	--Must attack if able
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetCode(EFFECT_MUST_ATTACK)
@@ -77,12 +87,14 @@ function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
 	c:RegisterEffect(e2)
 end
 
+--ATK reduction condition
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
 	return bc and c:IsRelateToBattle()
 end
 
+--ATK reduction and opponent draw
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
@@ -90,7 +102,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local atk=bc:GetAttack()
 	if atk<0 then atk=0 end
 
-	--Reduce ATK
+	--Reduce own ATK permanently
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_UPDATE_ATTACK)
