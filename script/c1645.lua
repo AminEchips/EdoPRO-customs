@@ -94,22 +94,23 @@ function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	return bc and c:IsRelateToBattle()
 end
 
---ATK reduction and opponent draw
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
 	if not c:IsRelateToBattle() or not bc or not bc:IsRelateToBattle() then return end
-	local atk=bc:GetAttack()
-	if atk<0 then atk=0 end
+	local opp_atk=bc:GetAttack()
+	if opp_atk<0 then opp_atk=0 end
+	local new_atk=c:GetAttack()-opp_atk
+	if new_atk<0 then new_atk=0 end
 
-	--Reduce own ATK permanently
+	-- Permanently set new ATK
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_UPDATE_ATTACK)
-	e1:SetValue(-atk)
+	e1:SetCode(EFFECT_SET_ATTACK_FINAL)
+	e1:SetValue(new_atk)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
 	c:RegisterEffect(e1)
 
-	--Opponent draws 1
+	-- Opponent draws 1
 	Duel.Draw(1-tp,1,REASON_EFFECT)
 end
