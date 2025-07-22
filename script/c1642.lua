@@ -82,7 +82,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not (tc and tc:IsRelateToEffect(e)) then return end
 	if Duel.SendtoGrave(tc,REASON_EFFECT)==0 then return end
-	if not c:IsRelateToEffect(e) or not Duel.GetLocationCount(tp,LOCATION_MZONE)>0 then return end
+	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	c:CancelToGrave()
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,LOCATION_MZONE,0,nil)
@@ -113,7 +113,7 @@ function s.setfilter(c)
 	return c:IsCode(1623) and c:IsSSetable()
 end
 function s.settg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.setfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
+	if chk==0 then return Duel.IsExistingMatchingGroup(s.setfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,nil) end
 end
 function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.SelectMatchingCard(tp,s.setfilter,tp,LOCATION_DECK+LOCATION_GRAVE,0,1,1,nil)
