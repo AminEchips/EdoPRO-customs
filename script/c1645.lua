@@ -55,10 +55,12 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 end
 
---Effect immunity from controller's other effects
+--Unaffected by its controller's card effects, except itself
 function s.efilter(e,te)
-	return te:GetOwnerPlayer()==e:GetHandlerPlayer()
+    local c=e:GetHandler()
+    return te:GetOwnerPlayer()==c:GetControler() and te:GetHandler()~=c
 end
+
 
 --Control switch condition: in Attack Position and controlled by you
 function s.ctrlcon(e,tp,eg,ep,ev,re,r,rp)
