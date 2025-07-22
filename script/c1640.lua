@@ -15,7 +15,7 @@ function s.initial_effect(c)
 	e0c:SetValue(0x6042) -- Nordic Beast
 	c:RegisterEffect(e0c)
 
-	--Special Summon from hand & backrow look + control
+	--Special Summon from hand & look at/change control of Set Spells/Traps
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -27,7 +27,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spop)
 	c:RegisterEffect(e1)
 
-	--If you control Odin, Lord of the Aesir: Look at opponent's hand
+	--Look at opponent's hand if you control Odin, Lord of the Aesir
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_IGNITION)
@@ -37,7 +37,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.handop)
 	c:RegisterEffect(e2)
 
-	--If banished: Add 1 "Nordic" monster with 0 ATK from Deck to hand
+	--If banished: Add 1 "Nordic" monster with 0 ATK
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
@@ -50,32 +50,30 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
---e1: Special Summon condition
+-- Check for Aesir monster (SetCard 0x4b)
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(s.aesirfilter,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.aesirfilter(c)
-	return c:IsFaceup() and c:IsRace(RACE_DIVINE) and c:IsType(TYPE_SYNCHRO)
+	return c:IsFaceup() and c:IsSetCard(0x4b)
 end
---e1: Special Summon target
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 		and c:IsCanBeSpecialSummoned(e,0,tp,false,false) end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
 end
---e1: Special Summon operation
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) then return end
 	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)==0 then return end
-	--Look at all Set Spells/Traps
+	-- Look at all Set Spells/Traps
 	local g=Duel.GetMatchingGroup(s.setfilter,tp,0,LOCATION_SZONE,nil)
 	if #g>0 and Duel.SelectYesNo(tp,aux.Stringid(id,3)) then
 		Duel.ConfirmCards(tp,g)
 		Duel.ShuffleSetCard(g)
 	end
-	--If you control an Odin monster, take control of 1 Set Spell/Trap
+	-- Optional control of 1 Set card if you control an Odin monster
 	if Duel.IsExistingMatchingCard(s.odinfilter,tp,LOCATION_MZONE,0,1,nil)
 		and Duel.IsExistingMatchingCard(s.takefilter,tp,0,LOCATION_SZONE,1,nil,tp)
 		and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
@@ -96,9 +94,9 @@ function s.odinfilter(c)
 	return c:IsFaceup() and c:IsCode(93483212,1621,1647)
 end
 
---e2: Look at opponent's hand
+-- Look at opponent's hand if you control Odin, Lord of the Aesir
 function s.handcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.IsExistingMatchingCard(s.odinfilter,tp,LOCATION_MZONE,0,1,nil)
+	return Duel.IsExistingMatchingCard(function(c) return c:IsFaceup() and c:IsCode(93483212) end,tp,LOCATION_MZONE,0,1,nil)
 end
 function s.handop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetFieldGroup(1-tp,LOCATION_HAND,0)
@@ -107,7 +105,7 @@ function s.handop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---e3: Search 0 ATK Nordic
+-- If banished: search 0 ATK Nordic monster
 function s.thfilter(c)
 	return c:IsSetCard(0x42) and c:IsAttack(0) and c:IsAbleToHand()
 end
@@ -116,7 +114,6 @@ function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
 	if #g>0 then
 		Duel.SendtoHand(g,nil,REASON_EFFECT)
