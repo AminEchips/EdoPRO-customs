@@ -32,68 +32,60 @@ function s.initial_effect(c)
 	e2:SetValue(s.efilter)
 	c:RegisterEffect(e2)
 
-	--Start of Battle Phase: switch control, lock position, must attack
+	--Start of Battle Phase: mandatory control switch
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,0))
 	e3:SetCategory(CATEGORY_CONTROL)
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
 	e3:SetCode(EVENT_PHASE+PHASE_BATTLE_START)
 	e3:SetRange(LOCATION_MZONE)
-	e3:SetCountLimit(1)
-	e3:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e3:SetCondition(s.ctrlcon)
-	e3:SetTarget(s.ctrltg)
 	e3:SetOperation(s.ctrlop)
 	c:RegisterEffect(e3)
 
-	--If this card attacks: lose ATK equal to opponent’s monster, opponent draws 1
+	--Mandatory: reduce ATK if attacks, opponent draws
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,1))
 	e4:SetCategory(CATEGORY_DRAW)
-	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
 	e4:SetCode(EVENT_PRE_DAMAGE_CALCULATE)
 	e4:SetCondition(s.atkcon)
 	e4:SetOperation(s.atkop)
 	c:RegisterEffect(e4)
 end
 
---Unaffected by its controller’s other effects
+--Effect immunity (to its controller’s other effects)
 function s.efilter(e,te)
 	return te:GetOwnerPlayer()==e:GetHandlerPlayer()
 end
 
---Start of Battle Phase: if in ATK Position and controlled by you
+--Control switch condition
 function s.ctrlcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsAttackPos() and c:IsControler(tp)
 end
-function s.ctrltg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsControlerCanBeChanged() end
-	Duel.SetTargetCard(c)
-	Duel.SetOperationInfo(0,CATEGORY_CONTROL,c,1,0,0)
-end
+
 function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
-	local tc=Duel.GetFirstTarget()
-	if not tc or not tc:IsRelateToEffect(e) or not tc:IsControler(tp) then return end
-	if Duel.GetControl(tc,1-tp)==0 then return end
+	local c=e:GetHandler()
+	if not c:IsFaceup() or not c:IsControler(tp) then return end
+	if Duel.GetControl(c,1-tp)==0 then return end
 
 	--Cannot change battle position
-	local e1=Effect.CreateEffect(tc)
+	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_CHANGE_POSITION)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-	tc:RegisterEffect(e1)
+	c:RegisterEffect(e1)
 
 	--Must attack
-	local e2=Effect.CreateEffect(tc)
+	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetCode(EFFECT_MUST_ATTACK)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD)
-	tc:RegisterEffect(e2)
+	c:RegisterEffect(e2)
 end
 
---Lose ATK and opponent draws 1 during damage calc
+--Damage calculation: reduce ATK and opponent draws
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local bc=c:GetBattleTarget()
