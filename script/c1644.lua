@@ -27,14 +27,14 @@ function s.initial_effect(c)
 	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
 
-	--Take control if destroyed by battle
+	--Take control of monster if destroyed by battle (negate + return at End Phase)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_CONTROL)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_BATTLE_DESTROYED)
 	e3:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
-	e3:SetCondition(function(_,tp) return tc:GetControler()==tp end)
+	e3:SetCondition(s.ctrlcon)
 	e3:SetTarget(s.ctrltg)
 	e3:SetOperation(s.ctrlop)
 	c:RegisterEffect(e3)
@@ -66,13 +66,16 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
 	local lv=tc:GetLevel()
-	if Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 and tc:IsLocation(LOCATION_HAND) and lv>0 and c:IsRelateToEffect(e) and c:IsFaceup() then
+	if Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 and tc:IsLocation(LOCATION_HAND)
+		and lv>0 and c:IsRelateToEffect(e) and c:IsFaceup() then
+		--Change Level
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_LEVEL)
 		e1:SetValue(lv)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
+		--Gain ATK
 		local e2=Effect.CreateEffect(c)
 		e2:SetType(EFFECT_TYPE_SINGLE)
 		e2:SetCode(EFFECT_UPDATE_ATTACK)
@@ -82,7 +85,7 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Effect 3: Take control (until End Phase) + permanent negate
+--Effect 3: Control opponent's monster if destroyed by battle
 function s.ctrlcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsReason(REASON_BATTLE)
 end
@@ -96,9 +99,9 @@ end
 function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
-	if Duel.GetControl(tc,tp)==0 then return end
+	if Duel.GetControl(tc,tp,PHASE_END,1)==0 then return end
 
-	--Permanent negate effects
+	--Permanently negate effects
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_DISABLE)
@@ -109,19 +112,4 @@ function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetCode(EFFECT_DISABLE_EFFECT)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD)
 	tc:RegisterEffect(e2)
-
-	--Return to owner at End Phase
-	local e3=Effect.CreateEffect(e:GetHandler())
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
-	e3:SetCode(EVENT_PHASE+PHASE_END)
-	e3:SetCountLimit(1)
-	e3:SetCondition(function(_,tp) return tc and tc:GetControler()==tp end)
-	e3:SetOperation(function(_,tp)
-		if tc and tc:IsControler(tp) and tc:IsAbleToChangeControler() then
-			Duel.GetControl(tc,1-tp)
-		end
-	end)
-	e3:SetReset(RESET_PHASE+PHASE_END)
-	Duel.RegisterEffect(e3,tp)
-
 end
