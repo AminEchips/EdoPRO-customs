@@ -1,7 +1,13 @@
 --Ragnarock of the Aesir Realm
 local s,id=GetID()
 function s.initial_effect(c)
-	--Draw when Aesir is Synchro Summoned or revived from GY
+	--Activate (Continuous Trap)
+	local e0=Effect.CreateEffect(c)
+	e0:SetType(EFFECT_TYPE_ACTIVATE)
+	e0:SetCode(EVENT_FREE_CHAIN)
+	c:RegisterEffect(e0)
+
+	--Effect 1: Draw when Aesir is Synchro Summoned or revived from GY
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_DRAW)
@@ -15,7 +21,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.drop)
 	c:RegisterEffect(e1)
 
-	--Special Summon 2 Nordic monsters from GY if Nordic/Aesir Synchro is destroyed
+	--Effect 2: Revive 2 Nordic if Synchro Nordic/Aesir destroyed (triggers in Damage Step)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -29,11 +35,13 @@ function s.initial_effect(c)
 	e2:SetOperation(s.spop)
 	c:RegisterEffect(e2)
 end
+s.listed_series={0x42,0x4b}
 
--- e1: Draw
+--Effect 1: Draw
 function s.cfilter1(c,tp)
-	return c:IsSummonPlayer(tp) and c:IsFaceup() and c:IsType(TYPE_SYNCHRO) and c:IsSetCard(0x4b)
-		and (c:IsSummonType(SUMMON_TYPE_SYNCHRO) or (c:IsPreviousLocation(LOCATION_GRAVE)))
+	return c:IsFaceup() and c:IsControler(tp) and c:IsType(TYPE_SYNCHRO)
+		and c:IsSetCard(0x4b)
+		and (c:IsSummonType(SUMMON_TYPE_SYNCHRO) or (c:GetSummonLocation()==LOCATION_GRAVE))
 end
 function s.drcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.cfilter1,1,nil,tp)
@@ -49,14 +57,14 @@ function s.drop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Draw(p,d,REASON_EFFECT)
 end
 
--- e2: Revival
+--Effect 2: Special Summon
 function s.desfilter(c,tp)
-	return c:IsReason(REASON_BATTLE+REASON_EFFECT)
+	return c:IsPreviousControler(tp)
 		and c:IsPreviousLocation(LOCATION_MZONE)
-		and c:IsPreviousControler(tp)
+		and c:IsReason(REASON_BATTLE+REASON_EFFECT)
+		and c:IsPreviousPosition(POS_FACEUP)
 		and c:IsType(TYPE_SYNCHRO)
-		and c:IsFaceup()
-		and (c:IsSetCard(0x42) or c:IsSetCard(0x4b))
+		and (c:IsPreviousSetCard(0x42) or c:IsPreviousSetCard(0x4b))
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.desfilter,1,nil,tp)
@@ -65,7 +73,7 @@ function s.spfilter(c,e,tp)
 	return c:IsSetCard(0x42) and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_DEFENSE)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,tp) end
+	if chkc then return chkc:IsLocation(LOCATION_GRAVE) and chkc:IsControler(tp) and s.spfilter(chkc,e,tp) end
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>1
 		and Duel.IsExistingTarget(s.spfilter,tp,LOCATION_GRAVE,0,2,nil,e,tp) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
@@ -75,7 +83,9 @@ end
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetTargetCards(e)
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<#g then return end
-	if #g>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_DEFENSE)
+	for tc in aux.Next(g) do
+		if tc:IsRelateToEffect(e) then
+			Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_DEFENSE)
+		end
 	end
 end
