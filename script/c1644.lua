@@ -23,12 +23,11 @@ function s.initial_effect(c)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
 	e2:SetCountLimit(1,id)
-	e2:SetCondition(s.thcon)
 	e2:SetTarget(s.thtg)
 	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
 
-	--Take control of monster after battle destruction
+	--Take control if destroyed by battle
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_CONTROL)
@@ -42,7 +41,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0x42,0xa042} -- Nordic, Nordic Alfar
 
---Effect 1: Protect "Nordic" Tuner activations
+--Effect 1: Protect "Nordic" Tuner effect activations
 function s.negcon(e)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
@@ -51,18 +50,14 @@ function s.effectfilter(eff,re,tp)
 	return rc:IsSetCard(0x42) and rc:IsType(TYPE_TUNER)
 end
 
---Effect 2: During Standby, return Alfar and gain ATK/Level
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetTurnPlayer()==tp or Duel.GetTurnPlayer()==1-tp
-end
+--Effect 2: During either Standby Phase, return "Nordic Alfar" to hand and gain Level/ATK
 function s.thfilter(c)
-	return c:IsSetCard(0xa042) and c:IsType(TYPE_MONSTER)
-		and (c:IsAbleToHand() or c:IsFaceup() and c:IsLocation(LOCATION_REMOVED))
+	return c:IsSetCard(0xa042) and c:IsType(TYPE_MONSTER) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE+LOCATION_REMOVED) and s.thfilter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RTOHAND)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
 	local g=Duel.SelectTarget(tp,s.thfilter,tp,LOCATION_GRAVE+LOCATION_REMOVED,0,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,g,1,0,0)
 end
@@ -71,20 +66,13 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
 	local lv=tc:GetLevel()
-	if tc:IsLocation(LOCATION_REMOVED) then
-		Duel.SendtoDeck(tc,nil,SEQ_DECKTOP,REASON_EFFECT)
-	elseif Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 and tc:IsLocation(LOCATION_HAND) then
-		Duel.ConfirmCards(1-tp,tc)
-	end
-	if c:IsRelateToEffect(e) and c:IsFaceup() and lv>0 then
-		--Change Level
+	if Duel.SendtoHand(tc,nil,REASON_EFFECT)>0 and tc:IsLocation(LOCATION_HAND) and lv>0 and c:IsRelateToEffect(e) and c:IsFaceup() then
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_LEVEL)
 		e1:SetValue(lv)
 		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 		c:RegisterEffect(e1)
-		--Gain ATK
 		local e2=Effect.CreateEffect(c)
 		e2:SetType(EFFECT_TYPE_SINGLE)
 		e2:SetCode(EFFECT_UPDATE_ATTACK)
@@ -94,10 +82,9 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Effect 3: Take control if destroyed by battle
+--Effect 3: Take control (until End Phase) + permanent negate
 function s.ctrlcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsReason(REASON_BATTLE)
+	return e:GetHandler():IsReason(REASON_BATTLE)
 end
 function s.ctrltg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsControler(1-tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() end
@@ -108,8 +95,10 @@ function s.ctrltg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 end
 function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
-	if not tc or not tc:IsRelateToEffect(e) or Duel.GetControl(tc,tp,PHASE_END)==0 then return end
-	--Permanent negate
+	if not tc or not tc:IsRelateToEffect(e) then return end
+	if Duel.GetControl(tc,tp)==0 then return end
+
+	--Permanent negate effects
 	local e1=Effect.CreateEffect(e:GetHandler())
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_DISABLE)
@@ -120,4 +109,18 @@ function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetCode(EFFECT_DISABLE_EFFECT)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD)
 	tc:RegisterEffect(e2)
+
+	--Return to owner at End Phase
+	local e3=Effect.CreateEffect(e:GetHandler())
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
+	e3:SetCode(EVENT_PHASE+PHASE_END)
+	e3:SetCountLimit(1)
+	e3:SetCondition(function(_,tp) return Duel.GetControler(tc)==tp end)
+	e3:SetOperation(function(_,tp)
+		if tc and tc:IsControler(tp) and tc:IsAbleToChangeControler() then
+			Duel.GetControl(tc,1-tp)
+		end
+	end)
+	e3:SetReset(RESET_PHASE+PHASE_END)
+	Duel.RegisterEffect(e3,tp)
 end
