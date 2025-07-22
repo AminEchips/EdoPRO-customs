@@ -92,15 +92,11 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Trigger when this face-up card is destroyed
--- Trigger when this face-up card is destroyed
+-- When this face-up card on the field is destroyed: Each player adds 1 Normal Spell from their GY, then both take 1000 damage
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_SZONE) and c:IsPreviousPosition(POS_FACEUP) 
-		and bit.band(r,REASON_DESTROY)~=0
-end
-function s.thfilter(c)
-	return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsAbleToHand()
+	return c:IsReason(REASON_DESTROY) and c:IsPreviousLocation(LOCATION_SZONE) and c:IsPreviousPosition(POS_FACEUP)
+		and c:IsLocation(LOCATION_GRAVE)
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
@@ -124,4 +120,5 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Damage(tp,1000,REASON_EFFECT)
 	Duel.Damage(1-tp,1000,REASON_EFFECT)
 end
+
 
