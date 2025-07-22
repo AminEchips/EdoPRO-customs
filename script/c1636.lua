@@ -1,7 +1,7 @@
 --Nordic Relic Mjollnir
 local s,id=GetID()
 function s.initial_effect(c)
-	--Activate and equip to 1 "Aesir" monster
+	--Activate: Equip to 1 "Aesir" monster
 	local e1=Effect.CreateEffect(c)
 	e1:SetCategory(CATEGORY_EQUIP)
 	e1:SetType(EFFECT_TYPE_ACTIVATE)
@@ -11,7 +11,15 @@ function s.initial_effect(c)
 	e1:SetOperation(s.eqop)
 	c:RegisterEffect(e1)
 
-	--Cannot be destroyed by card effects
+	--Equip limit: only to "Aesir" monster
+	local e1x=Effect.CreateEffect(c)
+	e1x:SetType(EFFECT_TYPE_SINGLE)
+	e1x:SetCode(EFFECT_EQUIP_LIMIT)
+	e1x:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+	e1x:SetValue(function(e,c) return c:IsSetCard(0x4b) end)
+	c:RegisterEffect(e1x)
+
+	--This card cannot be destroyed by card effects
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -28,7 +36,7 @@ function s.initial_effect(c)
 	e3:SetValue(aux.tgoval)
 	c:RegisterEffect(e3)
 
-	--Once per turn: If equipped to a Level 10 or higher monster, banish up to 3 cards from opponent's GY (non-targeting)
+	--Once per turn: banish up to 3 cards from opponent's GY (if Level 10+)
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,0))
 	e4:SetType(EFFECT_TYPE_IGNITION)
@@ -38,13 +46,13 @@ function s.initial_effect(c)
 	e4:SetOperation(s.rmop)
 	c:RegisterEffect(e4)
 
-	--GY effect: Banish this card, add 1 "Nordic Relic" from GY to hand (except itself)
+	--GY effect: recover 1 other "Nordic Relic" if you control a Level 10 Aesir
 	local e5=Effect.CreateEffect(c)
 	e5:SetDescription(aux.Stringid(id,1))
 	e5:SetCategory(CATEGORY_TOHAND)
 	e5:SetType(EFFECT_TYPE_IGNITION)
-	e5:SetRange(LOCATION_GRAVE)
 	e5:SetProperty(EFFECT_FLAG_CARD_TARGET)
+	e5:SetRange(LOCATION_GRAVE)
 	e5:SetCountLimit(1,id)
 	e5:SetCondition(s.thcon)
 	e5:SetCost(aux.bfgcost)
@@ -53,7 +61,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 
---Equip to an "Aesir" monster
+--Equip to "Aesir"
 function s.eqfilter(c)
 	return c:IsFaceup() and c:IsSetCard(0x4b)
 end
@@ -61,17 +69,17 @@ function s.eqtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and s.eqfilter(chkc) end
 	if chk==0 then return Duel.IsExistingTarget(s.eqfilter,tp,LOCATION_MZONE,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_EQUIP)
-	Duel.SelectTarget(tp,s.eqfilter,tp,LOCATION_MZONE,0,1,1,nil)
+	local g=Duel.SelectTarget(tp,s.eqfilter,tp,LOCATION_MZONE,0,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_EQUIP,g,1,0,0)
 end
 function s.eqop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
-	if c:IsRelateToEffect(e) and tc and tc:IsRelateToEffect(e) and tc:IsFaceup() then
-		Duel.Equip(tp,c,tc)
-	end
+	if not c:IsRelateToEffect(e) or not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
+	Duel.Equip(tp,c,tc)
 end
 
---Condition: Equipped to Level 10 or higher monster
+--Check if equipped to Level 10 or higher monster
 function s.rmcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler():GetEquipTarget()
 	return c and c:IsLevelAbove(10)
@@ -84,7 +92,7 @@ function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Remove(sg,POS_FACEUP,REASON_EFFECT)
 end
 
---GY effect: if you control Level 10 "Aesir", add 1 "Nordic Relic" from GY to hand (except this card)
+--Recovery effect
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.IsExistingMatchingCard(function(c)
 		return c:IsFaceup() and c:IsSetCard(0x4b) and c:IsLevel(10)
