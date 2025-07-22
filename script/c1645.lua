@@ -68,26 +68,41 @@ function s.ctrlcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetTurnPlayer()==tp and c:IsAttackPos() and c:IsControler(tp)
 end
 
---Control switch operation
 function s.ctrlop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if not c:IsFaceup() or not c:IsRelateToEffect(e) then return end
+	if not c:IsFaceup() or not c:IsRelateToEffect(e) or not c:IsControler(tp) then return end
 	if Duel.GetControl(c,1-tp)==0 then return end
 
-	--Cannot change position
+	-- Mark that control was switched by this effect
+	c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,0)
+
+	-- Cannot change position
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetCode(EFFECT_CANNOT_CHANGE_POSITION)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 	c:RegisterEffect(e1)
 
-	--Must attack if able
+	-- Must attack if able
 	local e2=Effect.CreateEffect(c)
 	e2:SetType(EFFECT_TYPE_SINGLE)
 	e2:SetCode(EFFECT_MUST_ATTACK)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD)
 	c:RegisterEffect(e2)
+
+	-- Cannot switch control again while opponent controls it
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE)
+	e3:SetCode(EFFECT_CANNOT_CHANGE_CONTROL)
+	e3:SetCondition(function(e)
+		local c=e:GetHandler()
+		return c:GetControler()~=c:GetOwner() and c:GetFlagEffect(id)>0
+	end)
+	e3:SetValue(1)
+	e3:SetReset(RESET_EVENT+RESETS_STANDARD)
+	c:RegisterEffect(e3)
 end
+
 
 --ATK reduction condition
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
