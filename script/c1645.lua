@@ -72,7 +72,6 @@ end
 function s.bpop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if not c:IsRelateToEffect(e) or not c:IsControler(tp) or not c:IsAttackPos() then return end
-	if not Duel.IsPlayerCanControlMonster(1-tp) then return end
 	if Duel.GetControl(c,1-tp)==0 then return end
 
 	--Cannot change battle position
@@ -89,6 +88,7 @@ function s.bpop(e,tp,eg,ep,ev,re,r,rp)
 	e2:SetReset(RESET_EVENT+RESETS_STANDARD)
 	c:RegisterEffect(e2)
 end
+
 
 --Damage calc: loses ATK equal to target's ATK, opponent draws 1
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
