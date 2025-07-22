@@ -93,6 +93,10 @@ function s.desop(e,tp,eg,ep,ev,re,r,rp)
 end
 
 -- When this face-up card on the field is destroyed: Each player adds 1 Normal Spell from their GY, then both take 1000 damage
+function s.thfilter(c)
+	return c:IsType(TYPE_SPELL) and c:IsType(TYPE_NORMAL) and c:IsAbleToHand()
+end
+
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsReason(REASON_DESTROY) and c:IsPreviousLocation(LOCATION_SZONE) and c:IsPreviousPosition(POS_FACEUP)
