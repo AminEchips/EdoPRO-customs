@@ -29,42 +29,50 @@ function s.initial_effect(c)
     e2:SetOperation(s.negop)
     c:RegisterEffect(e2)
 
-    -- Revive self
+    -- Register revival eligibility
     local e3=Effect.CreateEffect(c)
-    e3:SetDescription(aux.Stringid(id,2))
-    e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
-    e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-    e3:SetCode(EVENT_PHASE+PHASE_END)
-    e3:SetRange(LOCATION_GRAVE)
-    e3:SetCountLimit(1,{id,2})
-    e3:SetCondition(s.revcon)
-    e3:SetTarget(s.revtg)
-    e3:SetOperation(s.revop)
+    e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+    e3:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+    e3:SetCode(EVENT_TO_GRAVE)
+    e3:SetOperation(s.regop)
     c:RegisterEffect(e3)
 
-    -- Draw 2 after revive by own effect
+    -- Revive self by banishing another Synchro
     local e4=Effect.CreateEffect(c)
-    e4:SetDescription(aux.Stringid(id,3))
-    e4:SetCategory(CATEGORY_DRAW)
-    e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-    e4:SetCode(EVENT_SPSUMMON_SUCCESS)
-    e4:SetProperty(EFFECT_FLAG_DELAY)
-    e4:SetCountLimit(1,{id,3})
-    e4:SetCondition(s.drawcon)
-    e4:SetTarget(s.drawtg)
-    e4:SetOperation(s.drawop)
+    e4:SetDescription(aux.Stringid(id,2))
+    e4:SetCategory(CATEGORY_SPECIAL_SUMMON)
+    e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
+    e4:SetCode(EVENT_PHASE+PHASE_END)
+    e4:SetRange(LOCATION_GRAVE)
+    e4:SetCountLimit(1,{id,2})
+    e4:SetCondition(s.spcon)
+    e4:SetCost(s.spcost)
+    e4:SetTarget(s.sptg2)
+    e4:SetOperation(s.spop2)
     c:RegisterEffect(e4)
+
+    -- Draw 2 if Special Summoned by own revival
+    local e5=Effect.CreateEffect(c)
+    e5:SetDescription(aux.Stringid(id,3))
+    e5:SetCategory(CATEGORY_DRAW)
+    e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+    e5:SetProperty(EFFECT_FLAG_DELAY)
+    e5:SetCode(EVENT_SPSUMMON_SUCCESS)
+    e5:SetCountLimit(1,{id,3})
+    e5:SetCondition(s.drawcon)
+    e5:SetTarget(s.drawtg)
+    e5:SetOperation(s.drawop)
+    c:RegisterEffect(e5)
 end
 
--- Synchro Tuner material: Nordic or Aesir
+-- Material restriction
 function s.synfilter(c,sc,tp)
     return c:IsType(TYPE_SYNCHRO) and c:IsType(TYPE_TUNER) and (c:IsSetCard(0x42) or c:IsSetCard(0x4b))
 end
 
 -- Special Summon Aesir from GY (except Fairy)
 function s.spfilter(c,e,tp)
-    return c:IsSetCard(0x4b) and not c:IsRace(RACE_FAIRY)
-        and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+    return c:IsSetCard(0x4b) and not c:IsRace(RACE_FAIRY) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
 function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
     if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_GRAVE) and s.spfilter(chkc,e,tp) end
@@ -80,7 +88,7 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- LP gain, optional negate, always ATK boost
+-- Gain LP, optional negate, always ATK boost
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
     return re:IsActivated()
 end
@@ -90,11 +98,9 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local lpGain = 1500
     if Duel.Recover(tp,lpGain,REASON_EFFECT)>0 then
         local lp_diff = math.abs(Duel.GetLP(tp)-Duel.GetLP(1-tp))
-        -- Negate if opponent activated and LP difference is >=3000
-        if rp~=tp and lp_diff>=3000 and Duel.NegateEffect(ev) then
-            -- successful negate
+        if rp~=tp and lp_diff>=3000 then
+            Duel.NegateEffect(ev)
         end
-        -- Always gain ATK
         local e1=Effect.CreateEffect(c)
         e1:SetType(EFFECT_TYPE_SINGLE)
         e1:SetCode(EFFECT_UPDATE_ATTACK)
@@ -104,25 +110,44 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Revive self if sent by opponent's effect
-function s.revcon(e,tp,eg,ep,ev,re,r,rp)
-    return e:GetHandler():IsReason(REASON_EFFECT) and rp~=tp
-end
-function s.revtg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0 end
-    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
-end
-function s.revop(e,tp,eg,ep,ev,re,r,rp)
+-- Register if eligible to revive
+function s.regop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-    if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-        c:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1)
+    local pos=c:GetPreviousPosition()
+    if c:IsReason(REASON_BATTLE) then pos=c:GetBattlePosition() end
+    if rp~=tp and c:IsPreviousControler(tp) and c:IsReason(REASON_EFFECT)
+        and c:IsPreviousLocation(LOCATION_ONFIELD) and (pos&POS_FACEUP)~=0 then
+        c:RegisterFlagEffect(id,RESETS_STANDARD_PHASE_END,0,1)
     end
 end
 
--- Draw 2 if revived by its own effect
+-- Revive condition
+function s.spcon(e,tp,eg,ep,ev,re,r,rp)
+    return e:GetHandler():GetFlagEffect(id)~=0
+end
+-- Cost: banish a Synchro monster
+function s.cfilter(c)
+    return c:IsType(TYPE_SYNCHRO) and c:IsAbleToRemoveAsCost()
+end
+function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_GRAVE,0,1,e:GetHandler()) end
+    Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
+    local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_GRAVE,0,1,1,e:GetHandler())
+    Duel.Remove(g,POS_FACEUP,REASON_COST)
+end
+function s.sptg2(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return e:GetHandler():IsCanBeSpecialSummoned(e,1,tp,false,false) end
+    Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
+end
+function s.spop2(e,tp,eg,ep,ev,re,r,rp)
+    if e:GetHandler():IsRelateToEffect(e) then
+        Duel.SpecialSummon(e:GetHandler(),1,tp,tp,false,false,POS_FACEUP)
+    end
+end
+
+-- Draw 2 if revived by own effect
 function s.drawcon(e,tp,eg,ep,ev,re,r,rp)
-    return e:GetHandler():GetFlagEffect(id)>0
+    return e:GetHandler():GetSummonType()==SUMMON_TYPE_SPECIAL+1
 end
 function s.drawtg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsPlayerCanDraw(tp,2) end
