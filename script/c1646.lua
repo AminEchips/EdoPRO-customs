@@ -7,7 +7,7 @@ function s.initial_effect(c)
 
     -- Special Summon 1 Aesir (except Fairy)
     local e1=Effect.CreateEffect(c)
-    e1:SetDescription(aux.Stringid(id,0)) -- "Target 1 'Aesir' monster in your GY, except a Fairy monster; Special Summon it."
+    e1:SetDescription(aux.Stringid(id,0))
     e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
     e1:SetType(EFFECT_TYPE_IGNITION)
     e1:SetProperty(EFFECT_FLAG_CARD_TARGET)
@@ -19,7 +19,7 @@ function s.initial_effect(c)
 
     -- Gain LP, possibly negate, always gain ATK
     local e2=Effect.CreateEffect(c)
-    e2:SetDescription(aux.Stringid(id,1)) -- "Gain 1500 LP, then if the LP difference is 3000 or more and your opponent activated the effect, negate it. Then, this card gains ATK equal to the LP gained."
+    e2:SetDescription(aux.Stringid(id,1))
     e2:SetCategory(CATEGORY_RECOVER+CATEGORY_ATKCHANGE)
     e2:SetType(EFFECT_TYPE_QUICK_O)
     e2:SetCode(EVENT_CHAINING)
@@ -31,7 +31,7 @@ function s.initial_effect(c)
 
     -- Revive self
     local e3=Effect.CreateEffect(c)
-    e3:SetDescription(aux.Stringid(id,2)) -- "During the End Phase, if this card was sent to the GY by an opponent’s card effect: Special Summon it."
+    e3:SetDescription(aux.Stringid(id,2))
     e3:SetCategory(CATEGORY_SPECIAL_SUMMON)
     e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
     e3:SetCode(EVENT_PHASE+PHASE_END)
@@ -42,9 +42,9 @@ function s.initial_effect(c)
     e3:SetOperation(s.revop)
     c:RegisterEffect(e3)
 
-    -- Draw 2 after being revived by its own effect
+    -- Draw 2 after revive by own effect
     local e4=Effect.CreateEffect(c)
-    e4:SetDescription(aux.Stringid(id,3)) -- "If this card was Special Summoned by its own effect: Draw 2 cards."
+    e4:SetDescription(aux.Stringid(id,3))
     e4:SetCategory(CATEGORY_DRAW)
     e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
     e4:SetCode(EVENT_SPSUMMON_SUCCESS)
@@ -56,7 +56,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e4)
 end
 
--- Synchro Tuner material: must be Nordic or Aesir
+-- Synchro Tuner material: Nordic or Aesir
 function s.synfilter(c,sc,tp)
     return c:IsType(TYPE_SYNCHRO) and c:IsType(TYPE_TUNER) and (c:IsSetCard(0x42) or c:IsSetCard(0x4b))
 end
@@ -80,16 +80,17 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- LP gain, conditional negate, always ATK gain
+-- LP gain, optional negate, always ATK boost
 function s.negcon(e,tp,eg,ep,ev,re,r,rp)
-    return re:GetHandler()~=e:GetHandler() and re:IsActivated()
+    return re:IsActivated()
 end
 function s.negop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsRelateToEffect(e) then return end
-    local lpGain=1500
+    local lpGain = 1500
     if Duel.Recover(tp,lpGain,REASON_EFFECT)>0 then
-        local lp_diff=math.abs(Duel.GetLP(tp)-Duel.GetLP(1-tp))
+        local lp_diff = math.abs(Duel.GetLP(tp)-Duel.GetLP(1-tp))
+        -- Negate if opponent activated and LP difference is >=3000
         if rp~=tp and lp_diff>=3000 and Duel.NegateEffect(ev) then
             -- successful negate
         end
@@ -103,7 +104,7 @@ function s.negop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- End Phase revive self if sent by opponent
+-- Revive self if sent by opponent's effect
 function s.revcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():IsReason(REASON_EFFECT) and rp~=tp
 end
@@ -119,7 +120,7 @@ function s.revop(e,tp,eg,ep,ev,re,r,rp)
     end
 end
 
--- Draw 2 if revived by own effect
+-- Draw 2 if revived by its own effect
 function s.drawcon(e,tp,eg,ep,ev,re,r,rp)
     return e:GetHandler():GetFlagEffect(id)>0
 end
