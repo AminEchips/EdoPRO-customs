@@ -42,7 +42,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
---PENDULUM EFFECT
+--Pendulum Effect: Reveal Dragon, destroy this, place Pendulum from GY
 function s.costfilter(c)
 	return c:IsRace(RACE_DRAGON) and not c:IsPublic()
 end
@@ -50,28 +50,32 @@ function s.pdcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_HAND,0,1,nil) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
 	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_HAND,0,1,1,nil)
-	e:SetLabel(g:GetFirst():GetLevel())
+	local lv=g:GetFirst():GetLevel()
+	e:SetLabel(lv)
 	Duel.ConfirmCards(1-tp,g)
 	Duel.ShuffleHand(tp)
 end
 function s.pdtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsDestructable(e:GetHandler()) end
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,e:GetHandler(),1,0,0)
+	local c=e:GetHandler()
+	if chk==0 then return c:IsDestructable()
+		and Duel.IsExistingMatchingCard(s.pendfilter,tp,LOCATION_GRAVE,0,1,nil,e:GetLabel())
+		and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) end
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,c,1,0,0)
 end
 function s.pdop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local lv=e:GetLabel()
-	if Duel.Destroy(c,REASON_EFFECT)~=0 and lv>0 and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) then
-		local g=Duel.GetMatchingGroup(s.pendfilter,tp,LOCATION_GRAVE,0,nil,lv)
-		if #g>0 then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
-			local sg=g:Select(tp,1,1,nil)
-			Duel.MoveToField(sg:GetFirst(),tp,tp,LOCATION_PZONE,POS_FACEUP,true)
-		end
+	if not c:IsRelateToEffect(e) or Duel.Destroy(c,REASON_EFFECT)==0 then return end
+	if lv<=0 or not (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) then return end
+	local g=Duel.GetMatchingGroup(s.pendfilter,tp,LOCATION_GRAVE,0,nil,lv)
+	if #g>0 then
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
+		local sg=g:Select(tp,1,1,nil)
+		Duel.MoveToField(sg:GetFirst(),tp,tp,LOCATION_PZONE,POS_FACEUP,true)
 	end
 end
 function s.pendfilter(c,lv)
-	return c:IsType(TYPE_PENDULUM) and c:IsLevel(lv)
+	return c:IsType(TYPE_PENDULUM) and c:IsLevel(lv) and not c:IsForbidden()
 end
 
 --MONSTER EFFECT 1: Tribute to summon Odd-Eyes from Deck
