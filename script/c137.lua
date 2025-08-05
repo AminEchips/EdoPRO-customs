@@ -29,7 +29,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spzop)
 	c:RegisterEffect(e1)
 
-	--Gain ATK and extra attack on Special Summon
+	--Gain ATK and extra attack on Special Summon (permanent)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
@@ -68,21 +68,22 @@ function s.initial_effect(c)
 	Synchro.AddProcedure(c,nil,1,1,aux.FilterBoolFunction(Card.IsSetCard,0x99),1,99)
 	c:EnableReviveLimit()
 end
-
 s.listed_series={0x99,0x20f8}
 
--- Scale increase
+--Scale increase = hand size
 function s.scaleval(e,c)
 	return Duel.GetFieldGroupCount(c:GetControler(),LOCATION_HAND,0)
 end
 
--- Special Summon from Pendulum Zone
+--Special Summon from Pendulum Zone
 function s.spzcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 end
 function s.spzcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckReleaseGroupCost(tp,Card.IsType,1,false,nil,nil,TYPE_SYNCHRO)
-		and Duel.CheckReleaseGroupCost(tp,Card.IsType,1,false,nil,nil,TYPE_PENDULUM) end
+	if chk==0 then
+		return Duel.CheckReleaseGroupCost(tp,Card.IsType,1,false,nil,nil,TYPE_SYNCHRO)
+			and Duel.CheckReleaseGroupCost(tp,Card.IsType,1,false,nil,nil,TYPE_PENDULUM)
+	end
 	local g1=Duel.SelectReleaseGroupCost(tp,Card.IsType,1,1,false,nil,nil,TYPE_SYNCHRO)
 	local g2=Duel.SelectReleaseGroupCost(tp,Card.IsType,1,1,false,nil,nil,TYPE_PENDULUM)
 	g1:Merge(g2)
@@ -99,7 +100,7 @@ function s.spzop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Gain ATK and extra attack
+--Permanent ATK boost and extra attack on Special Summon
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local ct=Duel.GetMatchingGroupCount(Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,nil)
@@ -108,23 +109,21 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 		atk:SetType(EFFECT_TYPE_SINGLE)
 		atk:SetCode(EFFECT_UPDATE_ATTACK)
 		atk:SetValue(ct*200)
-		atk:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
 		c:RegisterEffect(atk)
 	end
 	local ea=Effect.CreateEffect(c)
 	ea:SetType(EFFECT_TYPE_SINGLE)
 	ea:SetCode(EFFECT_EXTRA_ATTACK)
 	ea:SetValue(1)
-	ea:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
 	c:RegisterEffect(ea)
 end
 
--- Negate face-up monsters
+--Negate opponent monsters on attack
 function s.ngcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttacker()==e:GetHandler()
 end
 function s.ngtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return true end
+	return true
 end
 function s.ngop(e,tp,eg,ep,ev,re,r,rp)
 	local g=Duel.GetMatchingGroup(Card.IsFaceup,tp,0,LOCATION_MZONE,nil)
@@ -148,7 +147,7 @@ function s.ngop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- Fusion Summon on destruction
+--Fusion Summon when destroyed in Monster Zone
 function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_MZONE)
@@ -183,8 +182,8 @@ function s.fusop(e,tp,eg,ep,ev,re,r,rp)
 		Duel.SpecialSummon(sc,SUMMON_TYPE_FUSION,tp,tp,false,false,POS_FACEUP)
 		sc:CompleteProcedure()
 	end
-	-- Place this card in Pendulum Zone
-	if c:IsRelateToEffect(e) and Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) then
+	-- Move this card to Pendulum Zone
+	if c:IsRelateToEffect(e) and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) then
 		Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
 	end
 end
