@@ -147,11 +147,11 @@ function s.ngop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Floating condition (must be destroyed)
 function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsReason(REASON_DESTROY) and c:IsPreviousLocation(LOCATION_MZONE)
+	return c:IsPreviousLocation(LOCATION_MZONE)
 end
+
 function s.fusfilter(c,e,tp,m,f)
 	return c:IsType(TYPE_FUSION) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
 		and c:CheckFusionMaterial(m,nil,f)
