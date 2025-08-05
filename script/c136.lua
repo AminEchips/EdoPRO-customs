@@ -11,7 +11,6 @@ function s.initial_effect(c)
 	e1:SetRange(LOCATION_PZONE)
 	e1:SetCountLimit(1,id)
 	e1:SetCategory(CATEGORY_DESTROY)
-	e1:SetCost(s.pdcost)
 	e1:SetTarget(s.pdtg)
 	e1:SetOperation(s.pdop)
 	c:RegisterEffect(e1)
@@ -42,43 +41,45 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
---Pendulum Effect: Reveal Dragon, destroy this, place Pendulum from GY
-function s.costfilter(c)
-	return c:IsRace(RACE_DRAGON) and not c:IsPublic()
+------------------------------
+-- PENDULUM EFFECT
+------------------------------
+function s.reveal_filter(c)
+	return c:IsRace(RACE_DRAGON) and not c:IsPublic() and c:IsLevelAbove(1)
 end
-function s.pdcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.costfilter,tp,LOCATION_HAND,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-	local g=Duel.SelectMatchingCard(tp,s.costfilter,tp,LOCATION_HAND,0,1,1,nil)
-	local lv=g:GetFirst():GetLevel()
-	e:SetLabel(lv)
-	Duel.ConfirmCards(1-tp,g)
-	Duel.ShuffleHand(tp)
+function s.pendfilter(c,lv)
+	return c:IsType(TYPE_PENDULUM) and c:IsLevel(lv) and not c:IsForbidden()
 end
 function s.pdtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsDestructable()
-		and Duel.IsExistingMatchingCard(s.pendfilter,tp,LOCATION_GRAVE,0,1,nil,e:GetLabel())
-		and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) end
-	Duel.SetOperationInfo(0,CATEGORY_DESTROY,c,1,0,0)
+	if chk==0 then
+		return e:GetHandler():IsDestructable()
+			and Duel.IsExistingMatchingCard(s.reveal_filter,tp,LOCATION_HAND,0,1,nil)
+			and Duel.IsExistingMatchingCard(s.pendfilter,tp,LOCATION_GRAVE,0,1,nil)
+			and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1))
+	end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
+	local g=Duel.SelectMatchingCard(tp,s.reveal_filter,tp,LOCATION_HAND,0,1,1,nil)
+	e:SetLabel(g:GetFirst():GetLevel())
+	Duel.ConfirmCards(1-tp,g)
+	Duel.ShuffleHand(tp)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,e:GetHandler(),1,0,0)
 end
 function s.pdop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local lv=e:GetLabel()
 	if not c:IsRelateToEffect(e) or Duel.Destroy(c,REASON_EFFECT)==0 then return end
-	if lv<=0 or not (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) then return end
+	if lv<=0 then return end
 	local g=Duel.GetMatchingGroup(s.pendfilter,tp,LOCATION_GRAVE,0,nil,lv)
-	if #g>0 then
+	if #g>0 and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
 		local sg=g:Select(tp,1,1,nil)
 		Duel.MoveToField(sg:GetFirst(),tp,tp,LOCATION_PZONE,POS_FACEUP,true)
 	end
 end
-function s.pendfilter(c,lv)
-	return c:IsType(TYPE_PENDULUM) and c:IsLevel(lv) and not c:IsForbidden()
-end
 
---MONSTER EFFECT 1: Tribute to summon Odd-Eyes from Deck
+------------------------------
+-- MONSTER EFFECT 1: Tribute to summon Odd-Eyes from Deck
+------------------------------
 function s.spcost(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return e:GetHandler():IsReleasable() end
 	Duel.Release(e:GetHandler(),REASON_COST)
@@ -99,7 +100,9 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---MONSTER EFFECT 2: In Extra Deck when "Supreme King Dragon" sent to GY
+------------------------------
+-- MONSTER EFFECT 2: In Extra Deck when "Supreme King Dragon" sent to GY
+------------------------------
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(function(c)
 		return c:IsSetCard(0x20f8) and c:IsReason(REASON_EFFECT+REASON_BATTLE)
