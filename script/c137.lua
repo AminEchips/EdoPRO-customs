@@ -29,7 +29,7 @@ function s.initial_effect(c)
 	e1:SetOperation(s.spzop)
 	c:RegisterEffect(e1)
 
-	--Gain ATK and extra attack on Special Summon (permanent)
+	--Permanent ATK gain and extra attack on Special Summon
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
@@ -39,7 +39,7 @@ function s.initial_effect(c)
 	e2:SetOperation(s.atkop)
 	c:RegisterEffect(e2)
 
-	--Negate opponent’s monsters on attack, then optionally destroy Pendulum
+	--Negate opponent’s monsters on attack, optionally destroy Pendulum
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,2))
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
@@ -51,18 +51,24 @@ function s.initial_effect(c)
 	e3:SetOperation(s.ngop)
 	c:RegisterEffect(e3)
 
-	--Fusion Summon when destroyed, then place self in Pendulum Zone
+	--Floating: Fusion Summon + place in Pendulum Zone when destroyed
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,3))
 	e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_FUSION_SUMMON)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e4:SetCode(EVENT_DESTROYED)
+	e4:SetCode(EVENT_TO_GRAVE)
 	e4:SetProperty(EFFECT_FLAG_DELAY)
 	e4:SetCountLimit(1,{id,3})
 	e4:SetCondition(s.fuscon)
 	e4:SetTarget(s.fustg)
 	e4:SetOperation(s.fusop)
 	c:RegisterEffect(e4)
+	local e5=e4:Clone()
+	e5:SetCode(EVENT_REMOVE)
+	c:RegisterEffect(e5)
+	local e6=e4:Clone()
+	e6:SetCode(EVENT_TO_DECK)
+	c:RegisterEffect(e6)
 
 	--Synchro Materials: 1 Tuner + 1+ non-Tuner "Odd-Eyes" monsters
 	Synchro.AddProcedure(c,nil,1,1,aux.FilterBoolFunction(Card.IsSetCard,0x99),1,99)
@@ -70,7 +76,7 @@ function s.initial_effect(c)
 end
 s.listed_series={0x99,0x20f8}
 
---Scale increase = hand size
+--Scale increases by number of cards in hand
 function s.scaleval(e,c)
 	return Duel.GetFieldGroupCount(c:GetControler(),LOCATION_HAND,0)
 end
@@ -100,7 +106,7 @@ function s.spzop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Permanent ATK boost and extra attack on Special Summon
+--Permanent ATK gain + second attack
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local ct=Duel.GetMatchingGroupCount(Card.IsSpellTrap,tp,0,LOCATION_ONFIELD,nil)
@@ -118,7 +124,7 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	c:RegisterEffect(ea)
 end
 
---Negate opponent monsters on attack
+--Negate effects on attack declaration
 function s.ngcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttacker()==e:GetHandler()
 end
@@ -147,10 +153,10 @@ function s.ngop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Fusion Summon when destroyed in Monster Zone
+--Floating condition (must be destroyed)
 function s.fuscon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_MZONE)
+	return c:IsReason(REASON_DESTROY) and c:IsPreviousLocation(LOCATION_MZONE)
 end
 function s.fusfilter(c,e,tp,m,f)
 	return c:IsType(TYPE_FUSION) and c:IsCanBeSpecialSummoned(e,SUMMON_TYPE_FUSION,tp,false,false)
