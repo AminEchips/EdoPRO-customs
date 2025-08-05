@@ -40,7 +40,7 @@ function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_SYNCHRO)
 end
 function s.thfilter(c)
-	return (c:IsCode(27847700) or c:IsCode(72490637)) and c:IsAbleToHand()
+	return (c:IsCode(24094653) or c:IsCode(72490637)) and c:IsAbleToHand()
 end
 function s.spfilter(c,e,tp)
 	return c:IsType(TYPE_TUNER) and c:IsCanBeSpecialSummoned(e,0,tp,false,false) and c:IsFaceup()
