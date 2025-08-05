@@ -41,41 +41,49 @@ function s.initial_effect(c)
 	c:RegisterEffect(e3)
 end
 
-------------------------------
--- PENDULUM EFFECT
-------------------------------
-function s.reveal_filter(c)
-	return c:IsRace(RACE_DRAGON) and not c:IsPublic() and c:IsLevelAbove(1)
-end
-function s.pendfilter(c,lv)
-	return c:IsType(TYPE_PENDULUM) and c:IsLevel(lv) and not c:IsForbidden()
-end
 function s.pdtg(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then
 		return e:GetHandler():IsDestructable()
 			and Duel.IsExistingMatchingCard(s.reveal_filter,tp,LOCATION_HAND,0,1,nil)
-			and Duel.IsExistingMatchingCard(s.pendfilter,tp,LOCATION_GRAVE,0,1,nil)
+			and Duel.IsExistingMatchingCard(s.pendfilter_any,tp,LOCATION_GRAVE,0,1,nil)
 			and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1))
 	end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-	local g=Duel.SelectMatchingCard(tp,s.reveal_filter,tp,LOCATION_HAND,0,1,1,nil)
-	e:SetLabel(g:GetFirst():GetLevel())
-	Duel.ConfirmCards(1-tp,g)
-	Duel.ShuffleHand(tp)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,e:GetHandler(),1,0,0)
 end
+
 function s.pdop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local lv=e:GetLabel()
-	if not c:IsRelateToEffect(e) or Duel.Destroy(c,REASON_EFFECT)==0 then return end
-	if lv<=0 then return end
-	local g=Duel.GetMatchingGroup(s.pendfilter,tp,LOCATION_GRAVE,0,nil,lv)
-	if #g>0 and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) then
+	if not c:IsRelateToEffect(e) then return end
+	if Duel.Destroy(c,REASON_EFFECT)==0 then return end
+
+	-- Now that it's destroyed, ask to reveal a Dragon
+	if not Duel.IsExistingMatchingCard(s.reveal_filter,tp,LOCATION_HAND,0,1,nil) then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
+	local g=Duel.SelectMatchingCard(tp,s.reveal_filter,tp,LOCATION_HAND,0,1,1,nil)
+	if #g==0 then return end
+	local lv=g:GetFirst():GetLevel()
+	Duel.ConfirmCards(1-tp,g)
+	Duel.ShuffleHand(tp)
+
+	-- Now find matching Pendulum Monster in GY with that Level
+	local tg=Duel.GetMatchingGroup(s.pendfilter,tp,LOCATION_GRAVE,0,nil,lv)
+	if #tg>0 and (Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
-		local sg=g:Select(tp,1,1,nil)
+		local sg=tg:Select(tp,1,1,nil)
 		Duel.MoveToField(sg:GetFirst(),tp,tp,LOCATION_PZONE,POS_FACEUP,true)
 	end
 end
+
+function s.reveal_filter(c)
+	return c:IsRace(RACE_DRAGON) and not c:IsPublic() and c:IsLevelAbove(1)
+end
+function s.pendfilter_any(c)
+	return c:IsType(TYPE_PENDULUM) and c:IsLevelAbove(1) and not c:IsForbidden()
+end
+function s.pendfilter(c,lv)
+	return c:IsType(TYPE_PENDULUM) and c:IsLevel(lv) and not c:IsForbidden()
+end
+
 
 ------------------------------
 -- MONSTER EFFECT 1: Tribute to summon Odd-Eyes from Deck
