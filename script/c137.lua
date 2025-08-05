@@ -65,7 +65,7 @@ function s.initial_effect(c)
 	c:RegisterEffect(e4)
 
 	--Synchro Materials: 1 Tuner + 1+ non-Tuner "Odd-Eyes" monsters
-	Synchro.AddProcedure(c, nil, 1, 1, aux.FilterSummonCode(0x99), 1, 99)
+	Synchro.AddProcedure(c, nil, 1, 1, aux.FilterNonTuner(Card.IsSetCard, 0x99), 1, 99)
 	c:EnableReviveLimit()
 end
 
