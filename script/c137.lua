@@ -51,24 +51,18 @@ function s.initial_effect(c)
 	e3:SetOperation(s.ngop)
 	c:RegisterEffect(e3)
 
-	--Floating: Fusion Summon + place in Pendulum Zone when destroyed
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,3))
 	e4:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_FUSION_SUMMON)
 	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e4:SetCode(EVENT_TO_GRAVE)
+	e4:SetCode(EVENT_DESTROYED)
 	e4:SetProperty(EFFECT_FLAG_DELAY)
 	e4:SetCountLimit(1,{id,3})
 	e4:SetCondition(s.fuscon)
 	e4:SetTarget(s.fustg)
 	e4:SetOperation(s.fusop)
 	c:RegisterEffect(e4)
-	local e5=e4:Clone()
-	e5:SetCode(EVENT_REMOVE)
-	c:RegisterEffect(e5)
-	local e6=e4:Clone()
-	e6:SetCode(EVENT_TO_DECK)
-	c:RegisterEffect(e6)
+
 
 	--Synchro Materials: 1 Tuner + 1+ non-Tuner "Odd-Eyes" monsters
 	Synchro.AddProcedure(c,nil,1,1,aux.FilterBoolFunction(Card.IsSetCard,0x99),1,99)
