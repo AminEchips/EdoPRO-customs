@@ -40,7 +40,7 @@ function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
 end
 
 function s.xyztg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,e:GetHandler()) end
+    if chk==0 then return Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,e:GetHandler(),tp) end
 end
 function s.xyzfilter(c,mc)
     return c:IsCode(141) and mc:IsCanBeXyzMaterial(c)
