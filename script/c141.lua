@@ -9,15 +9,15 @@ function s.initial_effect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_IGNITION)
 	e1:SetRange(LOCATION_PZONE)
-	e1:SetCountLimit(1)
+	e1:SetCountLimit(1,id)
 	e1:SetOperation(s.pscaleop)
 	c:RegisterEffect(e1)
 
-	--Xyz Summon
+	--Xyz Summon procedure
 	Xyz.AddProcedure(c,nil,7,3)
 	c:EnableReviveLimit()
 
-	--Banish target on Xyz Summon or attack (until your next End Phase)
+	--Banish target on Xyz Summon or attack declaration (until your next End Phase)
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
 	e2:SetCategory(CATEGORY_REMOVE)
@@ -25,7 +25,7 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
 	e2:SetCondition(s.rmcon1)
-	e2:SetCost(s.rmcost)
+	e2:SetCost(Cost.Detach(1))
 	e2:SetTarget(s.rmtg)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
@@ -34,7 +34,7 @@ function s.initial_effect(c)
 	e3:SetCondition(s.rmcon2)
 	c:RegisterEffect(e3)
 
-	--When attacked: banish 1 from GY, destroy attacker at end of BP
+	--When attacked: banish 1 from GY, destroy attacker at end of Battle Phase
 	local e4=Effect.CreateEffect(c)
 	e4:SetDescription(aux.Stringid(id,2))
 	e4:SetCategory(CATEGORY_DESTROY)
@@ -58,6 +58,7 @@ end
 function s.pscaleop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsFaceup() and c:IsLocation(LOCATION_PZONE) then
+		-- Set Scale to 3
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_LSCALE)
@@ -67,24 +68,22 @@ function s.pscaleop(e,tp,eg,ep,ev,re,r,rp)
 		local e2=e1:Clone()
 		e2:SetCode(EFFECT_CHANGE_RSCALE)
 		c:RegisterEffect(e2)
+		-- Gain 1000 LP
 		Duel.Recover(tp,1000,REASON_EFFECT)
 	end
 end
 
---Xyz Summon condition
+--Condition: on Xyz Summon
 function s.rmcon1(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_XYZ)
 end
---Attack declare condition
+
+--Condition: on Attack Declare
 function s.rmcon2(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttacker()==e:GetHandler()
 end
---Detach cost
-function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
-	e:GetHandler():RemoveOverlayCard(tp,1,REASON_COST)
-end
---Target to banish
+
+--Target for temporary banish
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsAbleToRemove() end
 	if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,nil) end
@@ -92,7 +91,8 @@ function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
---Temporarily banish until your next End Phase
+
+--Operation: temporarily banish until your next End Phase
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	local c=e:GetHandler()
@@ -122,18 +122,18 @@ function s.retrop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---When attacked: banish 1 GY, destroy attacker at end of BP
+--When attacked: banish 1 from GY, destroy attacker at end of BP
 function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttackTarget()==e:GetHandler()
 end
 function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local atk=Duel.GetAttacker()
-	if not atk or not atk:IsRelateToBattle() or atk:IsControler(tp) then return end
+	if not atk or atk:IsControler(tp) then return end
 	if Duel.IsExistingMatchingCard(Card.IsAbleToRemove,tp,LOCATION_GRAVE,0,1,nil) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 		local g=Duel.SelectMatchingCard(tp,Card.IsAbleToRemove,tp,LOCATION_GRAVE,0,1,1,nil)
-		if #g>0 and Duel.Remove(g,POS_FACEUP,REASON_EFFECT)~=0 then
+		if #g>0 and Duel.Remove(g,POS_FACEUP,REASON_EFFECT)>0 then
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 			e1:SetCode(EVENT_PHASE+PHASE_BATTLE)
@@ -149,10 +149,9 @@ function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---If destroyed, place in Pendulum Zone
+--If destroyed in Monster Zone, place in Pendulum Zone
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_MZONE)
+	return e:GetHandler():IsPreviousLocation(LOCATION_MZONE)
 end
 function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
