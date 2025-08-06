@@ -31,7 +31,7 @@ function s.initial_effect(c)
     c:RegisterEffect(e2)
 end
 s.listed_names={141} -- Odd-Eyes Lapis Dragon
-s.listed_series={SET_ODD_EYES}
+s.listed_series={0x99}
 
 --e1: Quick Xyz Summon during opponent's turn into Lapis
 function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
