@@ -36,23 +36,22 @@ s.listed_series={0x99}
 --e1: Quick Xyz Summon during opponent's turn into Lapis
 function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
-    return Duel.GetTurnPlayer()~=tp and c:GetOverlayGroup():IsExists(Card.IsSetCard,1,nil,0x99)
+    return Duel.GetTurnPlayer()~=tp
+        and c:IsType(TYPE_XYZ)
+        and c:GetOverlayGroup():IsExists(Card.IsSetCard,1,nil,0x99)
 end
-
-function s.xyztg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,e:GetHandler(),tp) end
-end
-
-function s.xyzfilter(c,mc,tp)
+function s.xyzfilter(c,mc,e,tp)
     return c:IsCode(141) and mc:IsCanBeXyzMaterial(c)
-        and Duel.GetLocationCountFromEx(tp,tp,mc,c)>0 
-        and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
+        and Duel.GetLocationCountFromEx(tp,tp,mc,c)>0
+        and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 end
-
+function s.xyztg(e,tp,eg,ep,ev,re,r,rp,chk)
+    if chk==0 then return Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,e:GetHandler(),e,tp) end
+end
 function s.xyzop(e,tp,eg,ep,ev,re,r,rp)
     local c=e:GetHandler()
     if not c:IsRelateToEffect(e) or c:IsFacedown() then return end
-    local g=Duel.GetMatchingGroup(s.xyzfilter,tp,LOCATION_EXTRA,0,nil,c)
+    local g=Duel.GetMatchingGroup(s.xyzfilter,tp,LOCATION_EXTRA,0,nil,c,e,tp)
     if #g>0 then
         Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
         local sc=g:Select(tp,1,1,nil):GetFirst()
