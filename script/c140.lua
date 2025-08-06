@@ -35,11 +35,10 @@ s.listed_series={0x99}
 
 --e1: Quick Xyz Summon during opponent's turn into Lapis
 function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
-    return Duel.GetTurnPlayer()~=tp and e:GetHandler():IsType(TYPE_XYZ)
-        and e:GetHandler():IsHasEffect(EFFECT_MATERIAL_CHECK)
-        and e:GetHandler():IsHasEffect(EFFECT_XYZ_MATERIAL)
-        and e:GetHandler():GetOverlayGroup():IsExists(Card.IsSetCard,1,nil,0x99)
+    local c=e:GetHandler()
+    return Duel.GetTurnPlayer()~=tp and c:GetOverlayGroup():IsExists(Card.IsSetCard,1,nil,0x99)
 end
+
 function s.xyztg(e,tp,eg,ep,ev,re,r,rp,chk)
     if chk==0 then return Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,e:GetHandler()) end
 end
