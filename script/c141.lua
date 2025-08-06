@@ -1,172 +1,142 @@
---Odd-Eyes Lapis Dragon
+--Odd-Eyes Future Dragon
 local s,id=GetID()
 function s.initial_effect(c)
+	--Pendulum Attribute
 	Pendulum.AddProcedure(c)
-	--Pendulum Scale becomes 3 and gain 1000 LP
-	local e0=Effect.CreateEffect(c)
-	e0:SetDescription(aux.Stringid(id,0))
-	e0:SetType(EFFECT_TYPE_IGNITION)
-	e0:SetRange(LOCATION_PZONE)
-	e0:SetCountLimit(1,id)
-	e0:SetOperation(s.psop)
-	c:RegisterEffect(e0)
+	--Pendulum Effect: Set scale to 3 and gain LP
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
+	e1:SetType(EFFECT_TYPE_IGNITION)
+	e1:SetRange(LOCATION_PZONE)
+	e1:SetCountLimit(1)
+	e1:SetOperation(s.pscaleop)
+	c:RegisterEffect(e1)
 
-	--Xyz Summon procedure
+	--Xyz Summon
 	Xyz.AddProcedure(c,nil,7,3)
 	c:EnableReviveLimit()
 
-	--Banish 1 opponent's monster until your next End Phase (detach 1 material as cost)
-	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,1))
-	e1:SetCategory(CATEGORY_REMOVE)
-	e1:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e1:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
-	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e1:SetCountLimit(1,{id,1})
-	e1:SetCondition(s.rmcon1)
-	e1:SetTarget(s.rmtg)
-	e1:SetOperation(s.rmop)
-	c:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EVENT_ATTACK_ANNOUNCE)
-	e2:SetCondition(s.rmcon2)
+	--Banish target on summon or attack
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_REMOVE)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
+	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
+	e2:SetCondition(s.rmcon1)
+	e2:SetCost(s.rmcost)
+	e2:SetTarget(s.rmtg)
+	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
-
-	--Banish from GY when attacked, destroy that monster at End of BP
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
-	e3:SetCode(EVENT_BE_BATTLE_TARGET)
-	e3:SetRange(LOCATION_MZONE)
-	e3:SetCondition(s.bdcon)
-	e3:SetOperation(s.bdop)
+	local e3=e2:Clone()
+	e3:SetCode(EVENT_ATTACK_ANNOUNCE)
+	e3:SetCondition(s.rmcon2)
 	c:RegisterEffect(e3)
 
-	--Place in Pendulum Zone if destroyed
+	--Destroy attacking monster at end of BP
 	local e4=Effect.CreateEffect(c)
-	e4:SetDescription(aux.Stringid(id,3))
-	e4:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
-	e4:SetCode(EVENT_DESTROYED)
-	e4:SetProperty(EFFECT_FLAG_DELAY)
-	e4:SetCondition(s.pencon)
-	e4:SetTarget(s.pentg)
-	e4:SetOperation(s.penop)
+	e4:SetDescription(aux.Stringid(id,2))
+	e4:SetCategory(CATEGORY_DESTROY)
+	e4:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
+	e4:SetCode(EVENT_ATTACK_ANNOUNCE)
+	e4:SetRange(LOCATION_MZONE)
+	e4:SetCondition(s.atkcon)
+	e4:SetOperation(s.atkop)
 	c:RegisterEffect(e4)
+
+	--Place in Pendulum Zone if destroyed
+	local e5=Effect.CreateEffect(c)
+	e5:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
+	e5:SetCode(EVENT_DESTROYED)
+	e5:SetCondition(s.pzcon)
+	e5:SetOperation(s.pzop)
+	c:RegisterEffect(e5)
 end
 
---Pendulum Effect
-function s.psop(e,tp,eg,ep,ev,re,r,rp)
+--Pendulum effect: Change scale to 3, gain 1000 LP
+function s.pscaleop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local e1=Effect.CreateEffect(c)
-	e1:SetType(EFFECT_TYPE_SINGLE)
-	e1:SetCode(EFFECT_CHANGE_LSCALE)
-	e1:SetValue(3)
-	e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
-	c:RegisterEffect(e1)
-	local e2=e1:Clone()
-	e2:SetCode(EFFECT_CHANGE_RSCALE)
-	c:RegisterEffect(e2)
-	Duel.Recover(tp,1000,REASON_EFFECT)
+	local sc=3
+	if c:IsFaceup() and c:IsLocation(LOCATION_PZONE) then
+		--Change scales
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_CHANGE_LSCALE)
+		e1:SetValue(sc)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD_DISABLE)
+		c:RegisterEffect(e1)
+		local e2=e1:Clone()
+		e2:SetCode(EFFECT_CHANGE_RSCALE)
+		c:RegisterEffect(e2)
+		--Gain LP
+		Duel.Recover(tp,1000,REASON_EFFECT)
+	end
 end
 
--- Conditions
+--Condition: if Xyz Summoned
 function s.rmcon1(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_XYZ)
 end
+
+--Condition: if it declares an attack
 function s.rmcon2(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttacker()==e:GetHandler()
 end
 
--- Targeting for temporary banish
-function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsAbleToRemove() end
-	if chk==0 then
-		return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,nil)
-			and e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST)
-	end
+--Detach 1 as cost
+function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
 	e:GetHandler():RemoveOverlayCard(tp,1,REASON_COST)
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-	local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,1,nil)
-	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
 
--- Banish temporarily until your next End Phase
+-- Temporarily banish (until your next End Phase)
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	local c=e:GetHandler()
 	if tc:IsRelateToEffect(e) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT+REASON_TEMPORARY)~=0 then
-		local fid=c:GetFieldID()
-		local turncount=Duel.GetTurnCount()
-		tc:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1,fid)
-		tc:SetTurnCounter(turncount)
-
+		local turn_id=Duel.GetTurnCount()
+		tc:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END,0,1)
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		e1:SetCode(EVENT_PHASE+PHASE_END)
 		e1:SetCountLimit(1)
-		e1:SetLabel(fid,turncount,tp)
+		e1:SetLabel(turn_id,tp)
+		e1:SetLabelObject(tc)
 		e1:SetCondition(s.retcon)
-		e1:SetOperation(s.retop)
-		e1:SetReset(RESET_PHASE+PHASE_END,2)
+		e1:SetOperation(s.retrop)
+		e1:SetReset(RESET_PHASE+PHASE_END,2) -- lasts for up to 2 End Phases
 		Duel.RegisterEffect(e1,tp)
 	end
 end
+
+-- Check for your next End Phase
 function s.retcon(e,tp,eg,ep,ev,re,r,rp)
-	local fid,turn,tp_owner=e:GetLabel()
-	return Duel.GetTurnCount()>turn and Duel.GetTurnPlayer()==tp_owner and Duel.GetMatchingGroup(s.retfilter,tp_owner,0,LOCATION_REMOVED,nil,fid):GetCount()>0
+	local turn_id, owner = e:GetLabel()
+	return Duel.GetTurnPlayer()==owner and Duel.GetTurnCount()>turn_id
 end
-function s.retfilter(c,fid)
-	return c:GetFlagEffect(id)>0 and c:GetFlagEffectLabel(id)==fid
-end
-function s.retop(e,tp,eg,ep,ev,re,r,rp)
-	local fid=e:GetLabel()
-	local g=Duel.GetMatchingGroup(s.retfilter,tp,0,LOCATION_REMOVED,nil,fid)
-	for tc in g:Iter() do
+
+-- Return to field
+function s.retrop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=e:GetLabelObject()
+	if tc:GetFlagEffect(id)~=0 then
 		Duel.ReturnToField(tc)
 	end
 end
 
--- Banish from GY when attacked
-function s.bdcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return eg:GetFirst()==c and Duel.GetAttacker():IsControler(1-tp)
+
+--When attacked: banish GY monster to destroy attacker at end of BP
+function s.atkcon(e,tp,eg,ep,ev,re,r,rp)
+	return Duel.GetAttackTarget()==e:GetHandler()
 end
-function s.bdop(e,tp,eg,ep,ev,re,r,rp)
+function s.atkop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local att=Duel.GetAttacker()
-	if not att or not att:IsRelateToBattle() then return end
-	if Duel.IsExistingMatchingCard(Card.IsAbleToRemove,tp,LOCATION_GRAVE,0,1,nil) and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
+	if Duel.GetAttacker():IsControler(1-tp) and Duel.IsExistingMatchingCard(aux.TRUE,tp,LOCATION_GRAVE,0,1,nil) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
-		local g=Duel.SelectMatchingCard(tp,Card.IsAbleToRemove,tp,LOCATION_GRAVE,0,1,1,nil)
+		local g=Duel.SelectMatchingCard(tp,aux.TRUE,tp,LOCATION_GRAVE,0,1,1,nil)
+		local atk=Duel.GetAttacker()
 		if #g>0 and Duel.Remove(g,POS_FACEUP,REASON_EFFECT)~=0 then
 			local e1=Effect.CreateEffect(c)
 			e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 			e1:SetCode(EVENT_PHASE+PHASE_BATTLE)
-			e1:SetOperation(function()
-				if att:IsRelateToBattle() then
-					Duel.Destroy(att,REASON_EFFECT)
-				end
-			end)
-			e1:SetReset(RESET_PHASE+PHASE_BATTLE)
-			Duel.RegisterEffect(e1,tp)
-		end
-	end
-end
-
--- Place in Pendulum Zone
-function s.pencon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsPreviousLocation(LOCATION_MZONE) and c:IsFaceup()
-end
-function s.pentg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.CheckLocation(tp,LOCATION_PZONE,0) or Duel.CheckLocation(tp,LOCATION_PZONE,1) end
-end
-function s.penop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) then return end
-	if Duel.CheckLocation(tp,LOCATION_PZONE,0) then
-		Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
-	elseif Duel.CheckLocation(tp,LOCATION_PZONE,1) then
-		Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
-	end
-end
+			e1:SetCountLimit(1)
+			e
