@@ -15,7 +15,7 @@ function s.initial_effect(c)
 	Xyz.AddProcedure(c,nil,7,3)
 	c:EnableReviveLimit()
 
-	--Banish 1 opponent's monster until your End Phase
+	--Banish 1 opponent's monster until your next End Phase (detach 1 material as cost)
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,1))
 	e1:SetCategory(CATEGORY_REMOVE)
@@ -27,7 +27,6 @@ function s.initial_effect(c)
 	e1:SetTarget(s.rmtg)
 	e1:SetOperation(s.rmop)
 	c:RegisterEffect(e1)
-
 	local e2=e1:Clone()
 	e2:SetCode(EVENT_ATTACK_ANNOUNCE)
 	e2:SetCondition(s.rmcon2)
@@ -70,53 +69,64 @@ function s.psop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Recover(tp,1000,REASON_EFFECT)
 end
 
---Banish effect conditions
+-- Conditions
 function s.rmcon1(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():IsSummonType(SUMMON_TYPE_XYZ)
 end
 function s.rmcon2(e,tp,eg,ep,ev,re,r,rp)
 	return Duel.GetAttacker()==e:GetHandler()
 end
+
+-- Targeting for temporary banish
 function s.rmtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) and chkc:IsAbleToRemove() end
-	if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,nil) end
+	if chk==0 then
+		return Duel.IsExistingTarget(Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,nil)
+			and e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST)
+	end
+	e:GetHandler():RemoveOverlayCard(tp,1,REASON_COST)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local g=Duel.SelectTarget(tp,Card.IsAbleToRemove,tp,0,LOCATION_MZONE,1,1,nil)
 	Duel.SetOperationInfo(0,CATEGORY_REMOVE,g,1,0,0)
 end
+
+-- Banish temporarily until your next End Phase
 function s.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
+	local c=e:GetHandler()
 	if tc:IsRelateToEffect(e) and Duel.Remove(tc,POS_FACEUP,REASON_EFFECT+REASON_TEMPORARY)~=0 then
-		local fid=e:GetHandler():GetFieldID()
+		local fid=c:GetFieldID()
+		local turncount=Duel.GetTurnCount()
 		tc:RegisterFlagEffect(id,RESET_EVENT+RESETS_STANDARD,0,1,fid)
-		tc:RegisterFlagEffect(id+100,RESET_EVENT+RESETS_STANDARD,0,1)
-		local e1=Effect.CreateEffect(e:GetHandler())
+		tc:SetTurnCounter(turncount)
+
+		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_CONTINUOUS)
 		e1:SetCode(EVENT_PHASE+PHASE_END)
-		e1:SetLabel(fid)
 		e1:SetCountLimit(1)
+		e1:SetLabel(fid,turncount,tp)
 		e1:SetCondition(s.retcon)
 		e1:SetOperation(s.retop)
-		e1:SetReset(RESET_PHASE+PHASE_END)
+		e1:SetReset(RESET_PHASE+PHASE_END,2)
 		Duel.RegisterEffect(e1,tp)
 	end
 end
 function s.retcon(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(function(c,fid)
-		return c:GetFlagEffectLabel(id)==fid
-	end,tp,0,LOCATION_REMOVED,nil,e:GetLabel())
-	return #g>0
+	local fid,turn,tp_owner=e:GetLabel()
+	return Duel.GetTurnCount()>turn and Duel.GetTurnPlayer()==tp_owner and Duel.GetMatchingGroup(s.retfilter,tp_owner,0,LOCATION_REMOVED,nil,fid):GetCount()>0
+end
+function s.retfilter(c,fid)
+	return c:GetFlagEffect(id)>0 and c:GetFlagEffectLabel(id)==fid
 end
 function s.retop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.GetMatchingGroup(function(c,fid)
-		return c:GetFlagEffectLabel(id)==fid
-	end,tp,0,LOCATION_REMOVED,nil,e:GetLabel())
+	local fid=e:GetLabel()
+	local g=Duel.GetMatchingGroup(s.retfilter,tp,0,LOCATION_REMOVED,nil,fid)
 	for tc in g:Iter() do
 		Duel.ReturnToField(tc)
 	end
 end
 
---Banish from GY to destroy attacker at end of Battle Phase
+-- Banish from GY when attacked
 function s.bdcon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return eg:GetFirst()==c and Duel.GetAttacker():IsControler(1-tp)
@@ -143,7 +153,7 @@ function s.bdop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---Pendulum replace
+-- Place in Pendulum Zone
 function s.pencon(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	return c:IsPreviousLocation(LOCATION_MZONE) and c:IsFaceup()
