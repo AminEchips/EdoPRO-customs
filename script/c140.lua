@@ -39,9 +39,12 @@ function s.xyzcon(e,tp,eg,ep,ev,re,r,rp)
     return Duel.GetTurnPlayer()~=tp and c:GetOverlayGroup():IsExists(Card.IsSetCard,1,nil,0x99)
 end
 
-function s.xyztg(e,tp,eg,ep,ev,re,r,rp,chk)
-    if chk==0 then return Duel.IsExistingMatchingCard(s.xyzfilter,tp,LOCATION_EXTRA,0,1,nil,e:GetHandler(),tp) end
+function s.xyzfilter(c,mc,tp)
+    return c:IsCode(141) and mc:IsCanBeXyzMaterial(c)
+        and Duel.GetLocationCountFromEx(tp,tp,mc,c)>0 
+        and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
 end
+
 function s.xyzfilter(c,mc)
     return c:IsCode(141) and mc:IsCanBeXyzMaterial(c)
         and Duel.GetLocationCountFromEx(tp,tp,mc,c)>0 and c:IsCanBeSpecialSummoned(nil,0,tp,false,false)
