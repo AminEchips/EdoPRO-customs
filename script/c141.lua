@@ -25,7 +25,7 @@ function s.initial_effect(c)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET+EFFECT_FLAG_DELAY)
 	e2:SetCondition(s.rmcon1)
-	e2:SetCost(Cost.Detach(1))
+	e2:SetCost(s.rmcost)
 	e2:SetTarget(s.rmtg)
 	e2:SetOperation(s.rmop)
 	c:RegisterEffect(e2)
@@ -54,11 +54,10 @@ function s.initial_effect(c)
 	c:RegisterEffect(e5)
 end
 
---Pendulum effect
+--Pendulum effect: Set Scale to 3, gain 1000 LP
 function s.pscaleop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	if c:IsFaceup() and c:IsLocation(LOCATION_PZONE) then
-		-- Set Scale to 3
 		local e1=Effect.CreateEffect(c)
 		e1:SetType(EFFECT_TYPE_SINGLE)
 		e1:SetCode(EFFECT_CHANGE_LSCALE)
@@ -68,9 +67,14 @@ function s.pscaleop(e,tp,eg,ep,ev,re,r,rp)
 		local e2=e1:Clone()
 		e2:SetCode(EFFECT_CHANGE_RSCALE)
 		c:RegisterEffect(e2)
-		-- Gain 1000 LP
 		Duel.Recover(tp,1000,REASON_EFFECT)
 	end
+end
+
+--Manual detach cost
+function s.rmcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():CheckRemoveOverlayCard(tp,1,REASON_COST) end
+	e:GetHandler():RemoveOverlayCard(tp,1,1,REASON_COST)
 end
 
 --Condition: on Xyz Summon
