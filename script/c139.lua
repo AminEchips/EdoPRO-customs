@@ -9,7 +9,6 @@ function s.initial_effect(c)
 	e1:SetCode(EVENT_TO_GRAVE)
 	e1:SetProperty(EFFECT_FLAG_DELAY)
 	e1:SetCountLimit(1,id)
-	e1:SetCondition(s.thcon)
 	e1:SetTarget(s.thtg)
 	e1:SetOperation(s.thop)
 	c:RegisterEffect(e1)
@@ -41,9 +40,6 @@ end
 s.listed_series={0x95}
 
 --(1) Add Rank-Up-Magic from Deck
-function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-	return e:GetHandler():IsReason(REASON_EFFECT+REASON_BATTLE)
-end
 function s.thfilter(c)
 	return c:IsSetCard(0x95) and c:IsAbleToHand()
 end
