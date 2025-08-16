@@ -155,36 +155,42 @@ end
 -- =====================================
 -- (M2) Face-up in Extra: Tribute & SS it
 -- =====================================
-function s.tunerfilter(c) return c:IsFaceup() and c:IsType(TYPE_TUNER) and c:IsReleasableByEffect() end
-function s.darkpenddragon(c) return c:IsFaceup() and c:IsAttribute(ATTRIBUTE_DARK) and c:IsRace(RACE_DRAGON)
-		and c:IsType(TYPE_PENDULUM) and c:IsReleasableByEffect() end
-function s.exscheck(g)
-	return g:IsExists(s.tunerfilter,1,nil) and g:IsExists(s.darkpenddragon,1,nil)
+function s.tunerfilter(c) 
+	return c:IsFaceup() and c:IsType(TYPE_TUNER) and c:IsReleasableByEffect()
 end
+function s.darkpenddragon(c)
+	return c:IsFaceup() and c:IsAttribute(ATTRIBUTE_DARK) and c:IsRace(RACE_DRAGON)
+		and c:IsType(TYPE_PENDULUM) and c:IsReleasableByEffect()
+end
+
 function s.exstg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then
-		return c:IsFaceup() and Duel.GetLocationCountFromEx(tp,tp,nil,c)>0
+		return c:IsFaceup() and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+			and Duel.GetLocationCountFromEx(tp,tp,nil,c)>0
 			and Duel.IsExistingMatchingCard(s.tunerfilter,tp,LOCATION_MZONE,0,1,nil)
 			and Duel.IsExistingMatchingCard(s.darkpenddragon,tp,LOCATION_MZONE,0,1,nil)
-			and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 	end
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
-	Duel.SetOperationInfo(0,CATEGORY_RELEASE,nil,2,0,0)
+	-- info only; tribute happens after a successful SS
 end
+
 function s.exsop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if Duel.GetLocationCountFromEx(tp,tp,nil,c)<=0 or not c:IsRelateToEffect(e) then return end
-	local g=Duel.GetMatchingGroup(aux.FaceupFilter(Card.IsReleasableByEffect),tp,LOCATION_MZONE,0,nil)
-	-- pick exactly 2 monsters: one Tuner and one DARK Dragon Pendulum
-	local cand=Duel.GetMatchingGroup(function(tc) return (s.tunerfilter(tc) or s.darkpenddragon(tc)) end,tp,LOCATION_MZONE,0,nil)
+	if not c:IsRelateToEffect(e) or Duel.GetLocationCountFromEx(tp,tp,nil,c)<=0 then return end
+	-- Try to Special Summon first (tributes occur after resolution)
+	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)<=0 then return end
+	-- After successful SS: select and tribute 1 Tuner + 1 DARK Dragon Pendulum (by effect)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
-	local sg=cand:SelectSubGroup(tp,s.exscheck,false,2,2)
-	if not sg then return end
-	if Duel.Release(sg,REASON_EFFECT)==2 then
-		Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
-	end
+	local g1=Duel.SelectMatchingCard(tp,s.tunerfilter,tp,LOCATION_MZONE,0,1,1,nil)
+	if #g1==0 then return end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
+	local g2=Duel.SelectMatchingCard(tp,s.darkpenddragon,tp,LOCATION_MZONE,0,1,1,g1:GetFirst())
+	if #g2==0 then return end
+	g1:Merge(g2)
+	Duel.Release(g1,REASON_EFFECT)
 end
+
 
 -- ==========================================
 -- (M3) If destroyed in MZ: go to Pendulum Z
