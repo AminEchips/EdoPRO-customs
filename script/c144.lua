@@ -60,13 +60,15 @@ end
 s.listed_series={0x99,0xff}
 s.listed_names={id}
 
--- =========================
--- (P1) P-Zone helper funcs
--- =========================
-local function summoned_by_you_and_synchro(c,tp) return c:IsSummonPlayer(tp) and c:IsSummonType(SUMMON_TYPE_SYNCHRO) end
+-- (P1) P-Zone: If YOU Synchro Summon (not in Damage Step): SS this,
+-- then you may make 1 other monster you control gain ATK equal to the
+-- original ATK of 1 of those Synchro Summoned monsters.
+local function isYourSynchro(c,tp)
+	return c:IsSummonPlayer(tp) and c:IsSummonType(SUMMON_TYPE_SYNCHRO)
+end
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
 	if Duel.IsDamageStep() then return false end
-	return eg:IsExists(summoned_by_you_and_synchro,1,nil,tp)
+	return eg:IsExists(isYourSynchro,1,nil,tp)
 end
 function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
@@ -74,42 +76,38 @@ function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk)
 		return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
 			and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 	end
-	-- keep only the Synchro Summoned monsters by you from this event
-	local g=eg:Filter(summoned_by_you_and_synchro,nil,tp)
-	g:KeepAlive()
-	e:SetLabelObject(g)
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
 end
 function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	local g=e:GetLabelObject()
-	if not c:IsRelateToEffect(e) then
-		if g then g:DeleteGroup() end
-		return
+	if not c:IsRelateToEffect(e) then return end
+	-- Special Summon this card from the P-Zone
+	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)<=0 then return end
+
+	-- Optional ATK gain (choose 1 of the Synchro Summoned monsters from this event)
+	local g=eg:Filter(isYourSynchro,nil,tp)
+	if #g==0 then return end
+	if not Duel.SelectYesNo(tp,aux.Stringid(id,4)) then return end
+
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
+	local sc=g:Select(tp,1,1,nil):GetFirst()
+	if not sc then return end
+	local val=math.max(0,sc:GetBaseAttack())
+
+	-- pick "1 other" face-up monster you control
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
+	local tg=Duel.SelectMatchingCard(tp,function(tc) return tc:IsFaceup() and tc~=c end,
+	                                  tp,LOCATION_MZONE,0,1,1,nil)
+	local tc=tg:GetFirst()
+	if tc and val>0 then
+		local e1=Effect.CreateEffect(c)
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_UPDATE_ATTACK)
+		e1:SetValue(val)
+		e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+		tc:RegisterEffect(e1)
 	end
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		-- optional ATK gain
-		if g and #g>0 and Duel.IsExistingMatchingCard(aux.FaceupFilter(Card.IsControler,tp),tp,LOCATION_MZONE,0,1,c)
-			and Duel.SelectYesNo(tp,aux.Stringid(id,4)) then
-			Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-			local sc=g:Select(tp,1,1,nil):GetFirst() -- choose which Synchro Summoned monster to reference
-			if sc then
-				local val=math.max(0,sc:GetBaseAttack())
-				Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_FACEUP)
-				local tg=Duel.SelectMatchingCard(tp,aux.FaceupFilter(Card.IsControler,tp),tp,LOCATION_MZONE,0,1,1,c)
-				local tc=tg:GetFirst()
-				if tc and val>0 then
-					local e1=Effect.CreateEffect(c)
-					e1:SetType(EFFECT_TYPE_SINGLE)
-					e1:SetCode(EFFECT_UPDATE_ATTACK)
-					e1:SetValue(val)
-					e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-					tc:RegisterEffect(e1)
-				end
-			end
-		end
-	end
-	if g then g:DeleteGroup() end
 end
 
 -- ===================================
@@ -155,7 +153,7 @@ end
 -- =====================================
 -- (M2) Face-up in Extra: Tribute & SS it
 -- =====================================
-function s.tunerfilter(c) 
+function s.tunerfilter(c)
 	return c:IsFaceup() and c:IsType(TYPE_TUNER) and c:IsReleasableByEffect()
 end
 function s.darkpenddragon(c)
@@ -167,20 +165,16 @@ function s.exstg(e,tp,eg,ep,ev,re,r,rp,chk)
 	local c=e:GetHandler()
 	if chk==0 then
 		return c:IsFaceup() and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
-			and Duel.GetLocationCountFromEx(tp,tp,nil,c)>0
 			and Duel.IsExistingMatchingCard(s.tunerfilter,tp,LOCATION_MZONE,0,1,nil)
 			and Duel.IsExistingMatchingCard(s.darkpenddragon,tp,LOCATION_MZONE,0,1,nil)
 	end
+	-- tribute happens in operation; SS info declared for clarity
 	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,c,1,0,0)
-	-- info only; tribute happens after a successful SS
 end
 
 function s.exsop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
-	if not c:IsRelateToEffect(e) or Duel.GetLocationCountFromEx(tp,tp,nil,c)<=0 then return end
-	-- Try to Special Summon first (tributes occur after resolution)
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)<=0 then return end
-	-- After successful SS: select and tribute 1 Tuner + 1 DARK Dragon Pendulum (by effect)
+	-- Select the two tributes first
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_RELEASE)
 	local g1=Duel.SelectMatchingCard(tp,s.tunerfilter,tp,LOCATION_MZONE,0,1,1,nil)
 	if #g1==0 then return end
@@ -188,8 +182,15 @@ function s.exsop(e,tp,eg,ep,ev,re,r,rp)
 	local g2=Duel.SelectMatchingCard(tp,s.darkpenddragon,tp,LOCATION_MZONE,0,1,1,g1:GetFirst())
 	if #g2==0 then return end
 	g1:Merge(g2)
-	Duel.Release(g1,REASON_EFFECT)
+
+	-- Tribute by effect (NOT a cost)
+	if Duel.Release(g1,REASON_EFFECT)~=2 then return end
+
+	-- After tributing, Special Summon this from face-up Extra if possible
+	if not (c:IsRelateToEffect(e) and Duel.GetLocationCountFromEx(tp,tp,nil,c)>0) then return end
+	Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
 end
+
 
 
 -- ==========================================
