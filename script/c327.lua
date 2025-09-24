@@ -41,7 +41,7 @@ s.listed_names={25451652}
 
 -- Condition for revive
 function s.cfilter(c,tp)
-    return c:IsSetCard(0xef) and c:IsControler(tp) and c:IsPreviousControler(tp)
+    return c:IsSetCard(0xef) and c:IsControler(tp) and c:IsPreviousControler(tp) and not c:IsSetCode(327) and c:IsType(TYPE_MONSTER)
 end
 function s.spcon(e,tp,eg,ep,ev,re,r,rp)
     return eg:IsExists(s.cfilter,1,nil,tp)
