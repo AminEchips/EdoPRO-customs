@@ -21,7 +21,7 @@ Includes:
 - Odd-Eyes
 - Performapal
 - "Magician" Pendulum
-- Supreme King Z-Arc(including Supreme King Dragon/Gate)
+- Supreme King Z-Arc (including Supreme King Dragon/Gate)
 - Raidraptor
 - Phantom Knights
 - Salamangreat
