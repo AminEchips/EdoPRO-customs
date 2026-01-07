@@ -27,3 +27,4 @@ Includes:
 - Salamangreat
 - Nordic (including Ascendant/Beast/Alfar)
 - Aesir
+- Constellar/Tellarknight
