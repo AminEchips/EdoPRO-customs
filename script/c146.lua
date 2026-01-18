@@ -75,23 +75,26 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
 
-	--convert PZONE "index" (0/1) -> actual SZONE sequence (6/7)
-	local seq=tc:GetSequence()
-	if seq<=1 then seq=seq+6 end
+	--Normalize: get which PZ (0=left, 1=right) no matter what sequence format we get
+	local pz=tc:GetSequence()
+	if pz>=6 then pz=pz-6 end          -- 6/7 -> 0/1
+	if pz~=0 and pz~=1 then return end -- safety
 
+	local seq=6+pz -- actual SZONE sequence for Pendulum Zones is 6/7
 	local code=tc:GetCode()
+
 	if Duel.Destroy(tc,REASON_EFFECT)==0 then return end
 
-	--must have the same PZ free
+	--must have that exact pendulum zone free
 	if not Duel.CheckLocation(tp,LOCATION_SZONE,seq) then return end
 
-	--Place 1 "Odd-Eyes" Pendulum Monster with a different name from Deck/face-up Extra/GY into that PZ
+	--Select 1 "Odd-Eyes" Pendulum Monster with a different name from Deck/face-up Extra/GY
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
 	local g=Duel.SelectMatchingCard(tp,s.oe_pendfilter,tp,LOCATION_DECK+LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil,e,tp,code)
 	local sc=g:GetFirst()
 	if not sc or sc:IsForbidden() then return end
 
-	--Move it to SZONE, then force it into the correct Pendulum Zone slot
+	--Put it in SZONE then force it into the correct PZ slot (6/7)
 	if Duel.MoveToField(sc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
 		Duel.MoveSequence(sc,seq)
 	else
@@ -108,4 +111,6 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 			Duel.SendtoGrave(mc,REASON_EFFECT)
 		end
 	end
+end
+
 end
