@@ -46,7 +46,7 @@ end
 --(2) Trigger condition: an "Odd-Eyes" card you controlled in MZONE/SZONE left the field
 function s.cfilter(c,tp)
 	return c:IsPreviousControler(tp)
-		and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_SZONE)
+		and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_SZONE+LOCATION_PZONE)
 		and c:IsPreviousSetCard(0x99) -- IMPORTANT: works even if it left face-down
 end
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
