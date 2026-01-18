@@ -46,8 +46,8 @@ end
 --(2) Trigger condition: an "Odd-Eyes" card you controlled in MZONE/SZONE left the field
 function s.cfilter(c,tp)
 	return c:IsPreviousControler(tp)
-		and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_SZONE+LOCATION_PZONE)
-		and c:IsPreviousSetCard(0x99) -- IMPORTANT: works even if it left face-down
+		and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_SZONE)
+		and c:IsPreviousSetCard(0x99) -- works even if it left face-down
 end
 function s.pzcon(e,tp,eg,ep,ev,re,r,rp)
 	return eg:IsExists(s.cfilter,1,nil,tp)
@@ -74,27 +74,31 @@ end
 function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
-	local seq=tc:GetSequence() -- 6 or 7 (Pendulum Zones)
-	local code=tc:GetCode()
 
+	--convert PZONE "index" (0/1) -> actual SZONE sequence (6/7)
+	local seq=tc:GetSequence()
+	if seq<=1 then seq=seq+6 end
+
+	local code=tc:GetCode()
 	if Duel.Destroy(tc,REASON_EFFECT)==0 then return end
-	-- make sure the exact zone we want is free
+
+	--must have the same PZ free
 	if not Duel.CheckLocation(tp,LOCATION_SZONE,seq) then return end
 
-	-- Place 1 "Odd-Eyes" Pendulum Monster with a different name from Deck/face-up Extra/GY into that PZ
+	--Place 1 "Odd-Eyes" Pendulum Monster with a different name from Deck/face-up Extra/GY into that PZ
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
 	local g=Duel.SelectMatchingCard(tp,s.oe_pendfilter,tp,LOCATION_DECK+LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil,e,tp,code)
 	local sc=g:GetFirst()
 	if not sc or sc:IsForbidden() then return end
 
-	-- Move it to SZONE, then force it into the correct PZ slot (seq 6/7)
+	--Move it to SZONE, then force it into the correct Pendulum Zone slot
 	if Duel.MoveToField(sc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
 		Duel.MoveSequence(sc,seq)
 	else
 		return
 	end
 
-	-- Then you can send 1 face-up "Odd-Eyes" monster from your Extra Deck to the GY
+	--Then you can send 1 face-up "Odd-Eyes" monster from your Extra Deck to the GY
 	if Duel.IsExistingMatchingCard(s.oe_extrafilter,tp,LOCATION_EXTRA,0,1,nil)
 		and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
@@ -105,4 +109,3 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
-
