@@ -74,22 +74,27 @@ end
 function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
-	local seq=tc:GetSequence()
+	local seq=tc:GetSequence() -- 6 or 7 (Pendulum Zones)
 	local code=tc:GetCode()
-	if Duel.Destroy(tc,REASON_EFFECT)==0 then return end
 
-	--Place 1 "Odd-Eyes" Pendulum Monster with a different name from Deck/face-up Extra/GY into that PZ
-	if not Duel.CheckPendulumZones(tp) then return end
+	if Duel.Destroy(tc,REASON_EFFECT)==0 then return end
+	-- make sure the exact zone we want is free
+	if not Duel.CheckLocation(tp,LOCATION_SZONE,seq) then return end
+
+	-- Place 1 "Odd-Eyes" Pendulum Monster with a different name from Deck/face-up Extra/GY into that PZ
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
 	local g=Duel.SelectMatchingCard(tp,s.oe_pendfilter,tp,LOCATION_DECK+LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil,e,tp,code)
 	local sc=g:GetFirst()
-	if sc and not sc:IsForbidden() then
-		Duel.MoveToField(sc,tp,tp,LOCATION_PZONE,POS_FACEUP,true,seq)
+	if not sc or sc:IsForbidden() then return end
+
+	-- Move it to SZONE, then force it into the correct PZ slot (seq 6/7)
+	if Duel.MoveToField(sc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
+		Duel.MoveSequence(sc,seq)
 	else
 		return
 	end
 
-	--Then you can send 1 face-up "Odd-Eyes" monster from your Extra Deck to the GY
+	-- Then you can send 1 face-up "Odd-Eyes" monster from your Extra Deck to the GY
 	if Duel.IsExistingMatchingCard(s.oe_extrafilter,tp,LOCATION_EXTRA,0,1,nil)
 		and Duel.SelectYesNo(tp,aux.Stringid(id,2)) then
 		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOGRAVE)
@@ -100,3 +105,4 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 		end
 	end
 end
+
