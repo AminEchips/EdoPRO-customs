@@ -14,7 +14,7 @@ function s.initial_effect(c)
 	--If an "Odd-Eyes" card you control in MZONE or SZONE leaves the field
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_TOFIELD+CATEGORY_TOGRAVE)
+	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_TOGRAVE)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_LEAVE_FIELD)
 	e2:SetRange(LOCATION_SZONE)
