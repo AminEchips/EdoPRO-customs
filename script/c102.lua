@@ -1,7 +1,7 @@
 --Performapal Spectral Magician
 local s,id=GetID()
-
 function s.initial_effect(c)
+	--Pendulum Summon
 	Pendulum.AddProcedure(c)
 
 	-- Always treated as "Predaplant"
@@ -25,29 +25,17 @@ function s.initial_effect(c)
 	e1:SetOperation(s.atkopop)
 	c:RegisterEffect(e1)
 
-	-- Monster Effect 1: Special Summon self by targeting DARK, becomes DARK, gain stats if Plant
+	-- Monster Effect: from hand, destroy 1 DARK monster you control or 1 card in your PZone; choose 1 effect
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,1))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e2:SetCategory(CATEGORY_DESTROY+CATEGORY_SPECIAL_SUMMON)
 	e2:SetType(EFFECT_TYPE_IGNITION)
-	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetRange(LOCATION_HAND)
+	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetCountLimit(1,id)
-	e2:SetTarget(s.sptg)
-	e2:SetOperation(s.spop)
+	e2:SetTarget(s.hdtg)
+	e2:SetOperation(s.hdop)
 	c:RegisterEffect(e2)
-
-	-- Monster Effect 2: Recover from face-up Extra Deck if you control Dragon Fusion
-	local e3=Effect.CreateEffect(c)
-	e3:SetDescription(aux.Stringid(id,2))
-	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_TODECK)
-	e3:SetType(EFFECT_TYPE_IGNITION)
-	e3:SetRange(LOCATION_EXTRA)
-	e3:SetCountLimit(1,{id,1})
-	e3:SetCondition(s.recon)
-	e3:SetTarget(s.retg)
-	e3:SetOperation(s.reop)
-	c:RegisterEffect(e3)
 end
 
 -- PENDULUM EFFECT (optional on attack declare)
@@ -76,86 +64,83 @@ function s.atkopop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
--- MONSTER EFFECT 1
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chkc then return chkc:IsControler(tp) and chkc:IsLocation(LOCATION_MZONE) and chkc:IsAttribute(ATTRIBUTE_DARK) end
-	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
-		and e:GetHandler():IsCanBeSpecialSummoned(e,0,tp,false,false)
-		and Duel.IsExistingTarget(Card.IsAttribute,tp,LOCATION_MZONE,0,1,nil,ATTRIBUTE_DARK) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TARGET)
-	local g=Duel.SelectTarget(tp,Card.IsAttribute,tp,LOCATION_MZONE,0,1,1,nil,ATTRIBUTE_DARK)
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,e:GetHandler(),1,0,0)
+-- MONSTER EFFECT
+function s.hdtgfilter(c,tp)
+	return (c:IsFaceup() and c:IsControler(tp) and c:IsLocation(LOCATION_MZONE) and c:IsAttribute(ATTRIBUTE_DARK))
+		or (c:IsControler(tp) and c:IsLocation(LOCATION_PZONE))
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
+
+function s.banfilter(c,e,tp)
+	return c:IsFaceup() and c:IsType(TYPE_PENDULUM) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		and (c:IsSetCard(0x9f) or c:IsSetCard(0x99) or c:IsSetCard(0x98)) -- Performapal / Odd-Eyes / Magician
+end
+
+function s.hdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsControler(tp) and s.hdtgfilter(chkc,tp) end
+	if chk==0 then
+		return Duel.IsExistingTarget(s.hdtgfilter,tp,LOCATION_MZONE+LOCATION_PZONE,0,1,nil,tp)
+	end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_DESTROY)
+	local g=Duel.SelectTarget(tp,s.hdtgfilter,tp,LOCATION_MZONE+LOCATION_PZONE,0,1,1,nil,tp)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
+	-- (we don't pre-declare special summon targets because the effect branches)
+end
+
+function s.hdop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local tc=Duel.GetFirstTarget()
-	if not c:IsRelateToEffect(e) or Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
-	if not tc or not tc:IsRelateToEffect(e) or not tc:IsFaceup() then return end
-
-	if Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)>0 then
-		-- Always become DARK
-		local e1=Effect.CreateEffect(c)
-		e1:SetType(EFFECT_TYPE_SINGLE)
-		e1:SetCode(EFFECT_CHANGE_ATTRIBUTE)
-		e1:SetValue(ATTRIBUTE_DARK)
-		e1:SetReset(RESET_EVENT+RESETS_STANDARD)
-		c:RegisterEffect(e1)
-
-		-- Gain stats if Plant
-		if tc:IsRace(RACE_PLANT) then
-			local atk=tc:GetAttack()
-			if atk>0 then
-				local e2=Effect.CreateEffect(c)
-				e2:SetType(EFFECT_TYPE_SINGLE)
-				e2:SetCode(EFFECT_UPDATE_ATTACK)
-				e2:SetValue(atk)
-				e2:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-				c:RegisterEffect(e2)
-			end
-			local def=tc:GetDefense()
-			if def>0 then
-				local e3=Effect.CreateEffect(c)
-				e3:SetType(EFFECT_TYPE_SINGLE)
-				e3:SetCode(EFFECT_UPDATE_DEFENSE)
-				e3:SetValue(def)
-				e3:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-				c:RegisterEffect(e3)
-			end
-			local lv=tc:GetLevel()
-			if type(lv)=="number" and lv>0 then
-				local e4=Effect.CreateEffect(c)
-				e4:SetType(EFFECT_TYPE_SINGLE)
-				e4:SetCode(EFFECT_CHANGE_LEVEL)
-				e4:SetValue(lv)
-				e4:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
-				c:RegisterEffect(e4)
-			end
-		end
-	end
-end
-
--- MONSTER EFFECT 2 (Extra Deck)
-function s.fusionfilter(c)
-	return c:IsFaceup() and c:IsType(TYPE_FUSION) and c:IsRace(RACE_DRAGON)
-end
-function s.recon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	return c:IsFaceup() and Duel.IsExistingMatchingCard(s.fusionfilter,tp,LOCATION_MZONE,0,1,nil)
-end
-function s.retg(e,tp,eg,ep,ev,re,r,rp,chk)
-	local c=e:GetHandler()
-	if chk==0 then return c:IsAbleToHand()
-		and Duel.IsExistingMatchingCard(Card.IsType,tp,LOCATION_GRAVE,0,1,nil,TYPE_PENDULUM) end
-	Duel.SetOperationInfo(0,CATEGORY_TODECK,nil,1,tp,LOCATION_GRAVE)
-	Duel.SetOperationInfo(0,CATEGORY_TOHAND,c,1,0,LOCATION_EXTRA)
-end
-function s.reop(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
+	if not tc or not tc:IsRelateToEffect(e) then return end
+	if Duel.Destroy(tc,REASON_EFFECT)==0 then return end
 	if not c:IsRelateToEffect(e) then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
-	local g=Duel.SelectMatchingCard(tp,Card.IsType,tp,LOCATION_GRAVE,0,1,1,nil,TYPE_PENDULUM)
-	if #g>0 and Duel.SendtoDeck(g,nil,SEQ_DECKSHUFFLE,REASON_EFFECT)>0 then
-		Duel.BreakEffect()
-		Duel.SendtoHand(c,nil,REASON_EFFECT)
+
+	-- Build which main options are available
+	local canA=true -- "SS this OR place in PZONE" (we'll check the sub-choices after selecting A)
+	local canB=Duel.IsExistingMatchingCard(s.banfilter,tp,LOCATION_REMOVED,0,1,nil,e,tp)
+	local opts={}
+	local map={} -- maps displayed index -> main option id (1=A,2=B)
+	if canA then
+		opts[#opts+1]=aux.Stringid(id,2)
+		map[#opts]=1
+	end
+	if canB then
+		opts[#opts+1]=aux.Stringid(id,3)
+		map[#opts]=2
+	end
+	if #opts==0 then return end
+
+	local sel=Duel.SelectOption(tp,table.unpack(opts))
+	local choice=map[sel+1]
+
+	if choice==1 then
+		-- After destroying, either Special Summon this card OR place it in the Pendulum Zone
+		local canSS=Duel.GetLocationCount(tp,LOCATION_MZONE)>0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
+		local canPZ=Duel.CheckPendulumZones(tp) and not c:IsForbidden()
+
+		if not canSS and not canPZ then return end
+
+		local sub=0
+		if canSS and canPZ then
+			sub=Duel.SelectOption(tp,aux.Stringid(id,4),aux.Stringid(id,5)) -- SS / place in PZONE
+		elseif canSS then
+			sub=0
+		else
+			sub=1
+		end
+
+		if sub==0 then
+			Duel.SpecialSummon(c,0,tp,tp,false,false,POS_FACEUP)
+		else
+			Duel.MoveToField(c,tp,tp,LOCATION_PZONE,POS_FACEUP,true)
+		end
+
+	else
+		-- Special Summon 1 of your banished Performapal/Odd-Eyes/Magician Pendulum Monsters
+		if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
+		Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
+		local g=Duel.SelectMatchingCard(tp,s.banfilter,tp,LOCATION_REMOVED,0,1,1,nil,e,tp)
+		local sc=g:GetFirst()
+		if sc then
+			Duel.SpecialSummon(sc,0,tp,tp,false,false,POS_FACEUP)
+		end
 	end
 end
