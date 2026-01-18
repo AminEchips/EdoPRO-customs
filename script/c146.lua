@@ -26,6 +26,8 @@ function s.initial_effect(c)
 	c:RegisterEffect(e2)
 end
 
+s.listed_series={0x99,0xf2}
+
 --(1) On activation: Set 1 "Pendulum" Spell/Trap from Deck or GY
 function s.setfilter(c)
 	return c:IsSetCard(0xf2) and c:IsSpellTrap() and c:IsSSetable()
@@ -43,7 +45,7 @@ function s.setop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---(2) Trigger condition: an "Odd-Eyes" card you controlled in MZONE/SZONE left the field
+--(2) Trigger condition: an "Odd-Eyes" card you controlled in MZONE/SZONE left the field (includes bounce/spin/banish/etc.)
 function s.cfilter(c,tp)
 	return c:IsPreviousControler(tp)
 		and c:IsPreviousLocation(LOCATION_MZONE+LOCATION_SZONE)
@@ -61,12 +63,15 @@ function s.pztg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,1,0,0)
 end
 
-function s.oe_pendfilter(c,e,tp,code)
+--Placeable "Odd-Eyes" Pendulum with different name
+function s.oe_pendfilter(c,code)
 	if c:IsCode(code) then return false end
 	if not (c:IsSetCard(0x99) and c:IsType(TYPE_PENDULUM)) then return false end
 	if c:IsLocation(LOCATION_EXTRA) and not c:IsFaceup() then return false end
 	return not c:IsForbidden()
 end
+
+--Send 1 face-up "Odd-Eyes" from Extra Deck to GY
 function s.oe_extrafilter(c)
 	return c:IsFaceup() and c:IsSetCard(0x99) and c:IsAbleToGrave()
 end
@@ -75,31 +80,26 @@ function s.pzop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if not tc or not tc:IsRelateToEffect(e) then return end
 
-	--Normalize: get which PZ (0=left, 1=right) no matter what sequence format we get
+	--tc is in LOCATION_PZONE, so sequence should be 0/1 (left/right)
 	local pz=tc:GetSequence()
-	if pz>=6 then pz=pz-6 end          -- 6/7 -> 0/1
-	if pz~=0 and pz~=1 then return end -- safety
+	if pz~=0 and pz~=1 then return end
 
-	local seq=6+pz -- actual SZONE sequence for Pendulum Zones is 6/7
 	local code=tc:GetCode()
-
 	if Duel.Destroy(tc,REASON_EFFECT)==0 then return end
 
-	--must have that exact pendulum zone free
-	if not Duel.CheckLocation(tp,LOCATION_SZONE,seq) then return end
+	--Need that exact Pendulum Zone free (PZONE 0 or 1)
+	if not Duel.CheckLocation(tp,LOCATION_PZONE,pz) then return end
 
-	--Select 1 "Odd-Eyes" Pendulum Monster with a different name from Deck/face-up Extra/GY
+	--Select replacement
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TOFIELD)
-	local g=Duel.SelectMatchingCard(tp,s.oe_pendfilter,tp,LOCATION_DECK+LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil,e,tp,code)
+	local g=Duel.SelectMatchingCard(tp,aux.FilterBoolFunction(s.oe_pendfilter,code),tp,
+		LOCATION_DECK+LOCATION_EXTRA+LOCATION_GRAVE,0,1,1,nil)
 	local sc=g:GetFirst()
-	if not sc or sc:IsForbidden() then return end
+	if not sc then return end
 
-	--Put it in SZONE then force it into the correct PZ slot (6/7)
-	if Duel.MoveToField(sc,tp,tp,LOCATION_SZONE,POS_FACEUP,true) then
-		Duel.MoveSequence(sc,seq)
-	else
-		return
-	end
+	--Force into the same PZ using zone bitmask (SZONE seq 6/7 -> zones 0x40/0x80)
+	local zone=(pz==0) and 0x40 or 0x80
+	if not Duel.MoveToField(sc,tp,tp,LOCATION_PZONE,POS_FACEUP,true,zone) then return end
 
 	--Then you can send 1 face-up "Odd-Eyes" monster from your Extra Deck to the GY
 	if Duel.IsExistingMatchingCard(s.oe_extrafilter,tp,LOCATION_EXTRA,0,1,nil)
