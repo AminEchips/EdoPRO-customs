@@ -75,23 +75,6 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 		tc:RegisterEffect(e1)
 	end
 
-	--Apply material restrictions to that monster
-	local e2=Effect.CreateEffect(e:GetHandler())
-	e2:SetType(EFFECT_TYPE_SINGLE)
-	e2:SetCode(EFFECT_CANNOT_BE_FUSION_MATERIAL)
-	e2:SetValue(matlimit)
-	e2:SetReset(RESET_EVENT+RESETS_STANDARD)
-	tc:RegisterEffect(e2)
-
-	local e3=e2:Clone()
-	e3:SetCode(EFFECT_CANNOT_BE_SYNCHRO_MATERIAL)
-	tc:RegisterEffect(e3)
-
-	local e4=e2:Clone()
-	e4:SetCode(EFFECT_CANNOT_BE_XYZ_MATERIAL)
-	tc:RegisterEffect(e4)
-end
-
 --========================
 --(2) GY effect
 --========================
