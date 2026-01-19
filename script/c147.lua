@@ -6,7 +6,7 @@ function s.initial_effect(c)
 	Link.AddProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),2,99,s.lcheck)
 
 	--If this card is Special Summoned: Special Summon 1 "Predaplant"/"Speedroid"/"The Phantom Knights" from Deck,
-	--then you can increase its Level by 1, also you cannot use that monster as Fusion/Synchro/Xyz Material, except for a Dragon monster
+	--then you can increase its Level by 1
 	local e1=Effect.CreateEffect(c)
 	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetCategory(CATEGORY_SPECIAL_SUMMON)
@@ -39,9 +39,7 @@ function s.lcheck(g,lc,sumtype,tp)
 	return g:IsExists(Card.IsSetCard,1,nil,0x99)
 end
 
---========================
---(1) SS from Deck + Level up + material restriction
---========================
+-- 1 - SS from Deck + Level change
 function s.spfilter(c,e,tp)
 	return c:IsCanBeSpecialSummoned(e,0,tp,false,false)
 		and (c:IsSetCard(0x10f3) -- Predaplant
@@ -76,9 +74,9 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 
---========================
---(2) GY effect
---========================
+
+-- 2 - GY effect
+
 function s.costfilter(c)
 	return c:IsFaceup() and c:IsMonster() and c:IsSetCard(0x99) and c:IsAbleToRemoveAsCost()
 end
