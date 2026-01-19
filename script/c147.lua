@@ -122,3 +122,4 @@ function s.gyop(e,tp,eg,ep,ev,re,r,rp)
 	end
 	Duel.SpecialSummonComplete()
 end
+end
