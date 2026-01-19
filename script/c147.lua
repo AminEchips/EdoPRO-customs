@@ -59,7 +59,7 @@ end
 
 local function matlimit(e,c)
 	-- "cannot be used as Fusion/Synchro/Xyz Material, except for a Dragon monster"
-	return not c:IsTYPE(RACE_DRAGON)
+	return not c:IsType(TYPE_DRAGON) and c:IsType(TYPE_PLANT) and c:IsType(TYPE_MACHINE) and c:IsType(TYPE_WARRIOR)
 end
 
 function s.spop(e,tp,eg,ep,ev,re,r,rp)
